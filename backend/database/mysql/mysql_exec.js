@@ -3,9 +3,10 @@ const conn = require('./mysql_conn');
 
 const mysql_exec_query = async (query) => {
     try {
-        const [result] = await conn.promise().execute(query);
+        const [result] = await conn.query(query);
         return result;
     } catch (err) {
+        console.log(err);
         return {err};
     }
 }
@@ -23,6 +24,7 @@ const mysql_exec_proc = async (name, params) => {
         const [result] = await conn.promise().execute(proc);
         return result[0];
     } catch (err) {
+        console.log(err);
         return {err};
     }
 }

@@ -25,6 +25,6 @@ app.get('/', async (_, res) => {
     return res.status(200).json({ msg: 'Proyecto Final de IPC2.' });
 });
 
-app.use('/registro', require('./routes/registro.routes.js'))
+app.use('/auth', require('./routes/auth.routes.js'));
 
 module.exports = app;
