@@ -1,99 +1,52 @@
 const adminOptions = [
     {
-        label: 'File',
+        label: 'Bienes',
+        icon: 'pi pi-box',
+        url: '/registar-bienes'
+    },
+    {
+        label: 'Tarjetas',
         icon: 'pi pi-fw pi-file',
+        url: '/administrar-tarjetas'
+    },
+    {
+        label: 'Auxiliares',
+        icon: 'pi pi-users',
+        url: '/gestionar-auxiliares'
+    },
+    {
+        label: 'Departamentos',
+        icon: 'pi pi-sitemap',
+        url: '/gestionar-departamentos'
+    },
+    {
+        label: 'Programas',
+        icon: 'pi pi-sitemap',
+        url: '/gestionar-programas'
+    },
+    {
+        label: 'Empleados',
+        icon: 'pi pi-users',
+        url: '/gestionar-empleados'
+    },
+    {
+        label: 'Reportes',
+        icon: 'pi pi-align-left',
+        url: '',
         items: [
             {
-                label: 'New',
-                icon: 'pi pi-fw pi-plus',
-                items: [
-                    {
-                        label: 'Bookmark',
-                        icon: 'pi pi-fw pi-bookmark'
-                    },
-                    {
-                        label: 'Video',
-                        icon: 'pi pi-fw pi-video'
-                    },
-
-                ]
+                label: 'Historial de Propiedad',
+                icon: 'pi pi-history',
+                url: '/historial-propiedad',
             },
             {
-                label: 'Delete',
-                icon: 'pi pi-fw pi-trash'
-            },
-            {
-                separator: true
-            },
-            {
-                label: 'Export',
-                icon: 'pi pi-fw pi-external-link'
+                label: 'Historial Modificaciones',
+                icon: 'pi pi-history',
+                url: '/historial-modificaciones',
             }
         ]
     },
-    {
-        label: 'Edit',
-        icon: 'pi pi-fw pi-pencil',
-        items: [
-            {
-                label: 'Left',
-                icon: 'pi pi-fw pi-align-left'
-            },
-            {
-                label: 'Right',
-                icon: 'pi pi-fw pi-align-right'
-            },
-            {
-                label: 'Center',
-                icon: 'pi pi-fw pi-align-center'
-            },
-            {
-                label: 'Justify',
-                icon: 'pi pi-fw pi-align-justify'
-            },
 
-        ]
-    },
-    {
-        label: 'Users',
-        icon: 'pi pi-fw pi-user',
-        items: [
-            {
-                label: 'New',
-                icon: 'pi pi-fw pi-user-plus',
-
-            },
-            {
-                label: 'Delete',
-                icon: 'pi pi-fw pi-user-minus',
-
-            },
-            {
-                label: 'Search',
-                icon: 'pi pi-fw pi-users',
-                items: [
-                    {
-                        label: 'Filter',
-                        icon: 'pi pi-fw pi-filter',
-                        items: [
-                            {
-                                label: 'Print',
-                                icon: 'pi pi-fw pi-print',
-                            }
-                        ]
-                    },
-                    {
-                        icon: 'pi pi-fw pi-bars',
-                        label: 'List'
-                    }
-                ]
-            }
-        ]
-    },
-    {
-        label: 'Events',
-        icon: 'pi pi-fw pi-calendar'
-    }
 ];
 
 export default adminOptions;

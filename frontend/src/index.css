@@ -7,3 +7,7 @@ body {
   list-style: none;
   list-style-type: none;
 }
+
+li.selected a span {
+  color: #06b6d4; /* Cambia el color del primer span cuando el li está seleccionado */
+}

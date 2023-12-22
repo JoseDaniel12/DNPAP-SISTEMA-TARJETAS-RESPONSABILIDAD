@@ -1,13 +1,12 @@
-import React from 'react';
-import { useState } from 'react';
-import * as yup from 'yup'
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFormik } from 'formik';
-import { useLocalStorage } from '../../hooks/useLocalStorage';
+import * as yup from 'yup'
 import {InputText } from 'primereact/inputtext';
 import { Card } from 'primereact/card';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
+import { useAuth } from '../../Auth/Auth';
 
 const validationSchema = yup.object({
     alias: yup.string().required('El alias es requerido'),
@@ -16,10 +15,10 @@ const validationSchema = yup.object({
 
 
 function Login() {
+    const { setLoginData } = useAuth();
     const navigate = useNavigate();
-    const [credencialesIncorrectas, setCredencialesIncorrectas] = useState(false);
-    const [_, setLoginData] = useLocalStorage('loginData', null);
 
+    const [credencialesIncorrectas, setCredencialesIncorrectas] = useState(false);
 
     const handleLoginSubmit = async (values, actions) => {
         const response = await fetch('http://localhost:5000/auth/login', {
@@ -37,7 +36,7 @@ function Login() {
         }
     
         setLoginData(data);
-        navigate('/dashboard');
+        navigate('/');
 
         actions.resetForm();
     }
@@ -49,8 +48,7 @@ function Login() {
         },
         validationSchema,
         onSubmit: handleLoginSubmit
-    });
-
+    }); 
 
     return (
         <form onSubmit={handleSubmit} className='col-12 md:col-5 mx-auto mt-8 formgrid flex-column align-items-center'>
