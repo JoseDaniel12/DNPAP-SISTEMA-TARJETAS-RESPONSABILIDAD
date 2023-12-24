@@ -26,16 +26,16 @@ const router = express.Router();
 
 // Verifica credenciales y retorna un token en caso de que el usuario sea valido
 router.post('/login', async (req, res) => {
-    const { alias, contrasenia } = req.body;
+    const { correo, contrasenia } = req.body;
 
     // Busqueda del usuario con las credenciales ingresadas
     let [usuario] = await mysql_exec_query(`
         SELECT
-        usuario.*,
-        tipo_usuario.nombre as tipo_usuario
-        FROM usuario
-        INNER JOIN tipo_usuario USING (id_tipo_usuario) 
-        WHERE alias = '${alias}'
+        empleado.*,
+        rol.nombre as rol
+        FROM empleado
+        INNER JOIN rol USING (id_rol) 
+        WHERE correo = '${correo}'
         LIMIT 1;
     `);
 

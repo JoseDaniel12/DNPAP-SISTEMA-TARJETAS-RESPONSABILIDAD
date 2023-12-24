@@ -14,12 +14,13 @@ import GestionarEmpleados from '../Components/GestionEmpleados/GestionEmpleados'
 import HistorialPropiedad from '../Components/Reportes/HistorialPropiedad/HistorialPropiedad';
 import HistorialModificaciones from '../Components/Reportes/HistorialModificaciones/HistorialModificaciones';
 import NotFound from '../Components/NotFound/NotFound';
+import { userRoles } from '../types/userRoles';
 
 function Rutas() {
     const {loginData, setLoginData} = useAuth();
     const usuario = loginData?.usuario;
 
-    const rutasAdmin = (
+    const rutasCoordinador = (
         <>
           <Route index element={<ListaEmpleados />} />
           <Route path="registar-bienes" element={<RegistroBien />} />
@@ -49,7 +50,7 @@ function Rutas() {
         </>
     );
       
-    const rutas = usuario?.tipo_usuario === 'ADMIN' ? rutasAdmin : rutasAuxiliar;
+    const rutas = usuario?.rol === userRoles.COORDINADOR ? rutasCoordinador : rutasAuxiliar;
 
     return (
         <Routes>
@@ -57,7 +58,6 @@ function Rutas() {
             !usuario? (
               <>
                 <Route index element={<Login/>} />
-                <Route path="/login" element={<Login/>} />
                 <Route path="/*" element={<Login/>}/>
               </>
             ) : (
@@ -69,6 +69,7 @@ function Rutas() {
               </>
             )
           }
+          <Route path="/login" element={<Login/>} />
         </Routes>
     );
 }

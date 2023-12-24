@@ -24,18 +24,18 @@ function RegistroBien() {
     const [programas, setProgramas] = useState([]);
 
     // Datos generales de los bienes
-    const [programa, setPrograma] = useState(null);
+    const [descripcion, setDescripcion] = useState('');
     const [precio, setPrecio] = useState(null);
     const [fecha, setFecha] = useState(new Date());
-    const [descripcion, setDescripcion] = useState('');
 
     // Datos especificos de los bienes
     const [sicoin, setSicoin] = useState('');
+    const [sicoinError, setSicoinError] = useState('');
     const [noSerie, setNoSerie] = useState('');
+    const [noSerieError, setNoSerieError] = useState('');
     const [noInventario, setNoInventario] = useState('');
-    const [errorDatosEspecificos, setErrorDatosEspecificos] = useState(false);
 
-    // Listado de bienes (unicmaente con datos especificos)
+    // Listado de bienes (cada bien solo tiene los datos especificos)
     const [bienes, setBienes] = useState([]);
 
 
@@ -46,7 +46,7 @@ function RegistroBien() {
             noSerie: { value: null, matchMode: FilterMatchMode.EQUALS },
             noInventario: { value: null, matchMode: FilterMatchMode.EQUALS },
         });
-        setGlobalFilterValue("");
+        setGlobalFilterValue('');
     };
 
     const onGlobalFilterChange = (e) => {
@@ -60,42 +60,44 @@ function RegistroBien() {
 
     const handleRegistrarBienes = e => {
         e.preventDefault();
-
-        const dia = fecha.getDate().toString().padStart(2, '0');
-        const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
-        const año = fecha.getFullYear();
-        const fechaTexto = `${dia}/${mes}/${año}`;
-
         fetch('http://localhost:5000/bienes/registro-bienes-comunes', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                idPrograma: programa ? programa.id_programa : null,
-                precio: precio === null ? 0 : precio,
                 descripcion,
-                fecha: fechaTexto,
+                precio: precio === null ? 0 : precio,
+                fecha_registro: fecha,
                 datos_espeficos_bienes: bienes
             })
         }).then(res => {    
             if (res.ok) {
-                alert("exito");
+                alert('exito');
             } else {
-                alert("error");
+                alert('error');
             }
         });
     }
 
 
     const handleAgregarBien = () => {
-        if ([sicoin, noSerie, noInventario].every(valor => valor === '')) {
-            setErrorDatosEspecificos(true);
-            return;
-        };
-        setErrorDatosEspecificos(false);
+        setSicoinError('');
+        setNoSerieError('');
+        if ([sicoin, noSerie, noInventario].every(valor => valor === '')) return;
 
-        const bien ={
+        let errors = false;
+        if (bienes.some(bien => bien.sicoin === sicoin)) {
+            setSicoinError('SICOIN ya registrado');
+            errors = true;
+        }
+        if (bienes.some(bien => bien.noSerie === noSerie)) {
+            setNoSerieError('No. Serie ya registrado');
+            errors = true;
+        }
+        if (errors) return;
+
+        const bien = {
             sicoin,
             noSerie,
             noInventario
@@ -104,6 +106,19 @@ function RegistroBien() {
         setSicoin('');
         setNoSerie('');
         setNoInventario('');
+    }
+
+
+    const handleEditarBien = (bien) => {
+        setSicoin(bien.sicoin);
+        setNoSerie(bien.noSerie);
+        setNoInventario(bien.noInventario);
+        setBienes(prevBienes => prevBienes.filter(b  => {
+            if (
+                bien.sicoin !== b.sicoin && 
+                bien.noSerie !== b.noSerie
+            ) return true;
+        }));
     }
 
 
@@ -116,49 +131,16 @@ function RegistroBien() {
 
     
     return (
-        <form onSubmit={handleRegistrarBienes} className='grid col-11 md:col-9 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+        <div className='grid col-11 md:col-9 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <h1 className='col-12 flex justify-content-center mb-0 text-black-alpha-80'>Registro de Bienes</h1>
 
             <Divider className='mb-0'/>
             <h2 className='col-12 mb-0 text-black-alpha-80'>Datos en Comun:</h2>
 
-            <div className='field col-12 md:col-4 mb-0'>
-                <label htmlFor="program" className='font-bold block'>Programa: </label>
-                <Dropdown 
-                    inputId="programa" 
-                    options={programas} 
-                    optionLabel='nombre'
-                    value={programa}
-                    placeholder='Seleccione un programa'
-                    onChange={e => setPrograma(e.target.value)}
-                />
-            </div>
-            <div className='field col-12 md:col-4 mb-0'>
-                <label htmlFor="precio" className='font-bold block'>Precio: </label>
-                <InputNumber 
-                    inputId="precio"
-                    placeholder='Q 0.00'
-                    minFractionDigits={2}
-                    maxFractionDigits={5}
-                    mode="currency" currency="GTQ" locale="es-GT"
-                    value={precio}
-                    onChange={e => setPrecio(e.value)}
-                />
-            </div>
-            <div className='field col-12 md:col-4 mb-0'>
-                <label htmlFor="fehca" className='font-bold block'>Fecha: </label>
-                <Calendar
-                    inputId="fecha"
-                    showIcon
-                    placeholder='dd/mm/aaaa'
-                    dateFormat="dd/mm/yy"
-                    value={fecha}
-                    onChange={e => setFecha(e.target.value)}
-                />
-            </div>
             <div className='field col-12 mb-0'>
-                <label htmlFor="descripcion" className='font-bold block'>Descripción: </label>
+                <label htmlFor='descripcion' className='font-bold block'>Descripción: </label>
                 <InputTextarea 
+                    id='descripcion'
                     placeholder='Caracteristicas y Especificaciones'  
                     rows={4}
                     value={descripcion}
@@ -168,39 +150,70 @@ function RegistroBien() {
                 />
             </div>
 
+            <div className='field col-12 md:col-4 mb-0'>
+                <label htmlFor='precio' className='font-bold block'>Precio: </label>
+                <InputNumber 
+                    inputId='precio'
+                    name='precio'
+                    placeholder='Q 0.00'
+                    minFractionDigits={2}
+                    maxFractionDigits={5}
+                    mode='currency' currency='GTQ' locale='es-GT'
+                    value={precio}
+                    min={0}
+                    onChange={e => setPrecio(e.value)}
+                />
+            </div>
+
+            <div className='field col-12 md:col-4 mb-0'>
+                <label htmlFor='fecha' className='font-bold block'>Fecha: </label>
+                <Calendar
+                    inputId='fecha'
+                    name='fecha'
+                    showIcon
+                    todayButtonClassName='p-button-'
+                    placeholder='dd/mm/aaaa'
+                    dateFormat='dd/mm/yy'
+                    value={fecha}
+                    onChange={e => setFecha(e.target.value)}
+                />
+            </div>
+
             <Divider className='mb-0'/>
             <h2 className='col-12 mb-0 text-black-alpha-80'>Datos Especificos:</h2>
 
 
             <div className='col-12 md:col-4'>
-                <div className=' col-12'>
+                {/* <div className=' col-12'>
                     {
-                        errorDatosEspecificos && <Message severity="error" text='Se requiere almenos un dato' className='mt-1 p-1'/>
+                        errorDatosEspecificos && <Message severity='error' text='Se requiere almenos un dato' className='mt-1 p-1'/>
                     }
-                </div>
+                </div> */}
 
                 <div className='field col-12 mb-0'>
-                    <label htmlFor="program" className='font-bold block'>SICOIN: </label>
+                    <label htmlFor='sicoin' className='font-bold block'>SICOIN: </label>
                     <InputText 
-                        inputId="sicoin"
+                        id='sicoin'
                         placeholder='SICOIN del bien'
                         value={sicoin}
                         onChange={e => setSicoin(e.target.value)}
                     />
+                    { sicoinError && <Message severity='error' text={sicoinError} className='mt-1 p-1'/> }
                 </div>
                 <div className='field col-12 mb-0'>
-                    <label htmlFor="program" className='font-bold block'>No serie: </label>
+                    <label htmlFor='noSerie' className='font-bold block'>No serie: </label>
                     <InputText 
-                        inputId="sicoin"
+                        id='noSerie'
                         placeholder='No. Serie del bien' 
                         value={noSerie}
                         onChange={e => setNoSerie(e.target.value)}
                     />
+                    { noSerieError && <Message severity='error' text={noSerieError} className='mt-1 p-1'/> }
                 </div>
                 <div className='field col-12 mb-0'>
-                    <label htmlFor="program" className='font-bold block'>No Inventario: </label>
-                    <InputText 
-                        inputId="sicoin"
+                    <label htmlFor='noInventario' className='font-bold block'>No Inventario: </label>
+                    <InputText
+                        id='noInventario'
                         placeholder='No. inventario del bien'
                         value={noInventario}
                         onChange={e => setNoInventario(e.target.value)}
@@ -209,10 +222,10 @@ function RegistroBien() {
                 <div className='col-12'>
                     <Button 
                         type='button'
-                        severity="success"
-                        label="Agregar Bien"
-                        icon="pi pi-plus"
-                        iconPos="left"
+                        severity='success'
+                        label='Agregar Bien'
+                        icon='pi pi-plus'
+                        iconPos='left'
                         onClick={handleAgregarBien}
                         className='w-full'
                     />
@@ -229,26 +242,26 @@ function RegistroBien() {
                     value={bienes} 
                     filters={filters}
                     paginator
-                    paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
-                    currentPageReportTemplate="Bien {first} a {last} de  {totalRecords}"
+                    paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
+                    currentPageReportTemplate='Bien {first} a {last} de  {totalRecords}'
                     rows={10}
                     scrollable
-                    scrollHeight="280px"
+                    scrollHeight='280px'
                     showGridlines
-                    stripedRows 
+                    stripedRows
                     header={
                         <div className='flex flex-wrap md:flex-row-reverse'>
                             <div className='col-12 md:col-4'>
                                 <Button 
-                                    severity="warning" icon="pi pi-upload" label="Carga (XLSX)" 
+                                    severity='warning' icon='pi pi-upload' label='Carga (XLSX)' 
                                 />
                             </div>
                             {/* {
                                 filtrosAplicados && <div className='col-6 md:col-4'>
                                     <Button
-                                        type="button"
-                                        icon="pi pi-filter-slash"
-                                        label="Quitar Filtros"
+                                        type='button'
+                                        icon='pi pi-filter-slash'
+                                        label='Quitar Filtros'
                                         outlined
                                         onClick={() => {
                                             initFilters();
@@ -257,31 +270,33 @@ function RegistroBien() {
                                     />
                                 </div>
                             } */}
-                            <div className="col-12 md:col-8 flex justify-content-end">
-                                <span className="p-input-icon-left flex align-items-center">
-                                    <i className="pi pi-search" />
-                                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
-                                        placeholder="Buscar por valor clave"
+                            <div className='col-12 md:col-8 flex justify-content-end'>
+                                <span className='p-input-icon-left flex align-items-center'>
+                                    <i className='pi pi-search' />
+                                    <InputText id='busquedaBien' value={globalFilterValue} onChange={onGlobalFilterChange} 
+                                        placeholder='Buscar por valor clave'
                                     />
                                 </span>
                             </div>
                         </div>
                     }
-                >
-                    <Column field="Index" header="No." body={(data, props) => props.rowIndex + 1}/>
-                    <Column field="sicoin" header="SICOIN" />
-                    <Column field="noSerie" header="No. Serie" />
-                    <Column field="noInventario" header="No. Inventario" />
+                >   
+                    <Column field='sicoin' header='SICOIN' />
+                    <Column field='noSerie' header='No. Serie' />
+                    <Column field='noInventario' header='No. Inventario' />
                     <Column 
-                        header="Editar"
+                        header='Editar'
                         body = {
                             bien => (
-                                <Button type='button' className='p-button-warning p-button-rounded p-button-text' icon='pi pi-pencil' />
+                                <Button 
+                                    type='button' className='p-button-warning p-button-rounded p-button-text' icon='pi pi-pencil'
+                                    onClick={() => handleEditarBien(bien)} 
+                                />
                             )
                         }
                     />
                     <Column 
-                        header="Eliminar"
+                        header='Eliminar'
                         body = {
                             bien => (
                                 <Button 
@@ -305,9 +320,12 @@ function RegistroBien() {
             </div>
 
             <div  className='sm:col-12 md:col-4 ml-auto mt-2' >
-                <Button label="Registrar Bienes" icon="pi pi-save" iconPos="left"/>
+                <Button 
+                    label='Registrar Bienes' icon='pi pi-save' iconPos='left'
+                    onClick={handleRegistrarBienes}
+                />
             </div>
-        </form>
+        </div>
     );
 }
 

@@ -9,7 +9,7 @@ import { Message } from 'primereact/message';
 import { useAuth } from '../../Auth/Auth';
 
 const validationSchema = yup.object({
-    alias: yup.string().required('El alias es requerido'),
+    correo: yup.string().required('El correo es requerido.').email('El correo no es valido.'),
     contrasenia: yup.string().required('La contraseña es requerida')
 });
 
@@ -43,12 +43,13 @@ function Login() {
 
     const {values, errors, touched, handleBlur, handleChange, handleSubmit} = useFormik({
         initialValues: {
-            alias: '',
+            correo: '',
             contrasenia: ''
         },
         validationSchema,
         onSubmit: handleLoginSubmit
     }); 
+    
 
     return (
         <form onSubmit={handleSubmit} className='col-12 md:col-5 mx-auto mt-8 formgrid flex-column align-items-center'>
@@ -56,18 +57,18 @@ function Login() {
                 { credencialesIncorrectas && <Message severity="error" text='Credenciales incorrectas' className='w-full mb-3'/>}
 
                 <div className='field w-full'>
-                    <label htmlFor='alias'>Nombre de Usuario:</label>
+                    <label htmlFor='correo'>Correo:</label>
                     <InputText 
-                        type='text' 
-                        id='alias' 
-                        name='alias' 
-                        value={values.alias} 
+                        type='mail' 
+                        id='correo'
+                        name='correo' 
+                        value={values.correo} 
                         onChange={handleChange} 
                         onBlur={handleBlur}
                         className='w-full p-2'
                         style={{display: 'block'}}
                     />
-                    {errors.alias && touched.alias && <Message severity="error" text={errors.alias} className='mt-1 p-1'/>}
+                    {errors.correo && touched.correo && <Message severity="error" text={errors.correo} className='mt-1 p-1'/>}
                 </div>
                 <div className='field w-full'>
                     <label htmlFor='contrasenia'>Contraseña:</label>

@@ -11,8 +11,8 @@ import { Menu } from 'primereact/menu';
         
 
 const userOptions = {
-    'ADMIN': adminOptions,
-    'AUXILIAR': auxiliarOptions
+    'Coordinador': adminOptions,
+    'Auxiliar': auxiliarOptions
 }
 
 function Dashboard() {  
@@ -46,7 +46,7 @@ function Dashboard() {
 
     const [menubarOptions, setMenubarOptions] = useState([]);
     useEffect(() => {
-        setMenubarOptions(getMenuObject(userOptions[usuario.tipo_usuario]));
+        setMenubarOptions(getMenuObject(userOptions[usuario.rol]));
     }, []);
 
     const userMenuOptions = [
