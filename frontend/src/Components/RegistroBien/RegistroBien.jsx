@@ -1,42 +1,107 @@
-import { useState, useEffect } from 'react';
-import { Dropdown } from 'primereact/dropdown';
+import { useState, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import  { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { DevTool } from '@hookform/devtools';
+import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputTextarea } from 'primereact/inputtextarea';
 import { Calendar } from 'primereact/calendar';
-
 import { Divider } from 'primereact/divider';
-        
 import { DataTable } from 'primereact/datatable';
-import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Column } from 'primereact/column';
-import { Button } from 'primereact/button';
+import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Message } from 'primereact/message';
+import { Toast } from 'primereact/toast';
+
+import bienesRequest from '../../Requests/bienesRequests';
+import requestSettings from '../../Requests/requestSettings';
+
 
 function RegistroBien() {
+    const toast = useRef(null);
 
     // Filtros de la tabla de bienes
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [filters, setFilters] = useState(null);
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
-    // Listado de programas en el backend
-    const [programas, setProgramas] = useState([]);
+    // _______________________ Formulario de datos Generales _______________________
+    const datosGeneralesSchema = yup.object({
+        descripcion: yup.string().required('Descripción requerida'),
+        fecha: yup.date(),
+    });
 
-    // Datos generales de los bienes
-    const [descripcion, setDescripcion] = useState('');
-    const [precio, setPrecio] = useState(null);
-    const [fecha, setFecha] = useState(new Date());
+    const formDatosGenerales = useForm({
+        defaultValues: {
+            descripcion: '',
+            precio: null,
+            fecha: new Date(),
+        },
+        resolver: yupResolver(datosGeneralesSchema),
+        mode: 'onSubmit'
+    });
+    const { 
+        register: registerDatosGenerales,
+        handleSubmit: handleSubmitDatosGenerales,
+        reset: resetDatosGenerales,
+        formState: {
+            errors: errorsDatosGenerales
+        },
+        setError: setErrorDatosGenerales,
+    } = formDatosGenerales;
 
-    // Datos especificos de los bienes
-    const [sicoin, setSicoin] = useState('');
-    const [sicoinError, setSicoinError] = useState('');
-    const [noSerie, setNoSerie] = useState('');
-    const [noSerieError, setNoSerieError] = useState('');
-    const [noInventario, setNoInventario] = useState('');
 
+    // _______________________ Formulario de datos Especificos _______________________
     // Listado de bienes (cada bien solo tiene los datos especificos)
     const [bienes, setBienes] = useState([]);
+
+    const validateDisponibilidadSicoin = async (sicoin) => {
+        for (const bien of bienes) {
+            if (bien.sicoin === sicoin) {
+               return  false;
+            }
+        }
+        const response = await bienesRequest.validarDisponibilidadSicoin(sicoin);
+        return response.data?.disponibilidad || false;
+    }
+
+    const validateDisponibilidadnoSerie= async (noSerie) => {
+        for (const bien of bienes) {
+            if (bien.noSerie === noSerie) {
+               return  false;
+            }
+        }
+        const response = await bienesRequest.validarDisponibilidadNoSerie(noSerie);
+        return response.data?.disponibilidad || false;
+    }
+
+    const datosEspecificosSchema = yup.object({
+        sicoin: yup.string(),
+        noSeries: yup.string(),
+        noInventario: yup.string()
+    });
+
+    const formDatosEspecificos = useForm({
+        defaultValues: {
+            sicoin: '',
+            noSerie: '',
+            noInventario: '',
+        },
+        resolver: yupResolver(datosEspecificosSchema),
+        mode: 'onSubmit'
+    });
+
+    const { 
+        register: registerDatosEspecificos,
+        handleSubmit: handleSubmitDatosEspecificos,
+        reset: resetDatosEspecificos,
+        formState: {
+            errors: errorsDatosEspecificos
+        },
+        setError: setErrorDatosEspecificos,
+    } = formDatosEspecificos;
 
 
     const initFilters = () => {
@@ -58,54 +123,54 @@ function RegistroBien() {
     };
 
 
-    const handleRegistrarBienes = e => {
-        e.preventDefault();
-        fetch('http://localhost:5000/bienes/registro-bienes-comunes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                descripcion,
-                precio: precio === null ? 0 : precio,
-                fecha_registro: fecha,
-                datos_espeficos_bienes: bienes
-            })
-        }).then(res => {    
-            if (res.ok) {
-                alert('exito');
-            } else {
-                alert('error');
-            }
+    const handleRegistrarBienes = async () => {
+        let errores = false;
+        if (bienes.length === 0) {
+            errores = true;
+            setErrorDatosGenerales('bienes', {
+                type: 'manual',
+                message: 'Debe agregar al menos un bien'
+            });
+        }
+        if (errores) return toast.current.show({severity:'error', summary: 'Error', detail: 'Debes corregir errores.', life: 1500});
+
+        const { descripcion, precio, fecha } = formDatosGenerales.getValues();
+        const response = await bienesRequest.registrarBienesComunes({
+            descripcion,
+            precio: precio === null ? 0 : precio,
+            fecha_registro: fecha,
+            datos_espeficos_bienes: bienes
         });
+        if (response.error) {
+            toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
+        } else {
+            toast.current.show({severity:'success', summary: 'Exito', detail: response.message, life: 3000});
+            formDatosGenerales.reset();
+            formDatosEspecificos.reset();
+            setBienes([]);
+        }
     }
 
 
-    const handleAgregarBien = () => {
-        setSicoinError('');
-        setNoSerieError('');
+    const onAgregarBien = async (datosEspecificos) => {
+        const { sicoin, noSerie, noInventario } = datosEspecificos;
         if ([sicoin, noSerie, noInventario].every(valor => valor === '')) return;
 
-        let errors = false;
-        if (bienes.some(bien => bien.sicoin === sicoin)) {
-            setSicoinError('SICOIN ya registrado');
-            errors = true;
-        }
-        if (bienes.some(bien => bien.noSerie === noSerie)) {
-            setNoSerieError('No. Serie ya registrado');
-            errors = true;
-        }
-        if (errors) return;
+        const sicoinDisomible = await validateDisponibilidadSicoin(sicoin);
+        if (!sicoinDisomible) return setErrorDatosEspecificos('sicoin', {
+            type: 'manual',
+            message: 'SICOIN ya registrado'
+        });
 
-        const bien = {
-            sicoin,
-            noSerie,
-            noInventario
-        }
-        setBienes(prevBienes => [...prevBienes, bien]);
-        setSicoin('');
-        setNoSerie('');
-        setNoInventario('');
+        const noSerieDisponible = await validateDisponibilidadnoSerie(noSerie);
+        if (!noSerieDisponible) return setErrorDatosEspecificos('noSerie', {
+            type: 'manual',
+            message: 'No. Serie ya registrado'
+        });
+
+
+        setBienes(prevBienes => [...prevBienes, datosEspecificos]);
+        resetDatosEspecificos();
     }
 
 
@@ -123,15 +188,16 @@ function RegistroBien() {
 
 
     useEffect(() => {
-        fetch('http://localhost:5000/programas/obtener-programas')
-        .then(res => res.json())
-        .then(res => setProgramas(res.programas));
+        // fetch('http://localhost:5000/programas/obtener-programas')
+        // .then(res => res.json())
+        // .then(res => setProgramas(res.programas));
         initFilters();
     }, []);
 
     
     return (
         <div className='grid col-11 md:col-9 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+            <Toast ref={toast}  position="bottom-right"/>
             <h1 className='col-12 flex justify-content-center mb-0 text-black-alpha-80'>Registro de Bienes</h1>
 
             <Divider className='mb-0'/>
@@ -139,15 +205,16 @@ function RegistroBien() {
 
             <div className='field col-12 mb-0'>
                 <label htmlFor='descripcion' className='font-bold block'>Descripción: </label>
-                <InputTextarea 
+                <InputTextarea
                     id='descripcion'
+                    name='descripcion'
                     placeholder='Caracteristicas y Especificaciones'  
                     rows={4}
-                    value={descripcion}
-                    onChange={e => setDescripcion(e.target.value)}
                     className='f-wull' 
                     style={{resize: 'none'}}
+                    { ...registerDatosGenerales('descripcion') }
                 />
+                { errorsDatosGenerales.descripcion && <Message severity='error' text={errorsDatosGenerales.descripcion?.message} className='mt-1 p-1'/> }
             </div>
 
             <div className='field col-12 md:col-4 mb-0'>
@@ -159,10 +226,10 @@ function RegistroBien() {
                     minFractionDigits={2}
                     maxFractionDigits={5}
                     mode='currency' currency='GTQ' locale='es-GT'
-                    value={precio}
                     min={0}
-                    onChange={e => setPrecio(e.value)}
+                    { ...registerDatosGenerales('precio') }
                 />
+                { errorsDatosGenerales.precio && <Message severity='error' text={errorsDatosGenerales.precio?.message} className='mt-1 p-1'/> }
             </div>
 
             <div className='field col-12 md:col-4 mb-0'>
@@ -174,59 +241,50 @@ function RegistroBien() {
                     todayButtonClassName='p-button-'
                     placeholder='dd/mm/aaaa'
                     dateFormat='dd/mm/yy'
-                    value={fecha}
-                    onChange={e => setFecha(e.target.value)}
+                    value={new Date()}
+                    { ...registerDatosGenerales('fecha') }
                 />
             </div>
 
             <Divider className='mb-0'/>
+            { errorsDatosGenerales.bienes && <Message severity='error' text={errorsDatosGenerales.bienes?.message} className='mt-1 p-1'/> }
             <h2 className='col-12 mb-0 text-black-alpha-80'>Datos Especificos:</h2>
 
-
             <div className='col-12 md:col-4'>
-                {/* <div className=' col-12'>
-                    {
-                        errorDatosEspecificos && <Message severity='error' text='Se requiere almenos un dato' className='mt-1 p-1'/>
-                    }
-                </div> */}
-
                 <div className='field col-12 mb-0'>
                     <label htmlFor='sicoin' className='font-bold block'>SICOIN: </label>
                     <InputText 
                         id='sicoin'
                         placeholder='SICOIN del bien'
-                        value={sicoin}
-                        onChange={e => setSicoin(e.target.value)}
+                        { ...registerDatosEspecificos('sicoin') }
                     />
-                    { sicoinError && <Message severity='error' text={sicoinError} className='mt-1 p-1'/> }
+                    { errorsDatosEspecificos.sicoin && <Message severity='error' text={errorsDatosEspecificos.sicoin?.message} className='mt-1 p-1'/> }
                 </div>
                 <div className='field col-12 mb-0'>
                     <label htmlFor='noSerie' className='font-bold block'>No serie: </label>
                     <InputText 
                         id='noSerie'
                         placeholder='No. Serie del bien' 
-                        value={noSerie}
-                        onChange={e => setNoSerie(e.target.value)}
+                        { ...registerDatosEspecificos('noSerie') }
                     />
-                    { noSerieError && <Message severity='error' text={noSerieError} className='mt-1 p-1'/> }
+                    { errorsDatosEspecificos.noSerie && <Message severity='error' text={errorsDatosEspecificos.noSerie?.message} className='mt-1 p-1'/> }
                 </div>
                 <div className='field col-12 mb-0'>
                     <label htmlFor='noInventario' className='font-bold block'>No Inventario: </label>
                     <InputText
                         id='noInventario'
                         placeholder='No. inventario del bien'
-                        value={noInventario}
-                        onChange={e => setNoInventario(e.target.value)}
+                        { ...registerDatosEspecificos('noInventario') }
                     />
                 </div>
                 <div className='col-12'>
                     <Button 
-                        type='button'
+                        type='submit'
                         severity='success'
                         label='Agregar Bien'
                         icon='pi pi-plus'
                         iconPos='left'
-                        onClick={handleAgregarBien}
+                        onClick={handleSubmitDatosEspecificos(onAgregarBien)}
                         className='w-full'
                     />
                 </div>
@@ -256,20 +314,6 @@ function RegistroBien() {
                                     severity='warning' icon='pi pi-upload' label='Carga (XLSX)' 
                                 />
                             </div>
-                            {/* {
-                                filtrosAplicados && <div className='col-6 md:col-4'>
-                                    <Button
-                                        type='button'
-                                        icon='pi pi-filter-slash'
-                                        label='Quitar Filtros'
-                                        outlined
-                                        onClick={() => {
-                                            initFilters();
-                                            setFiltrosAplicados(false);
-                                        }}
-                                    />
-                                </div>
-                            } */}
                             <div className='col-12 md:col-8 flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
@@ -322,9 +366,10 @@ function RegistroBien() {
             <div  className='sm:col-12 md:col-4 ml-auto mt-2' >
                 <Button 
                     label='Registrar Bienes' icon='pi pi-save' iconPos='left'
-                    onClick={handleRegistrarBienes}
+                    onClick={handleSubmitDatosGenerales(handleRegistrarBienes)}
                 />
             </div>
+                {/* <DevTool control={formDatosEspecificos.control} /> */}
         </div>
     );
 }

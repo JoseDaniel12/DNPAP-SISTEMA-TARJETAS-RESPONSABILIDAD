@@ -1,11 +1,12 @@
 const express = require('express');
+const HTTPResponseBody  = require('./HTTPResponseBody'); 
 const conn = require('../database/mysql/mysql_conn');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { format } = require('date-fns');
-
 const router = express.Router();
 
 router.post('/registro-bienes-comunes', async (req, res) => {
+    const respBody = new HTTPResponseBody();
     try {
         conn.beginTransaction();
         let {
@@ -63,10 +64,74 @@ router.post('/registro-bienes-comunes', async (req, res) => {
         }
 
         conn.commit();
-        return res.status(200).json({ msg: 'Bienes registrados correctamente.', bienes });
+        respBody.setMessage('Bienes registrados correctamente.');
+        respBody.setData({bienes});
+        return res.status(200).json(respBody.getLiteralObject());
     } catch (error) {
         conn.rollback();
-        return res.status(500).json({ msg: 'Error al registrar los bienes.' });
+        respBody.setError(error.toString());
+        return res.status(500).json(respBody.getLiteralObject());
+    } 
+});
+
+
+router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { sicoin } = req.body;
+        let query = `SELECT * FROM bien WHERE sicoin = '${sicoin}'`;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.length > 0) {
+            respBody.setData({disponibilidad: false});
+            respBody.setError('Ya existe un bien con el sicoin ingresado.');
+            return res.send(respBody.getLiteralObject());
+        }
+        respBody.setData({disponibilidad: true});
+        return res.send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.post('/verificar-disponibilidad-noSerie', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { noSerie } = req.body;
+        let query = `SELECT * FROM bien WHERE no_serie = '${noSerie}'`;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.length > 0) {
+            respBody.setData({disponibilidad: false});
+            respBody.setError('Ya existe un bien con el número de serie ingresado.');
+            return res.send(respBody.getLiteralObject());
+        }
+        respBody.setData({disponibilidad: true});
+        return res.send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+router.get('/bienes-sin-asignar', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const query = `
+            SELECT * FROM bien
+            INNER JOIN modelo USING(id_modelo)
+            LEFT OUTER JOIN registro_bien USING(id_bien)
+            WHERE registro_bien.id_registro_bien IS NULL;
+        `;
+        const bienesSinAsignar = await mysql_exec_query(query);
+        respBody.setData({bienesSinAsignar});
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
     } 
 });
 

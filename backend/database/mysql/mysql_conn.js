@@ -30,8 +30,9 @@ const conn = mysql.createConnection({
   database: process.env.MYSQL_DATABASE,
   user: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
+  decimalNumbers: true,
   multipleStatements: true,
-  enableKeepAlive: true
+  enableKeepAlive: true,
 });
 
 

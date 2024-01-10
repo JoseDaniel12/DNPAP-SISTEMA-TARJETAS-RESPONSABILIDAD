@@ -26,7 +26,7 @@ function Rutas() {
           <Route path="registar-bienes" element={<RegistroBien />} />
           <Route path="administrar-tarjetas" element={<ListaEmpleados />} />
           <Route path="tarjetas-empleado" element={<TarjetasEmpleado />} />
-          <Route path="asignar-bienes" element={<AgregarBienesTarjeta />} />
+          <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
           <Route path="traspasar-bienes" element={<TraspasoBienes />} />
           <Route path="pruebas" element={<AgregarBienesTarjeta />} />
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
@@ -44,7 +44,7 @@ function Rutas() {
             <Route path="registar-bienes" element={<RegistroBien />} />
             <Route path="administrar-tarjetas" element={<ListaEmpleados />} />
             <Route path="tarjetas-empleado" element={<TarjetasEmpleado />} />
-            <Route path="asignar-bienes" element={<AgregarBienesTarjeta />} />
+            <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
             <Route path="traspasar-bienes" element={<TraspasoBienes />} />
             <Route path="pruebas" element={<AgregarBienesTarjeta />} />
         </>

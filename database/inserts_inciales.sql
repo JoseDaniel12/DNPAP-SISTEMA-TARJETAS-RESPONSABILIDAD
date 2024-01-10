@@ -39,23 +39,26 @@ INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('Ciudad Vieja', 2)
 INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('Chimaltenango', 3);
 INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('San Pedro Sacatepéquez', 3);
 
-
-# _______________________ Direcciones _______________________
-DELETE FROM direccion;
-ALTER TABLE direccion AUTO_INCREMENT = 1;
-INSERT INTO direccion (nombre, id_municipio) VALUES ('Direccion de Normatividad de Programas de Atención a las Personas', 1);
-
-
-# _______________________ Departamentos _______________________
-DELETE FROM departamento;
-ALTER TABLE departamento AUTO_INCREMENT = 1;
-INSERT INTO departamento (nombre, id_direccion) VALUES ('Departamento de Programa de Atencion a las Personas', 1);
+# _______________________ Tipos de Unidades de Servicio _______________________
+DELETE FROM tipo_unidad_servicio;
+ALTER TABLE tipo_unidad_servicio AUTO_INCREMENT = 1;
+INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Dirección');
+INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Departamento');
+INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Programa');
 
 
-# _______________________ Programas _______________________
-DELETE FROM programa;
-ALTER TABLE programa AUTO_INCREMENT = 1;
-INSERT INTO programa (nombre, id_departamento) VALUES ('Programa de Salud Buco Dental', 1);
+# _______________________ Unidades de Servicio _______________________
+# Direcciones:
+DELETE FROM unidad_servicio;
+ALTER TABLE unidad_servicio AUTO_INCREMENT = 1;
+INSERT INTO unidad_servicio (nombre_nuclear, id_tipo_unidad_servicio, id_municipio)
+VALUES ('Direccion de Normatividad de Programas de Atención a las Personas', 1, 1);
+# Departamentos:
+INSERT INTO unidad_servicio (nombre_nuclear, id_unidad_superior,  id_tipo_unidad_servicio, id_municipio)
+VALUES ('Departamento de Inmunizaciones', 1, 2, 1);
+# Programas:
+INSERT INTO unidad_servicio (nombre_nuclear, id_unidad_superior,  id_tipo_unidad_servicio, id_municipio)
+VALUES ('Programa de Salud Buco Dental', 2, 3, 1);
 
 
 # _______________________ Roles _______________________
@@ -69,9 +72,13 @@ INSERT INTO rol (nombre) VALUES ('Ordinario');
 # _______________________ Empleados _______________________
 DELETE FROM empleado;
 ALTER TABLE empleado AUTO_INCREMENT = 1;
-INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_direccion, id_rol)
+INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
 VALUES ('josedaniel.alvaradof@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'José Miguel', 'Alvarado Aguilar', '3645832900101', '3645832900', 'Gerente', 1, 1);
-INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_direccion, id_rol)
+INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
 VALUES ('3645832900101@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Daniel  Armando', 'Fajardo Figueroa', '3645832900101', '3645832900', 'Gerente', 1, 2);
 
 
+-- Deletes
+DELETE FROM tarjeta_responsabilidad;
+DELETE FROM registro;
+DELETE FROM registro_bien;

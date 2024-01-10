@@ -1,25 +1,68 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
+import bienesRequests from '../../Requests/bienesRequests';
+import tarjetasRequests from '../../Requests/tarjetasReuests';
+import empleadoRequests from '../../Requests/empleadoRequests';
+import { Toast } from 'primereact/toast';
+
 
 import { bienesGenerales, bienesPorAgregar } from './mockData';
 
-function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
+function AgregarBienesTarjeta() {
+    const toast = useRef(null);
+    const { id_empleado } = useParams();
     const navigate = useNavigate();
+    const [bienesSinAsignar, setBienesSinAsignar] = useState([]);
+    const [bienesPorAsignar, setBienesPorAsignar] = useState([]);
 
     // Filtros de la tabla de empleados
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [filters, setFilters] = useState(null);
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
-    
+    const [cantTarjetasNesecarias, setCantTarjetasNecesarias] = useState(0);
     const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
+
+
+    const handleAgregarBien = (id_bien) => {
+        const bien = bienesSinAsignar.find(b => b.id_bien === id_bien);
+        setBienesPorAsignar(prevBiens => [...prevBiens, bien]);
+        setBienesSinAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
+    }
+
+    const handleEliminarBien = (id_bien) => {
+        const bien = bienesPorAsignar.find(b => b.id_bien === id_bien);
+        setBienesSinAsignar(prevBiens => [...prevBiens, bien]);
+        setBienesPorAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
+    }
+
+    const handleAgregarTarjeta = () => {
+        if (numeroTarjeta === '') return;
+        setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
+        setNumeroTarjeta('');
+    }
+
+    const handleEliminarTarjeta = (numero) => {
+        setNumerosTarjetas(prevNumeros => prevNumeros.filter(n => n !== numero));
+    }
+
+    const handleAgregarBienes = async () => {
+        if (!bienesPorAsignar.length) return;
+        if (numerosTarjetas.length !== cantTarjetasNesecarias) {
+            const error = 'Debes ingresar la cantidad de tarjetas indicada.'
+            return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500});
+        }
+        
+        const idsBienes = bienesPorAsignar.map(b => b.id_bien);
+        await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+    }
 
 
     const onGlobalFilterChange = (e) => {
@@ -29,13 +72,6 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
         setFilters(_filters);
         setGlobalFilterValue(value);
     };
-
-
-    useEffect(() => {
-        fetch('http://localhost:5000/bienes/lista-bienes')
-        .then(res => res.json())
-        .then(data => setBienesGenerales(data.bienes));
-    }, []);
 
 
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
@@ -52,8 +88,24 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
     };
 
 
+    useEffect(() => {
+        const idsBienes = bienesPorAsignar.map(b => b.id_bien);
+        tarjetasRequests
+        .getNumeroTarjetasNecesarias({id_empleado, idsBienes, operacion: 'ASIGNAR'})
+        .then(res => {
+           setCantTarjetasNecesarias(res.data);
+        });
+    }, [bienesPorAsignar]);
+
+
+    useEffect(() => {
+        bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data.bienesSinAsignar));
+    }, []);
+
+
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+            <Toast ref={toast}  position="bottom-right"/>
             <div className='col-12 text-center'>
                 <h1 className=' -mb-4 text-black-alpha-70'>Agregar Bienes de un Mismo Tipo</h1>
                 <h1 className='text-black-alpha-70'>a la Tarjeta No. 10733</h1>
@@ -61,7 +113,7 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
 
             <div className='col-12'>
                 <DataTable
-                    value={bienesGenerales}
+                    value={bienesSinAsignar}
                     rows={10}
                     paginator
                     scrollable
@@ -88,8 +140,8 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                     }
                 >
                     <Column field="sicoin" header="SICOIN"/>
-                    <Column field="noSerie" header="No. Serie"/>
-                    <Column field="noInventario" header="Inventario"/>
+                    <Column field="no_serie" header="No. Serie"/>
+                    <Column field="no_inventario" header="Inventario"/>
                     <Column field="descripcion" header="Descripcion"/>
                     <Column field="precio" header="Precio" body={bien => preciosTemplate(bien.precio)}/>
                     <Column 
@@ -101,7 +153,7 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                                     icon='pi pi-plus'
                                     className='p-button-success p-button-outlined w-auto'
                                     label="Agregar"
-                                    onClick={() => {}}
+                                    onClick={() => handleAgregarBien(bien.id_bien)}
                                 />
                             )
                         }
@@ -109,7 +161,7 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                 </DataTable>
 
                 <DataTable
-                    value={bienesPorAgregar}
+                    value={bienesPorAsignar}
                     rows={10}
                     paginator
                     scrollable
@@ -135,8 +187,8 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                     }
                 >
                     <Column field="sicoin" header="SICOIN"/>
-                    <Column field="noSerie" header="No. Serie"/>
-                    <Column field="noInventario" header="Inventario"/>
+                    <Column field="no_serie" header="No. Serie"/>
+                    <Column field="no_inventario" header="Inventario"/>
                     <Column field="descripcion" header="Descripcion"/>
                     <Column field="precio" header="Precio" body={bien => preciosTemplate(bien.precio)}/>
                     <Column 
@@ -148,7 +200,7 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                                     icon='pi pi-times'
                                     className='p-button-danger p-button-outlined w-auto'
                                     label="Eliminar"
-                                    onClick={() => {}}
+                                    onClick={() => handleEliminarBien(bien.id_bien)}
                                 />
                             )
                         }
@@ -157,21 +209,35 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
             </div>
 
             <div className='col-12'>
-                <p>Se requieren <b>2</b> tarjetas nuevas: </p>
+                <p>Se requieren <b>{cantTarjetasNesecarias}</b> tarjetas nuevas: </p>
                 <div className='field col max-w-max p-0'>
                     <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
                     <div className='flex flex-wrap gap-1'>
                         <div className='col p-0'>
-                            <InputText id='search' type='text' placeholder='No. Tarjeta'/>
+                            <InputText 
+                                id='search' type='text' placeholder='No. Tarjeta'
+                                value={numeroTarjeta}
+                                onChange={(e) => setNumeroTarjeta(e.target.value)}
+                            />
                         </div>
                         <div className='col-12 lg:max-w-max p-0'>
-                            <Button severity='success' label='Agregar' icon='pi pi-plus'/>
+                            <Button 
+                                severity='success' label='Agregar' icon='pi pi-plus'
+                                onClick={handleAgregarTarjeta}
+                            />
                         </div>
                     </div>
                 </div>
                 <div className="card flex flex-wrap gap-2 mb-4">
-                        <Chip label="10733-1" className="p-mr-2 p-mb-2" removable/>
-                        <Chip label="10733-1" className="p-mr-2 p-mb-2" removable/>
+                    {
+                        numerosTarjetas.map((numero, index) => (
+                            <Chip
+                                key={numero}
+                                label={numero} className="p-mr-2 p-mb-2" removable
+                                onRemove={() => handleEliminarTarjeta(numero)}
+                            />
+                        ))
+                    }
                 </div>
                 <div className='flex flex-wrap justify-content-between'>
                     <div className='col-12 md:col-6'>
@@ -184,7 +250,7 @@ function AgregarBienesTarjeta({visibilidad, setVisibilidad}) {
                     <div className='col-12 md:col-6'>
                         <Button
                             severity='info' label='Agregar Bienes' icon='pi pi-plus'
-                            onClick={() => navigate(-1)}
+                            onClick={handleAgregarBienes}
                         />
                     </div>
                 </div>

@@ -6,7 +6,7 @@ const mysql_exec_query = async (query) => {
         const [result] = await conn.promise().execute(query);
         return result;
     } catch (error) {
-        // console.log(error);
+        console.log(error);
         return {error};
     }
 }

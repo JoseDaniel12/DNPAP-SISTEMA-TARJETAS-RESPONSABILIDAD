@@ -1,4 +1,4 @@
-class HTTPResponse {
+class HTTPResponseBody {
     _severity;
 
     constructor(message = null, error = null, data = null) {
@@ -31,4 +31,4 @@ class HTTPResponse {
     }
 }
 
-module.exports = HTTPResponse;
+module.exports = HTTPResponseBody;

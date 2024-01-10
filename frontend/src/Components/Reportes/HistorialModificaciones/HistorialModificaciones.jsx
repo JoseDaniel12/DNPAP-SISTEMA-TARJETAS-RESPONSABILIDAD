@@ -106,7 +106,7 @@ function HistorialModificaciones() {
                     }
                 >
                     <Column field='descripcion' header='Descripción' filter filterPlaceholder='descripcion'/>
-                    <Column field='fecha' header='Fecha' body={dateBodyTemplate} filterField="fecha" dataType="date" filter filterPlaceholder='fecha'  filterElement={dateFilterTemplate}/>
+                    <Column field='fecha' header='Fecha' body={dateBodyTemplate} filterField="fecha" dataType="date" filter filterPlaceholder='fecha' filterElement={dateFilterTemplate}/>
                     <Column field='autor' header='Autor' filter filterPlaceholder='autor'/>
                     <Column field='dpi' header='DPI' filter filterPlaceholder='dpi'/>
                 </DataTable>    
