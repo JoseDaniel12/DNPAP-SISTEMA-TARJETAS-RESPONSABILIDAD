@@ -3,7 +3,7 @@ const _ = require('lodash');
 const HTTPResponseBody  = require('./HTTPResponseBody');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { obtenerUltimaTarjeta } = require('../utilities/empleado');
-const { colocarRegistro, crearTarjeta, getDescripcionRegistro, getNoLineas } = require('../utilities/tarjetas');
+const { colocarRegistro, crearTarjeta, getDescripcionRegistro, getNoLineas, formatearDescripcionBien } = require('../utilities/tarjetas');
 
 const router = express.Router();
 
@@ -54,7 +54,7 @@ const asingarBienes = async (id_empleado, idsBienes, numerosTarjetas) => {
 
     // Se genera los registros con algunos de sus datos
     const registros = Object.values(biensPorModelo).map(bienes => {
-        const descripcionRegistro = getDescripcionRegistro(bienes);
+        const descripcionRegistro = formatearDescripcionBien(getDescripcionRegistro(bienes));
         return {
             descripcion: descripcionRegistro,
             anverso: true,

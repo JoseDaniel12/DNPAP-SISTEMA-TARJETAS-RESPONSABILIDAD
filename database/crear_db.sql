@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS registro (
 	id_registro INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     fecha DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     cantidad INT UNSIGNED,
-    descripcion VARCHAR(250),
+    descripcion LONGTEXT,
     precio DECIMAL(10, 3),
     ingreso TINYINT(1),
     anverso TINYINT(1),
@@ -111,14 +111,14 @@ CREATE TABLE IF NOT EXISTS log (
 
 CREATE TABLE IF NOT EXISTS modelo (
 	id_modelo INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-	descripcion VARCHAR(250),
+	descripcion LONGTEXT,
     precio DECIMAL(10, 3)
 );
 
 
 CREATE TABLE IF NOT EXISTS kit (
 	id_kit INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    descripcion VARCHAR(250),
+    descripcion LONGTEXT,
     precio DECIMAL(10, 3)
 );
 

@@ -36,9 +36,9 @@ SET time_zone = 'America/Guatemala';
 
  SELECT @@session.time_zone;
 SHOW VARIABLES LIKE '%time_zone%';
-                SELECT
-                    tarjeta_responsabilidad.fecha
-                FROM tarjeta_responsabilidad
-                INNER JOIN registro USING(id_tarjeta_responsabilidad)
-                WHERE registro.id_tarjeta_responsabilidad = ${tarjeta.id_tarjeta_responsabilidad}
-                ORDER BY registro.fecha DESC;
+
+        UPDATE tarjeta_responsabilidad
+        SET
+            lineas_restantes_anverso = ${tarjeta.lineas_restantes_anverso},
+            lineas_restantes_reverso = ${tarjeta.lineas_restantes_reverso}
+        WHERE id_tarjeta_responsabilidad = ${tarjeta.id_tarjeta_responsabilidad};

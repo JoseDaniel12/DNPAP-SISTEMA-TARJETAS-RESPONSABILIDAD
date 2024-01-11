@@ -6,10 +6,10 @@ import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
+import { Toast } from 'primereact/toast';
 import bienesRequests from '../../Requests/bienesRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 import empleadoRequests from '../../Requests/empleadoRequests';
-import { Toast } from 'primereact/toast';
 
 
 import { bienesGenerales, bienesPorAgregar } from './mockData';
@@ -61,7 +61,15 @@ function AgregarBienesTarjeta() {
         }
         
         const idsBienes = bienesPorAsignar.map(b => b.id_bien);
-        await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        if (response.error) {
+            toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
+        } else  {
+            setBienesPorAsignar([]);
+            const milisegundos = 2500;
+            toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: milisegundos});
+            setTimeout(() => navigate(-1), milisegundos);
+        }
     }
 
 

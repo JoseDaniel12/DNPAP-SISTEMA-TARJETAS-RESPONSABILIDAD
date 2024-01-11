@@ -32,12 +32,12 @@ function getNoLineas(texto) {
 
 
 function formatearDescripcionBien(descripcion) {
-    const caracteresPorLinea = 20;
+    const caracteresPorLinea = DIMENSION_TARJETA.CARACTERES_POR_LINEA;
     const palabras = descripcion.split(' ');
     let resultado = '';
     let lineaActual = '';
     for (const palabra of palabras) {
-    if ((lineaActual + palabra).lgetDescripcionRegistroength > caracteresPorLinea) {
+    if ((lineaActual + palabra).length > caracteresPorLinea) {
         resultado += lineaActual.trim() + '\n';
         lineaActual = '';
     }
@@ -85,27 +85,26 @@ function getDescripcionRegistro(bienes) {
 
 
 async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
-  if (!idsBienes.length) return 0;
+    if (!idsBienes.length) return 0;
 
-  // Obtener la información de los bienes a los cuales se les crearan registros en las tarjetas
-  let query = `
-    SELECT *
-    FROM bien
-    INNER JOIN modelo USING(id_modelo)
-    WHERE (
-      bien.id_bien IN (${idsBienes.join(',')})
-    )
-  `;
-  const bienes = await mysql_exec_query(query);
+    // Obtener la información de los bienes a los cuales se les crearan registros en las tarjetas
+    let query = `
+        SELECT *
+        FROM bien
+        INNER JOIN modelo USING(id_modelo)
+        WHERE (
+            bien.id_bien IN (${idsBienes.join(',')})
+        )
+    `;
+    const bienes = await mysql_exec_query(query);
 
-  // Agrupar los bienes por modelo para obtener los registros que se crearan en las tarjetas
-  const biensPorModelo = _.groupBy(bienes, 'id_modelo');
-  const lineasRegistros = Object.values(biensPorModelo).map(bienes => {
-    return getNoLineas(getDescripcionRegistro(bienes));
-  });
+    // Agrupar los bienes por modelo para obtener los registros que se crearan en las tarjetas
+    const biensPorModelo = _.groupBy(bienes, 'id_modelo');
+    const lineasRegistros = Object.values(biensPorModelo).map(bienes => {
+        return getNoLineas(formatearDescripcionBien(getDescripcionRegistro(bienes)));
+    });
 
-  const lineasPorTarjeta = 10;
-  let noTarjetasNecesarioas = 0;
+    let noTarjetasNecesarioas = 0;
 	let espacioRestanteAnverso = 0;
 	let espacioRestanteReverso = 0;
 
@@ -153,8 +152,8 @@ async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
 				// Si no cabe en el lado reverso, se agrega una nueva tarjeta
 				noTarjetasNecesarioas += 1;
 				// Se reinicia el espacio de los lados de la tarjeta, ya que se ha creado una nueva
-				espacioRestanteAnverso = lineasPorTarjeta;
-				espacioRestanteReverso = lineasPorTarjeta;
+				espacioRestanteAnverso = DIMENSION_TARJETA.LINEAS_POR_PAGINA;
+				espacioRestanteReverso = DIMENSION_TARJETA.LINEAS_POR_PAGINA;
 				// Se coloca el bien en el lado anverso de la nueva tarjeta
 				espacioRestanteAnverso -=  lineasRegistro;
 			}
@@ -195,7 +194,7 @@ async function colocarRegistro(tarjeta, registro) {
         tarjeta.lineas_restantes_anverso -= registro.lineas;
     } else {
         tarjeta.lineas_restantes_reverso -= registro.lineas;
-        tarjeta.linenas_restantes_anverso = 0;
+        tarjeta.lineas_restantes_anverso = 0;
     }
     query = `
         UPDATE tarjeta_responsabilidad
@@ -204,7 +203,7 @@ async function colocarRegistro(tarjeta, registro) {
             lineas_restantes_reverso = ${tarjeta.lineas_restantes_reverso}
         WHERE id_tarjeta_responsabilidad = ${tarjeta.id_tarjeta_responsabilidad};
     `
-    await mysql_exec_query(query);
+await mysql_exec_query(query);
 
     // Se vincula el registro con los bienes que utilizo para su creación
     for (const bien of registro.bienes) {
