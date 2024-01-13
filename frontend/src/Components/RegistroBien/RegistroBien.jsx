@@ -30,13 +30,14 @@ function RegistroBien() {
     // _______________________ Formulario de datos Generales _______________________
     const datosGeneralesSchema = yup.object({
         descripcion: yup.string().required('Descripción requerida'),
+        precio: yup.number().required('Precio requerido'),
         fecha: yup.date(),
     });
 
     const formDatosGenerales = useForm({
         defaultValues: {
             descripcion: '',
-            precio: null,
+            precio: 0,
             fecha: new Date(),
         },
         resolver: yupResolver(datosGeneralesSchema),
@@ -124,6 +125,7 @@ function RegistroBien() {
 
 
     const handleRegistrarBienes = async () => {
+        console.log(formDatosGenerales.getValues())
         let errores = false;
         if (bienes.length === 0) {
             errores = true;
@@ -228,6 +230,7 @@ function RegistroBien() {
                     mode='currency' currency='GTQ' locale='es-GT'
                     min={0}
                     { ...registerDatosGenerales('precio') }
+                    onChange={e => formDatosGenerales.setValue('precio', e.value)}
                 />
                 { errorsDatosGenerales.precio && <Message severity='error' text={errorsDatosGenerales.precio?.message} className='mt-1 p-1'/> }
             </div>

@@ -1,6 +1,14 @@
 import requestSettings from './requestSettings';
 
 const empleadoRequests = {
+    obtenerEmpleados: async (body) => {
+        let url = 'http://localhost:5000/empleados/lista-empleados';
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET',
+        }).then(response => response.json());
+    },
+
     asignarBienes: async (body) => {
         let url = 'http://localhost:5000/empleados/asignar-bienes';
         return await fetch(url, {

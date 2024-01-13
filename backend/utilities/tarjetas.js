@@ -203,7 +203,7 @@ async function colocarRegistro(tarjeta, registro) {
             lineas_restantes_reverso = ${tarjeta.lineas_restantes_reverso}
         WHERE id_tarjeta_responsabilidad = ${tarjeta.id_tarjeta_responsabilidad};
     `
-await mysql_exec_query(query);
+    await mysql_exec_query(query);
 
     // Se vincula el registro con los bienes que utilizo para su creación
     for (const bien of registro.bienes) {
@@ -334,6 +334,41 @@ function generarPDF(tarjeta, fecha, dataCallback, endCallback) {
     doc.end();
 }
 
+async function generarRegistrosDesvinculados(idsBienes) {
+    // Obtener la información de los bienes de los cuales se crearan registros
+    let query = `
+        SELECT *
+        FROM bien
+        INNER JOIN modelo USING(id_modelo)
+        WHERE (
+            bien.id_bien IN (${idsBienes.join(',')})
+        )
+    `;
+    const bienes = await mysql_exec_query(query);
+
+    // Agrupar los bienes por modelo para luego crear los registros
+    const biensPorModelo = _.groupBy(bienes, 'id_modelo');
+
+    // Se generan los registros
+    const registros = Object.values(biensPorModelo).map(bienes => {
+        const descripcionRegistro = formatearDescripcionBien(getDescripcionRegistro(bienes));
+        return {
+            descripcion: descripcionRegistro,
+            anverso: true,
+            ingreso: true,
+            lineas: getNoLineas(descripcionRegistro),
+            precio: bienes.reduce((precio, bien) => precio + parseFloat(bien.precio), 0),
+            cantidad: bienes.length,
+            id_tarjeta_emisora: null,
+            id_tarjeta_receptora: null,
+            id_tarjeta_responsabilidad: null,
+            bienes
+        };
+    });
+
+    return registros;
+}
+
 module.exports = {
     getNoLineas,
     formatearDescripcionBien,
@@ -342,5 +377,6 @@ module.exports = {
     colocarRegistro,
     crearTarjeta,
     obtenerTarjeta,
+    generarRegistrosDesvinculados,
     generarPDF
 }

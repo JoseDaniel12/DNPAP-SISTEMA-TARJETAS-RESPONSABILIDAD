@@ -7,6 +7,8 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 import { InputNumber } from 'primereact/inputnumber';
+import { Divider } from 'primereact/divider';
+import empleadoRequests from '../../Requests/empleadoRequests';
 
 import { tipoBien, empleado, empleados } from './mockData';
 
@@ -18,9 +20,18 @@ function TraspasoBienes() {
     const [filters, setFilters] = useState(null);
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
+    // const [empleados, setEmpleados] = useState([]);
+    // const [empleado, setEmpleado] = useState(null);
+
     
     const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
+
+    const [bienes, setBienes] = useState([]);
+    const [bienesPorTraspasar, setBienesPorTraspasar] = useState([]);
+
+    const [numerosTarjetasEmisor, setNumerosTarjetasEmisor] = useState([]);
+    const [numerosTarjetasReceptor, setNumerosTarjetasReceptor] = useState([]);
 
 
     const onGlobalFilterChange = (e) => {
@@ -56,51 +67,10 @@ function TraspasoBienes() {
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
-                <h1 className=' -mb-4 text-black-alpha-70'>Traspaso de Bienes a Otro Empleado</h1>
+                <h1 className='mb-1 text-black-alpha-70'>Traspaso de Bienes a Otro Empleado</h1>
             </div>
 
             <div className='col-12'>
-                <DataTable
-                    value={[tipoBien]}
-                    rows={10}
-                    showGridlines
-                    className='mb-2'
-                    header = {
-                        <div className='-ml-2'>
-                            <div className='col-12 pb-0'>
-                                <p>Tipo de Bien por Traspasar:</p>
-                            </div>
-                        </div>
-                    }
-                >
-                    <Column field="sicoin" header="SICOIN"/>
-                    <Column field="noSerie" header="No. Serie"/>
-                    <Column field="noInventario" header="Inventario"/>
-                    <Column field="descripcion" header="Descripción"/>
-                    <Column field="precio" header="Precio" body={bien => preciosTemplate(bien.precio)}/>
-                    <Column field="cantDisponible" header="Cantidad Disponible" />
-                </DataTable>
-
-                <DataTable
-                    value={[empleado]}
-                    rows={10}
-                    showGridlines
-                    className='mb-2'
-                    header = {
-                        <div className='-ml-2'>
-                            <div className='col-12 pb-0'>
-                                <p>Empleado Receptor:</p>
-                            </div>
-                        </div>
-                    }
-                >
-                    <Column field="dpi" header="DPI"/>
-                    <Column field="nombre" header="Nombre"/>
-                    <Column field="apellidos" header="Apellidos"/>
-                    <Column field="cargo" header="Cargo" />
-                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
-                </DataTable>
-
                 <DataTable
                     value={empleados}
                     filters={filters}
@@ -113,7 +83,7 @@ function TraspasoBienes() {
                     showGridlines
                     stripedRows 
                     header = {
-                        <div className='-ml-0'>
+                        <div className='p-0'>
                             <p>Lista de Empleados:</p>
                             <span className="p-input-icon-left flex align-items-center">
                                 <i className="pi pi-search" />
@@ -140,26 +110,188 @@ function TraspasoBienes() {
                         )
                     } />
                 </DataTable>
+
+                <DataTable
+                    value={[empleado]}
+                    rows={10}
+                    showGridlines
+                    className='mb-2'
+                    header = {
+                        <div className='p-0'>
+                            <div className='col-12 pb-0'>
+                                <p>Empleado Receptor:</p>
+                            </div>
+                        </div>
+                    }
+                >
+                    <Column field="dpi" header="DPI"/>
+                    <Column field="nombre" header="Nombre"/>
+                    <Column field="apellidos" header="Apellidos"/>
+                    <Column field="cargo" header="Cargo" />
+                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                </DataTable>
+
+                <DataTable
+                    value={empleados}
+                    filters={filters}
+                    paginator
+                    paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                    currentPageReportTemplate="Empleado {first} a {last} de  {totalRecords}"
+                    rows={20}
+                    scrollable
+                    scrollHeight="300px"
+                    showGridlines
+                    stripedRows 
+                    header = {
+                        <div className='p-0'>
+                            <p>Bienes de tarjeta No. 1245849:</p>
+                            <span className="p-input-icon-left flex align-items-center">
+                                <i className="pi pi-search" />
+                                <InputText  
+                                    placeholder="Buscar por valor clave"
+                                />
+                            </span>
+                        </div>
+                    }
+                >
+                    <Column header="No." body={(data, props) => props.rowIndex + 1}/>
+                    <Column field="dpi" header="DPI"/>
+                    <Column field="nombre" header="Nombre"/>
+                    <Column field="apellidos" header="Apellidos"/>
+                    <Column field="cargo" header="Cargo" />
+                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                    <Column header="Agregar" body = {
+                        (empleado) => (
+                            <Button 
+                                severity='info' label='Agregar' icon='pi pi-plus'
+                                className='p-button-success p-button-outlined w-auto'
+                                onClick={() => navigate(-1)}
+                            />
+                        )
+                    } />
+                </DataTable>
+
+                <DataTable
+                    value={empleados}
+                    filters={filters}
+                    paginator
+                    paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                    currentPageReportTemplate="Empleado {first} a {last} de  {totalRecords}"
+                    rows={20}
+                    scrollable
+                    scrollHeight="300px"
+                    showGridlines
+                    stripedRows 
+                    header = {
+                        <div className='p-0'>
+                            <p>Bienes por Traspasar a Tarjeta No. 12583853:</p>
+                            <span className="p-input-icon-left flex align-items-center">
+                                <i className="pi pi-plus" />
+                                <InputText  
+                                    placeholder="Buscar por valor clave"
+                                />
+                            </span>
+                        </div>
+                    }
+                >
+                    <Column header="No." body={(data, props) => props.rowIndex + 1}/>
+                    <Column field="dpi" header="DPI"/>
+                    <Column field="nombre" header="Nombre"/>
+                    <Column field="apellidos" header="Apellidos"/>
+                    <Column field="cargo" header="Cargo" />
+                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                    <Column header="Eliminar" body = {
+                        (empleado) => (
+                            <Button 
+                                severity='danger' label='Eliminar' icon='pi pi-times'
+                                className='p-button-success p-button-outlined w-auto'
+                                onClick={() => navigate(-1)}
+                            />
+                        )
+                    } />
+                </DataTable>
+            </div>
+
+            <div className='col-12 grid'>        
+                <div className='col-12 md:col'>
+                    <p>Se requieren <b>N</b> tarjetas nuevas para el <b>Emisor:</b> </p>
+                    <div className='field col max-w-max p-0'>
+                        <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
+                        <div className='flex flex-wrap gap-1'>
+                            <div className='col p-0'>
+                                <InputText 
+                                    id='search' type='text' placeholder='No. Tarjeta'
+                                    value={numeroTarjeta}
+                                    onChange={(e) =>{}}
+                                />
+                            </div>
+                            <div className='col-12 lg:max-w-max p-0'>
+                                <Button 
+                                    severity='success' label='Agregar' icon='pi pi-plus'
+                                    onClick={() => {}}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card flex flex-wrap gap-2 mb-4">
+                        {/* {
+                            numerosTarjetas.map((numero, index) => (
+                                <Chip
+                                    key={numero}
+                                    label={numero} className="p-mr-2 p-mb-2" removable
+                                    onRemove={() => {}}
+                                />
+                            ))
+                        } */}
+                    </div>
+                </div>
+
+                <Divider layout='vertical hidden md:inline'/>
+
+                <div className='col-12 md:col'>
+                    <p>Se requieren <b>N</b> tarjetas nuevas para el <b>Recepetor:</b> </p>
+                    <div className='field col max-w-max p-0'>
+                        <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
+                        <div className='flex flex-wrap gap-1'>
+                            <div className='col p-0'>
+                                <InputText 
+                                    id='search' type='text' placeholder='No. Tarjeta'
+                                    value={numeroTarjeta}
+                                    onChange={(e) =>{}}
+                                />
+                            </div>
+                            <div className='col-12 lg:max-w-max p-0'>
+                                <Button 
+                                    severity='success' label='Agregar' icon='pi pi-plus'
+                                    onClick={() => {}}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="card flex flex-wrap gap-2 mb-4">
+                        {/* {
+                            numerosTarjetas.map((numero, index) => (
+                                <Chip
+                                    key={numero}
+                                    label={numero} className="p-mr-2 p-mb-2" removable
+                                    onRemove={() => {}}
+                                />
+                            ))
+                        } */}
+                    </div>
+                </div>
             </div>
 
             <div className='col-12'>
-                <div className='field col max-w-max p-0'>
-                    <label className='font-bold text-black-alpha-80 block'>Cantidad de bienes por traspasar:</label>
-                    <InputNumber value={0} onValueChange={() => {}} showButtons min={1} max={8}
-                        decrementButtonClassName="p-button-primary"
-                        incrementButtonClassName="p-button-primary"
-                    />
-                </div>
-
-                <div className='flex flex-wrap justify-content-between'>
-                    <div className='col-12 md:col-6 pl-0'>
+                <div className='flex flex-wrap justify-content-between gap-2'>
+                    <div className='col p-0'>
                         <Button 
                             severity='warning' label='Regresar' icon='pi pi-arrow-left'
                             onClick={() => navigate(-1)}
                         />
                     </div>
 
-                    <div className='col-12 md:col-6 pr-0'>
+                    <div className='col p-0'>
                         <Button
                             severity='info' label='Traspasar Bienes' icon='pi pi-arrow-right-arrow-left'
                             onClick={() => navigate(-1)}

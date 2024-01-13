@@ -57,19 +57,6 @@ function TarjetasEmpleado() {
     };
 
 
-    const botonTraspasarTemplate = (registro) => {
-        if (registro.haber) return;
-        return (
-            <Button 
-                type='button' 
-                icon='pi pi-arrow-right-arrow-left'
-                className='p-button-warning p-button-outlined w-auto'
-                label='Traspasar'
-                onClick={() => navigate('/traspasar-bienes')}
-            />
-        );
-    };
-
     const botonDescargarTemplate = (registro) => {
         if (registro.haber) return;
         return (
@@ -90,7 +77,7 @@ function TarjetasEmpleado() {
         maximumFractionDigits: 2,
     });
 
-    const precioTemplate = (precio) => {
+    const precioTemplate = (precio, row) => {
         if (isNaN(precio)) return;
         return (
             <span>{formatoMonedaGTQ.format(precio)}</span>
@@ -119,70 +106,44 @@ function TarjetasEmpleado() {
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
 
-            <div className='col-12 text-center'>
-                <h1 className=' mb-0 text-black-alpha-70'>Tarjetas de {empleado.nombres}</h1>
+            <div className='col-12 text-center text-'>
+                <h1 className='text-black-alpha-70'>Tarjetas de {empleado.nombres}</h1>
             </div>
 
-            <div className='col-12 -mb-2 flex justify-content-end'>
-                <Button 
-                    label='Asignar Bienes'
-                    severity='success'
-                    icon='pi pi-plus'
-                    className='p-button-rounded shadow-1 md:w-auto'
-                    onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
-                />
-            </div>
-
-
-            <Divider/>
-            <div className='col-12 flex flex-wrap justify-content-between xl:justify-content-between'>
-                <div className='field col max-w-max'>
-                    <label className='font-bold text-black-alpha-70 block'>Tarjeta No. {tarjeta.numero}</label>
-                    <Button 
-                        label='Generar PDF de Tarjeta'
-                        severity='help'
-                        icon='pi pi-file-pdf'
-                        className='md:w-auto flex-shrink-2'
-                        onClick={handleGenerarPDF}
-                    />
-                </div>
-                <div className='field col max-w-max'>
-                    <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta</label>
-                    <div className='flex flex-wrap gap-1'>
-                        <div className='col p-0'>
-                            <InputText id='search' type='text' placeholder='Nuevo No. Tarjeta'/>
-                        </div>
-                        <div className='col-12 lg:max-w-max p-0'>
-                            <Button severity='danger' label='Cambiar' icon='pi pi-pencil'/>
-                        </div>
-                    </div>
-                </div>
-                <div className='field col max-w-max'>
-                    <label htmlFor='search' className='font-bold text-black-alpha-70 block'>Buscar otra de sus tarjetas:</label>
-                    {/* <div className='flex flex-wrap gap-1'>
-                        <div className='col p-0'>
-                            <InputText id='search' type='text' placeholder='No. Tarjeta'/>
-                        </div>
-                        <div className='col-12 lg:max-w-max p-0'>
-                            <Button label='buscar' icon='pi pi-search'/>
-                        </div>
-                    </div> */}
+            <div className='col-12 grid flex flex-wrap md:justify-content-end'>
+                <div className='field col-12 md:max-w-max mb-0'>
                     <div className='flex flex-wrap gap-1'>
                         <div className='col-12 p-0'>
                         <Dropdown 
                             optionLabel='numero' filter 
-                            placeholder='Seleccione una tarjeta'
+                            placeholder='Seleccionar Tarjeta'
                             options={Object.values(tarjetas)} 
                             value={tarjeta?.numero || null}
+                            style={{borderColor: '#878787b3'}}
                             onChange={e => setTarjeta(e.value)}
                         />
                         </div>
                     </div>
-
+                </div>
+                <div className='field col-12 md:max-w-max mb-0'>
+                    <Button 
+                        label='Asignar Bienes'
+                        severity='success'
+                        icon='pi pi-plus'
+                        className='p-button-rounded md:w-auto'
+                        onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
+                    />
+                </div>
+                <div className='field col-12 md:max-w-max mb-0'>
+                    <Button 
+                        label='Desasignar Bienes'
+                        severity='danger'
+                        icon='pi pi-trash'
+                        className='p-button-rounded md:w-auto'
+                        onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
+                    />
                 </div>
             </div>
-
-            <Divider/>
 
             <div className='col-12 mb-6'>
                 <DataTable
@@ -197,13 +158,50 @@ function TarjetasEmpleado() {
                     showGridlines
                     stripedRows
                     header={
-                        <div className='col-12  flex justify-content-end'>
-                            <span className='p-input-icon-left flex align-items-center'>
-                                <i className='pi pi-search' />
-                                <InputText  
-                                    placeholder='Buscar por valor clave'
-                                />
-                            </span>
+                        <div className='grid p-0'>
+                            <div className='col-12 flex flex-wrap align-items-end justify-content-between xl:justify-content-between'>
+                                <div className='field col max-w-max'>
+                                    <label className='font-bold text-black-alpha-70 block'>Tarjeta No. {tarjeta.numero}</label>
+                                    <Button 
+                                        label='Generar PDF de Tarjeta'
+                                        severity='help'
+                                        icon='pi pi-file-pdf'
+                                        className='md:w-auto flex-shrink-2 p-button-outlined'
+                                        onClick={handleGenerarPDF}
+                                    />
+                                </div>
+                                <div className='field col max-w-max'>
+                                    <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
+                                    <div className='flex flex-wrap gap-1 p-0'>
+                                        <div className='col p-0'>
+                                            <InputText id='search' type='text' placeholder='Nuevo No. Tarjeta'/>
+                                        </div>
+                                        <div className='col-12 lg:max-w-max p-0'>
+                                            <Button severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className='field col max-w-max'>
+                                    <label className='font-bold text-black-alpha-70 block'>Bienes de Tarjeta:</label>
+                                    <Button 
+                                        type='button'
+                                        severity='warning'
+                                        label='Traspasar Bienes a Otro Empleado'
+                                        icon='pi pi-arrow-right-arrow-left'
+                                        className='md:w-auto flex-shrink-1 p-button-outlined'
+                                        onClick={() => navigate('/traspasar-bienes')}
+                                    />
+                                </div>
+                            </div>
+                            <div className='col-12  flex justify-content-end'>
+                                <span className='p-input-icon-left flex align-items-center'>
+                                    <i className='pi pi-search' />
+                                    <InputText
+                                        id='busquedaEmpleado'
+                                        placeholder='Buscar por valor clave'
+                                    />
+                                </span>
+                            </div>
                         </div>
                     }
                     selectionMode='checkbox'
@@ -216,18 +214,10 @@ function TarjetasEmpleado() {
                     <Column field='fecha' header='Fecha' dataType='date' body={dateBodyTemplate}/>
                     <Column field='cantidad' header='Cantidad'/>
                     <Column field='descripcion' header='Descripción'/>
-                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe)}/>
+                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe ,row)}/>
                     <Column field='haber' header='Haber' body={row => precioTemplate(row.haber)}/>
                     <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo)}/>
                     <Column field='nota' header='Nota'/>
-                    <Column 
-                        header='Traspasar'
-                        body = {botonTraspasarTemplate}
-                    />
-                    <Column 
-                        header='Descargar'
-                        body = {botonDescargarTemplate}
-                    />
                 </DataTable>
 
             </div>
