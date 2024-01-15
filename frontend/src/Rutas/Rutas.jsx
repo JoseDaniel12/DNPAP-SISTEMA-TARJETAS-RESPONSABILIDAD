@@ -27,7 +27,7 @@ function Rutas() {
           <Route path="administrar-tarjetas" element={<ListaEmpleados />} />
           <Route path="tarjetas-empleado" element={<TarjetasEmpleado />} />
           <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
-          <Route path="traspasar-bienes" element={<TraspasoBienes />} />
+          <Route path="traspasar-bienes/:id_tarjeta_responsabilidad" element={<TraspasoBienes />} />
           <Route path="pruebas" element={<AgregarBienesTarjeta />} />
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
           <Route path="gestionar-programas" element={<GestionProgramas />} />

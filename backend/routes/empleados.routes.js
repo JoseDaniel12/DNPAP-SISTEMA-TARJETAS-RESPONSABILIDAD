@@ -123,7 +123,7 @@ const gestionarVinculacionBienes = async (id_empleado, idsBienes, numerosTarjeta
                 break;
             case 'Desasignación':
                 registro.ingreso = false;
-                registro.id_tarjeta_receptora = action.payload.id_tarjeta_emisora;
+                registro.id_tarjeta_emisora = ultimaTarjeta.id_tarjeta_responsabilidad;
                 break;
         }
 

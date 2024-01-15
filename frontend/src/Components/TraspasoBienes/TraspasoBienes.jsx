@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -9,10 +9,12 @@ import { Chip } from 'primereact/chip';
 import { InputNumber } from 'primereact/inputnumber';
 import { Divider } from 'primereact/divider';
 import empleadoRequests from '../../Requests/empleadoRequests';
+import tarjetasRequests from '../../Requests/tarjetasReuests';
 
-import { tipoBien, empleado, empleados } from './mockData';
+import { tipoBien, empleado } from './mockData';
 
 function TraspasoBienes() {
+    const { id_tarjeta_responsabilidad } = useParams();
     const navigate = useNavigate();
 
     // Filtros de la tabla de empleados
@@ -20,10 +22,9 @@ function TraspasoBienes() {
     const [filters, setFilters] = useState(null);
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
-    // const [empleados, setEmpleados] = useState([]);
-    // const [empleado, setEmpleado] = useState(null);
+    const [empleados, setEmpleados] = useState([]);
+    const [empleado, setEmpleado] = useState(null);
 
-    
     const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
 
@@ -42,12 +43,16 @@ function TraspasoBienes() {
         setGlobalFilterValue(value);
     };
 
+    
+    const handleSeleccionarEmpleado = (id_empleado) => {
+        const empleadoSeleccionado = empleados.find(empleado => empleado.id_empleado === id_empleado);
+        setEmpleado(empleadoSeleccionado);
+    };
 
-    useEffect(() => {
-        fetch('http://localhost:5000/bienes/lista-bienes')
-        .then(res => res.json())
-        .then(data => setBienesGenerales(data.bienes));
-    }, []);
+    const handleAgregarBien = (id_bien) => {
+        const bienSeleccionado = bienes.find(bien => bien.id_bien === id_bien);
+        setBienesPorTraspasar(prevBienes => [...prevBienes, bienSeleccionado]);
+    };
 
 
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
@@ -57,11 +62,24 @@ function TraspasoBienes() {
         maximumFractionDigits: 2,
     });
 
+
     const preciosTemplate = (precio) => {
         return (
             <span>{formatoMonedaGTQ.format(precio)}</span>
         );
     };
+
+
+    useEffect(() => {
+        empleadoRequests.obtenerEmpleados().then(response => {
+            setEmpleados(response.empleados);
+        });
+
+        tarjetasRequests.getTarjetaConBienes(id_tarjeta_responsabilidad).then(response => {
+            console.log(response)
+            setBienes(response.data);
+        });
+    }, []);
 
 
     return (
@@ -96,7 +114,7 @@ function TraspasoBienes() {
                 >
                     <Column header="No." body={(data, props) => props.rowIndex + 1}/>
                     <Column field="dpi" header="DPI"/>
-                    <Column field="nombre" header="Nombre"/>
+                    <Column field="nombres" header="Nombres"/>
                     <Column field="apellidos" header="Apellidos"/>
                     <Column field="cargo" header="Cargo" />
                     <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
@@ -105,15 +123,14 @@ function TraspasoBienes() {
                             <Button 
                                 severity='info' label='Seleccionar' icon='pi pi-check'
                                 className='p-button-success p-button-outlined w-auto'
-                                onClick={() => navigate(-1)}
+                                onClick={() => handleSeleccionarEmpleado(empleado.id_empleado)}
                             />
                         )
                     } />
                 </DataTable>
 
                 <DataTable
-                    value={[empleado]}
-                    rows={10}
+                    value={empleado? [empleado] : []}
                     showGridlines
                     className='mb-2'
                     header = {
@@ -125,14 +142,14 @@ function TraspasoBienes() {
                     }
                 >
                     <Column field="dpi" header="DPI"/>
-                    <Column field="nombre" header="Nombre"/>
+                    <Column field="nombres" header="Nombres"/>
                     <Column field="apellidos" header="Apellidos"/>
                     <Column field="cargo" header="Cargo" />
                     <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
                 </DataTable>
 
                 <DataTable
-                    value={empleados}
+                    value={bienes}
                     filters={filters}
                     paginator
                     paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
@@ -154,14 +171,12 @@ function TraspasoBienes() {
                         </div>
                     }
                 >
-                    <Column header="No." body={(data, props) => props.rowIndex + 1}/>
-                    <Column field="dpi" header="DPI"/>
-                    <Column field="nombre" header="Nombre"/>
-                    <Column field="apellidos" header="Apellidos"/>
-                    <Column field="cargo" header="Cargo" />
-                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                    <Column field="fecha_registro" header="Fecha"/>
+                    <Column field="sicoin" header="Sicoin"/>
+                    <Column field="no_serie" header="No. Serie"/>
+                    <Column field="no_inventario" header="No. Inventario" />
                     <Column header="Agregar" body = {
-                        (empleado) => (
+                        (bien) => (
                             <Button 
                                 severity='info' label='Agregar' icon='pi pi-plus'
                                 className='p-button-success p-button-outlined w-auto'
@@ -172,7 +187,7 @@ function TraspasoBienes() {
                 </DataTable>
 
                 <DataTable
-                    value={empleados}
+                    value={bienesPorTraspasar}
                     filters={filters}
                     paginator
                     paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"

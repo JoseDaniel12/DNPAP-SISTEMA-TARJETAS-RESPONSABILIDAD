@@ -1,6 +1,14 @@
 import requestSettings from './requestSettings';
 
 const tarjetasRequests = {
+    getTarjetaConBienes: async (id_tarjeta_responsabilidad) => {
+        let url = `http://localhost:5000/tarjetas/bienes-activos-tarjeta/${id_tarjeta_responsabilidad}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET',
+        }).then(response => response.json());
+    },
+
     getNumeroTarjetasNecesarias: async (body) => {
         let url = 'http://localhost:5000/tarjetas/calcular-numero-tarjetas-necesarias';
         return await fetch(url, {
@@ -17,7 +25,6 @@ const tarjetasRequests = {
             method: 'GET',
         }).then(response => response.json());
     },
-
 
     generarPDF: async (id_tarjeta_responsabilidad, fecha) => {
         let url = `http://localhost:5000/tarjetas/generar-pdf-tarjeta/${id_tarjeta_responsabilidad}/${fecha}`;

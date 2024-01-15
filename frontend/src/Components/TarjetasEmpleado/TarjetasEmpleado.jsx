@@ -145,6 +145,7 @@ function TarjetasEmpleado() {
                 </div>
             </div>
 
+
             <div className='col-12 mb-6'>
                 <DataTable
                     className='mb-6'
@@ -189,7 +190,7 @@ function TarjetasEmpleado() {
                                         label='Traspasar Bienes a Otro Empleado'
                                         icon='pi pi-arrow-right-arrow-left'
                                         className='md:w-auto flex-shrink-1 p-button-outlined'
-                                        onClick={() => navigate('/traspasar-bienes')}
+                                        onClick={() => navigate(`/traspasar-bienes/${tarjeta.id_tarjeta_responsabilidad}`)}
                                     />
                                 </div>
                             </div>
