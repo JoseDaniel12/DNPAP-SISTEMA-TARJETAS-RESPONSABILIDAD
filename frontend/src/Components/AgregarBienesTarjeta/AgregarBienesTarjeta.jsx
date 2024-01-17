@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Dialog } from 'primereact/dialog';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
@@ -11,8 +10,6 @@ import bienesRequests from '../../Requests/bienesRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 
-
-import { bienesGenerales, bienesPorAgregar } from './mockData';
 
 function AgregarBienesTarjeta() {
     const toast = useRef(null);

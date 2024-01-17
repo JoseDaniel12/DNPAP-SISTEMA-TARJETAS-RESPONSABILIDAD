@@ -14,9 +14,7 @@ import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Message } from 'primereact/message';
 import { Toast } from 'primereact/toast';
-
 import bienesRequest from '../../Requests/bienesRequests';
-import requestSettings from '../../Requests/requestSettings';
 
 
 function RegistroBien() {

@@ -89,6 +89,7 @@ CREATE TABLE IF NOT EXISTS registro (
     precio DECIMAL(10, 3),
     ingreso TINYINT(1),
     anverso TINYINT(1),
+    es_nota TINYINT(1) DEFAULT 0,
     id_tarjeta_emisora INT,
     id_tarjeta_receptora INT,
 
@@ -132,8 +133,10 @@ CREATE TABLE IF NOT EXISTS bien (
 
     id_modelo INT,
     id_kit INT,
+    id_tarjeta_responsabilidad INT,
     FOREIGN KEY (id_modelo) REFERENCES modelo(id_modelo) ON DELETE CASCADE,
-    FOREIGN KEY (id_kit) REFERENCES kit(id_kit) ON DELETE CASCADE
+    FOREIGN KEY (id_kit) REFERENCES kit(id_kit) ON DELETE CASCADE,
+    FOREIGN KEY (id_tarjeta_responsabilidad) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE
 );
 
 
@@ -144,4 +147,49 @@ CREATE TABLE IF NOT EXISTS registro_bien (
     id_bien INT,
     FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE CASCADE,
     FOREIGN KEY (id_bien) REFERENCES bien(id_bien) ON DELETE CASCADE
+);
+
+
+CREATE VIEW ubicacion_bien AS
+(
+    # Bien con su dueño y tarjeta en la que lo posee (tarjeta en la que esta el bien como tal)
+    SELECT
+        bien_activo_empleado.id_bien,
+        bien_activo_empleado.id_empleado,
+        tarjeta_responsabilidad.id_tarjeta_responsabilidad
+    FROM (
+        # Bienes activos de empleados
+        SELECT
+            empleado.id_empleado,
+            bien.id_bien
+        FROM empleado
+        INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
+        INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
+        INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
+        INNER JOIN bien ON registro_bien.id_bien = bien.id_bien
+        GROUP BY empleado.id_empleado, bien.id_bien
+        HAVING (
+            SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
+            SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
+        ) = true
+    ) AS bien_activo_empleado
+    INNER JOIN tarjeta_responsabilidad ON bien_activo_empleado.id_empleado = tarjeta_responsabilidad.id_empleado
+    INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
+    INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
+    WHERE (
+        registro_bien.id_bien = bien_activo_empleado.id_bien AND
+        tarjeta_responsabilidad.id_empleado = bien_activo_empleado.id_empleado
+    )
+    GROUP BY bien_activo_empleado.id_empleado, bien_activo_empleado.id_bien, tarjeta_responsabilidad.id_tarjeta_responsabilidad
+    HAVING MAX(tarjeta_responsabilidad.fecha)
+)
+UNION
+(
+    # Bienes sin asignar
+    SELECT
+    bien.id_bien, NULL, NULL
+    FROM bien
+    INNER JOIN modelo USING(id_modelo)
+    LEFT OUTER JOIN registro_bien USING(id_bien)
+    WHERE registro_bien.id_registro_bien IS NULL
 );

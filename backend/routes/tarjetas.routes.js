@@ -23,7 +23,7 @@ router.get('/bienes-activos-tarjeta/:id_tarjeta_responsabilidad', async (req, re
                 bienes_empleado.id_modelo,
                 bienes_empleado.id_kit
             FROM (
-                # Bienes por empleado
+                # Bienes activos de empleados
                 SELECT
                     empleado.id_empleado,
                     bien.*,

@@ -69,8 +69,12 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
 });
 
 
-const gestionarVinculacionBienes = async (id_empleado, idsBienes, numerosTarjetas, action) => {
-    // Obtener el empleado al cual se le dueño que recibira los bienes
+const ejecutarAccionTarjeta = async (id_empleado, idsBienes, numerosTarjetas, action) => {
+    // Generar los registros apatir de los bienes, sin pertencer a una tarjeta y 
+    // sin tener tarjeta emisora y receptora
+    const registros = await generarRegistrosDesvinculados(idsBienes);
+
+    // Obtener el empleado al cual se le agregaran lso registros
     const [empleado] = await mysql_exec_query(`
         SELECT
             empleado.*,
@@ -85,16 +89,27 @@ const gestionarVinculacionBienes = async (id_empleado, idsBienes, numerosTarjeta
         LIMIT 1;
     `);
 
-    // Obtener ultima tarjeta del empleado
+    // Obtener la ultima tarjeta del empleado
     let ultimaTarjeta = await obtenerUltimaTarjeta(id_empleado);
     if (!ultimaTarjeta) {
         const numeroTarjeta = numerosTarjetas.shift();
         ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, 0);
     }
 
-    const registros = await generarRegistrosDesvinculados(idsBienes);
+    // Se crea una nota para si se harán descargos debido a un traspaso
+    if (action.type === 'Traspaso' && action.payload.ingreso === false) {
+        const descripcion = `
+            Se descargan los siguientes biens y se trasladan al empleado ${action.payload.idEmpleadoReceptor}:
+        `;
+        let query = `
+            INSERT INTO registro ( es_nota, descripcion, id_tarjeta_responsabilidad)
+            VALUES (true, '${descripcion}', ${ultimaTarjeta.id_tarjeta_responsabilidad});
+        ` 
+        await mysql_exec_query(query);
+    }
 
-    // Para cada registro se determina en que tarjeta y lado debe ir y se vincula a las tarjetas relacionadas
+    // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
+    // tarjeta emisora y receptora
     for (const registro of registros) {
 	    // Por defecto se inteara colocar en el anverso
 		if (registro.lineas > ultimaTarjeta.lineas_restantes_anverso) {
@@ -109,26 +124,31 @@ const gestionarVinculacionBienes = async (id_empleado, idsBienes, numerosTarjeta
 			}
         }
 
-        // Se vinculan las tarjetas relacionadas al registro y se establece como un ingreso o egreso
+        // Se establece si en el registro se dio un ingreso o egreso
         registro.id_tarjeta_responsabilidad = ultimaTarjeta.id_tarjeta_responsabilidad;
         switch (action.type) {
             case 'Asignación':
                 registro.ingreso = true;
                 registro.id_tarjeta_receptora = ultimaTarjeta.id_tarjeta_responsabilidad;
                 break;
-            case 'Taspaso':
-                registro.ingreso = registro.id_tarjeta_responsabilidad !== action.payload.id_tarjeta_emisora;
-                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
-                registro.id_tarjeta_receptora = ultimaTarjeta.id_tarjeta_responsabilidad;
-                break;
             case 'Desasignación':
                 registro.ingreso = false;
-                registro.id_tarjeta_emisora = ultimaTarjeta.id_tarjeta_responsabilidad;
+                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
+                // Problema: La tarjeta emisora debe ser la de cuando se cargan los bienes
+                registro.id_tarjeta_receptora = ultimaTarjeta.id_tarjeta_responsabilidad;
+                break;
+            case 'Traspaso':
+                registro.ingreso = action.payload.ingreso;
+                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
                 break;
         }
 
         // Una vez completa la información del registro se coloca en la tarjeta correspondiente
-        await colocarRegistro(ultimaTarjeta, registro);
+        if (action.type === 'Traspaso') {
+            await colocarRegistro(ultimaTarjeta, registro);
+        } else {
+            await colocarRegistro(ultimaTarjeta, registro);
+        }
 	}
 }
 
@@ -138,7 +158,7 @@ router.post('/asignar-bienes', async (req, res) => {
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: 'Asignación' }
-        gestionarVinculacionBienes(id_empleado, idsBienes, numerosTarjetas, action);
+        ejecutarAccionTarjeta(id_empleado, idsBienes, numerosTarjetas, action);
         respBody.setMessage('Bienes asignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
@@ -160,20 +180,35 @@ router.post('/traspasar-bienes', async (req, res) => {
             numerosTarjetaReceptor
         } = req.body;
 
-        const action = {
-            type: 'Taspaso',
+        const actionTraspasoEmisor = {
+            type: 'Traspaso',
             payload: {
                 id_tarjeta_emisora,
+                ingreso: false,
+                idEmpleadoEmisor,
+                idEmpleadoReceptor
             }
-        }
+        };
+
+        const actionTraspasoRecepetor = {
+            type: 'Traspaso',
+            payload: {
+                id_tarjeta_emisora,
+                ingreso: true,
+                idEmpleadoEmisor,
+                idEmpleadoReceptor
+            }
+        };
+
         // Se descargan los bienes del emisor
-        await gestionarVinculacionBienes(idEmpleadoEmisor, idsBienes, numerosTarjetaEmisor, action);
+        await ejecutarAccionTarjeta(idEmpleadoEmisor, idsBienes, numerosTarjetaEmisor, actionTraspasoEmisor);
         // Se cargan los bienes al receptor 
-        await gestionarVinculacionBienes(idEmpleadoReceptor, idsBienes, numerosTarjetaReceptor, action);
+        await ejecutarAccionTarjeta(idEmpleadoReceptor, idsBienes, numerosTarjetaReceptor, actionTraspasoRecepetor);
 
         respBody.setMessage('Bienes traspasados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
+        console.log(error)
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
     }

@@ -187,7 +187,7 @@ async function colocarRegistro(tarjeta, registro) {
             ${tarjeta.id_tarjeta_responsabilidad}
         );
     `;
-    const  { insertId: registroId } = await mysql_exec_query(query);
+    const  { insertId: id_registro } = await mysql_exec_query(query);
 
     // Se actualiza el espacio restante en la tarjeta donde se inserto el registro
     if (registro.anverso) {
@@ -209,13 +209,24 @@ async function colocarRegistro(tarjeta, registro) {
     for (const bien of registro.bienes) {
         query = `
             INSERT INTO registro_bien (id_registro, id_bien) 
-            VALUES (${registroId}, ${bien.id_bien});
+            VALUES (${id_registro}, ${bien.id_bien});
         `;
         await mysql_exec_query(query);
     }
 
     // Esperar un milisgundo para que el siguiente registro tenga fecha distinta
     await new Promise(resolve => setTimeout(resolve, 1));
+
+    // Se establcen los bienes como activos dentro de la tarjeta correspondiente
+    for (const bien of registro.bienes) {
+        let tarjeta_bien = registro.ingreso? registro.id_tarjeta_responsabilidad : null;
+        let query = `
+            UPDATE bien
+            SET id_tarjeta_responsabilidad = ${tarjeta_bien}
+            WHERE id_bien = ${bien.id_bien};
+        `;
+        await mysql_exec_query(query);
+    }
 }
 
 

@@ -6,7 +6,9 @@ import { Divider } from 'primereact/divider';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
-import { format } from 'date-fns'
+import { format } from 'date-fns';
+import { ColumnGroup } from 'primereact/columngroup';
+import { Row } from 'primereact/row';
 import AgregarBienesTarjeta from '../AgregarBienesTarjeta/AgregarBienesTarjeta';
 
 import registros from './registros';
@@ -78,7 +80,7 @@ function TarjetasEmpleado() {
     });
 
     const precioTemplate = (precio, row) => {
-        if (isNaN(precio)) return;
+        if (row.es_nota || isNaN(precio)) return;
         return (
             <span>{formatoMonedaGTQ.format(precio)}</span>
         );
@@ -91,6 +93,10 @@ function TarjetasEmpleado() {
     const dateBodyTemplate = (fila) => {
         return formatDate(fila.fecha);
     };
+
+    const rowClass  = (row) => {
+        if (row.es_nota) return 'font-bold';
+    }
 
 
     useEffect(() => {
@@ -190,7 +196,7 @@ function TarjetasEmpleado() {
                                         label='Traspasar Bienes a Otro Empleado'
                                         icon='pi pi-arrow-right-arrow-left'
                                         className='md:w-auto flex-shrink-1 p-button-outlined'
-                                        onClick={() => navigate(`/traspasar-bienes/${tarjeta.id_tarjeta_responsabilidad}`)}
+                                        onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}/${tarjeta.id_tarjeta_responsabilidad}`)}
                                     />
                                 </div>
                             </div>
@@ -210,14 +216,20 @@ function TarjetasEmpleado() {
                     onRowSelect={handleSelectRegistro}
                     onRowUnselect={handleDeseleccionarRegistro}
                     dataKey='id_registro'
+                    rowClassName={rowClass}
                 >
                     <Column selectionMode='multiple'></Column>
                     <Column field='fecha' header='Fecha' dataType='date' body={dateBodyTemplate}/>
-                    <Column field='cantidad' header='Cantidad'/>
-                    <Column field='descripcion' header='Descripción'/>
+                    <Column field='cantidad' header='Cantidad' body={row  => {
+                        if (row.es_nota) {
+                            return <b>Nota</b>;
+                        }
+                        return <span>{row.cantidad}</span>;
+                    }}/>
+                    <Column field='descripcion' header='Descripción' />
                     <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe ,row)}/>
-                    <Column field='haber' header='Haber' body={row => precioTemplate(row.haber)}/>
-                    <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo)}/>
+                    <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)}/>
+                    <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)}/>
                     <Column field='nota' header='Nota'/>
                 </DataTable>
 
