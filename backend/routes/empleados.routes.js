@@ -69,12 +69,8 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
 });
 
 
-const ejecutarAccionTarjeta = async (id_empleado, idsBienes, numerosTarjetas, action) => {
-    // Generar los registros apatir de los bienes, sin pertencer a una tarjeta y 
-    // sin tener tarjeta emisora y receptora
-    const registros = await generarRegistrosDesvinculados(idsBienes);
-
-    // Obtener el empleado al cual se le agregaran lso registros
+const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, action) => {
+    // Obtener el empleado al cual se le cargaran los registros
     const [empleado] = await mysql_exec_query(`
         SELECT
             empleado.*,
@@ -96,17 +92,7 @@ const ejecutarAccionTarjeta = async (id_empleado, idsBienes, numerosTarjetas, ac
         ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, 0);
     }
 
-    // Se crea una nota para si se harán descargos debido a un traspaso
-    if (action.type === 'Traspaso' && action.payload.ingreso === false) {
-        const descripcion = `
-            Se descargan los siguientes biens y se trasladan al empleado ${action.payload.idEmpleadoReceptor}:
-        `;
-        let query = `
-            INSERT INTO registro ( es_nota, descripcion, id_tarjeta_responsabilidad)
-            VALUES (true, '${descripcion}', ${ultimaTarjeta.id_tarjeta_responsabilidad});
-        ` 
-        await mysql_exec_query(query);
-    }
+    // para este punto ya se deberia tener a
 
     // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
     // tarjeta emisora y receptora
@@ -124,31 +110,8 @@ const ejecutarAccionTarjeta = async (id_empleado, idsBienes, numerosTarjetas, ac
 			}
         }
 
-        // Se establece si en el registro se dio un ingreso o egreso
-        registro.id_tarjeta_responsabilidad = ultimaTarjeta.id_tarjeta_responsabilidad;
-        switch (action.type) {
-            case 'Asignación':
-                registro.ingreso = true;
-                registro.id_tarjeta_receptora = ultimaTarjeta.id_tarjeta_responsabilidad;
-                break;
-            case 'Desasignación':
-                registro.ingreso = false;
-                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
-                // Problema: La tarjeta emisora debe ser la de cuando se cargan los bienes
-                registro.id_tarjeta_receptora = ultimaTarjeta.id_tarjeta_responsabilidad;
-                break;
-            case 'Traspaso':
-                registro.ingreso = action.payload.ingreso;
-                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
-                break;
-        }
-
         // Una vez completa la información del registro se coloca en la tarjeta correspondiente
-        if (action.type === 'Traspaso') {
-            await colocarRegistro(ultimaTarjeta, registro);
-        } else {
-            await colocarRegistro(ultimaTarjeta, registro);
-        }
+        await colocarRegistro(ultimaTarjeta, registro, action);
 	}
 }
 
@@ -158,7 +121,8 @@ router.post('/asignar-bienes', async (req, res) => {
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: 'Asignación' }
-        ejecutarAccionTarjeta(id_empleado, idsBienes, numerosTarjetas, action);
+        const registros = await generarRegistrosDesvinculados(idsBienes, action);
+        ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
         respBody.setMessage('Bienes asignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
@@ -184,9 +148,7 @@ router.post('/traspasar-bienes', async (req, res) => {
             type: 'Traspaso',
             payload: {
                 id_tarjeta_emisora,
-                ingreso: false,
-                idEmpleadoEmisor,
-                idEmpleadoReceptor
+                esRecepcion: false
             }
         };
 
@@ -194,16 +156,23 @@ router.post('/traspasar-bienes', async (req, res) => {
             type: 'Traspaso',
             payload: {
                 id_tarjeta_emisora,
-                ingreso: true,
-                idEmpleadoEmisor,
-                idEmpleadoReceptor
+                esRecepcion: true
             }
         };
 
+        const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor, actionTraspasoEmisor);
+        const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor, actionTraspasoRecepetor);
+
+        // Se cargan los bienes al receptor, aqui se establece la tarjeta receptora de los registros
+        await ejecutarAccionTarjeta(idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
         // Se descargan los bienes del emisor
-        await ejecutarAccionTarjeta(idEmpleadoEmisor, idsBienes, numerosTarjetaEmisor, actionTraspasoEmisor);
-        // Se cargan los bienes al receptor 
-        await ejecutarAccionTarjeta(idEmpleadoReceptor, idsBienes, numerosTarjetaReceptor, actionTraspasoRecepetor);
+        for (let i = 0; i < registrosEmisor.length; i++) {
+            let regEmisor = registrosEmisor[i];
+            let regReceptor = registrosReceptor[i];
+            regEmisor.id_tarjeta_emisora = regReceptor.id_tarjeta_emisora;
+            regEmisor.id_tarjeta_receptora = regReceptor.id_tarjeta_receptora;
+        }
+        await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
 
         respBody.setMessage('Bienes traspasados correctamente');
         res.send(respBody.getLiteralObject());

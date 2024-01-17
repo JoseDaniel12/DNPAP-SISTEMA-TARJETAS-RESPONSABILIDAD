@@ -164,7 +164,33 @@ async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
 }
 
 
-async function colocarRegistro(tarjeta, registro) {
+async function colocarRegistro(tarjeta, registro, action) {
+    // Dada la acción bajo la que se coloca el registro se determina si es un ingreso o egreso
+    // y se establece la tarjeta emisora y receptora
+    switch (action.type) {
+        case 'Asignación':
+            registro.ingreso = true;
+            registro.id_tarjeta_receptora = tarjeta.id_tarjeta_responsabilidad;
+            break;
+        case 'Desasignación':
+            registro.ingreso = false;
+            registro.id_tarjeta_emisora = tarjeta.id_tarjeta_responsabilidad;
+            break;
+        case 'Traspaso':
+            registro.ingreso = action.payload.esRecepcion;
+            const plantillaNumeroTarjeta = '╦'.repeat(8);
+            if (action.payload.esRecepcion) {
+                registro.id_tarjeta_emisora = action.payload.id_tarjeta_emisora;
+                registro.id_tarjeta_receptora = tarjeta.id_tarjeta_responsabilidad;
+            }
+            const tarjetaEmisora = await obtenerTarjeta(registro.id_tarjeta_emisora);
+            const id_tarjeta_receptora = await obtenerTarjeta(registro.id_tarjeta_receptora);
+            registro.descripcion = registro.descripcion.replace(plantillaNumeroTarjeta + 'E', tarjetaEmisora.numero);
+            registro.descripcion = registro.descripcion.replace(plantillaNumeroTarjeta + 'R', id_tarjeta_receptora.numero);
+
+            break;
+    }
+
     // Se inserta el registro en la db
     let query = `
         INSERT INTO registro (
@@ -345,7 +371,7 @@ function generarPDF(tarjeta, fecha, dataCallback, endCallback) {
     doc.end();
 }
 
-async function generarRegistrosDesvinculados(idsBienes) {
+async function generarRegistrosDesvinculados(idsBienes, action) {
     // Obtener la información de los bienes de los cuales se crearan registros
     let query = `
         SELECT *
@@ -362,9 +388,21 @@ async function generarRegistrosDesvinculados(idsBienes) {
 
     // Se generan los registros
     const registros = Object.values(biensPorModelo).map(bienes => {
-        const descripcionRegistro = formatearDescripcionBien(getDescripcionRegistro(bienes));
+        let descripcionRegistro = getDescripcionRegistro(bienes);
+        if (action.type === 'Traspaso') {
+            const plantillaNumeroTarjeta = '╦'.repeat(8);
+            if (!action.payload.esRecepcion) {
+                const nota = `Se descarga el contenido del presente registro de la tarjeta No. ${plantillaNumeroTarjeta + 'E'} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}`;
+                descripcionRegistro = nota + '. ' + descripcionRegistro;
+            } else {
+                const nota = `Se recibe el contenido del presente registro de la tarjeta No. ${plantillaNumeroTarjeta + 'E'}`;
+                descripcionRegistro = nota + '. ' + descripcionRegistro;
+            }
+        }
+
+        const descripcionConFormato = formatearDescripcionBien(descripcionRegistro);
         return {
-            descripcion: descripcionRegistro,
+            descripcion: descripcionConFormato,
             anverso: true,
             ingreso: true,
             lineas: getNoLineas(descripcionRegistro),
