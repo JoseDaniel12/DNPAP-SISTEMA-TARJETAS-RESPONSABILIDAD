@@ -81,8 +81,7 @@ function TraspasoBienes() {
 
     const handleTraspasarBienes = async () => {
         await empleadoRequests.trapasarBienes({
-            idEmpleadoEmisor: id_empleado_emisor, 
-            id_tarjeta_emisora: id_tarjeta_responsabilidad,
+            idEmpleadoEmisor: id_empleado_emisor,
             idEmpleadoReceptor: empleadoReceptor.id_empleado,
             idsBienes: bienesPorTraspasar.map(bien => bien.id_bien),
             numerosTarjetaEmisor: numerosTarjetasEmisor,
@@ -134,9 +133,10 @@ function TraspasoBienes() {
             setEmpleados(empleados);
         });
 
-        tarjetasRequests.getTarjetaConBienes(id_tarjeta_responsabilidad).then(response => {
+        empleadoRequests.getBienes(id_empleado_emisor).then(response => {
             setBienes(response.data);
         });
+
     }, []);
 
 

@@ -6,6 +6,7 @@ import RegistroBien from '../Components/RegistroBien/RegistroBien';
 import ListaEmpleados from '../Components/ListaEmpleados/ListaEmpleados';
 import AgregarBienesTarjeta from '../Components/AgregarBienesTarjeta/AgregarBienesTarjeta';
 import TraspasoBienes from '../Components/TraspasoBienes/TraspasoBienes';
+import DesasignacionBienes from '../Components/DesasignacionBienes/DesasignacionBienes';
 import TarjetasEmpleado from '../Components/TarjetasEmpleado/TarjetasEmpleado';
 import GestionDepartamentos from '../Components/GestionDepartamentos/GestionDepartamentos';
 import GestionProgramas from '../Components/GestionProgramas/GestionProgramas';
@@ -28,6 +29,7 @@ function Rutas() {
           <Route path="tarjetas-empleado" element={<TarjetasEmpleado />} />
           <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
           <Route path="traspasar-bienes/:id_empleado_emisor/:id_tarjeta_responsabilidad" element={<TraspasoBienes />} />
+          <Route path="desasignar-bienes/:id_empleado" element={<DesasignacionBienes />} />
           <Route path="pruebas" element={<AgregarBienesTarjeta />} />
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
           <Route path="gestionar-programas" element={<GestionProgramas />} />

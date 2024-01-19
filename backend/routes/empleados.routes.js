@@ -9,13 +9,41 @@ const {
     generarRegistrosDesvinculados
 } = require('../utilities/tarjetas');
 const { determinarTarjetasRequeridas } = require('../utilities/tarjetas');
-
 const router = express.Router();
 
 
 router.get('/lista-empleados', async (req, res,) => {
     const empleados = await mysql_exec_query('SELECT * FROM empleado');
     return res.status(200).json({empleados});
+});
+
+
+router.get('/obtener-bienes/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_empleado } = req.params;
+        // let query = `
+        //     SELECT bien.*
+        //     FROM empleado
+        //     INNER JOIN tarjeta_responsabilidad USING(id_empleado)
+        //     INNER JOIN bien USING(id_tarjeta_responsabilidad)
+        //     WHERE empleado.id_empleado = ${id_empleado};       
+        // `;
+        let query = `
+            SELECT *
+            FROM bien_activo
+            INNER JOIN bien USING(id_bien)
+            INNER JOIN modelo USING(id_modelo)
+            WHERE bien_activo.id_empleado = ${id_empleado};
+        `;
+        const bienes = await mysql_exec_query(query);
+        respBody.setData(bienes);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
 });
 
 
@@ -92,8 +120,6 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
         ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, 0);
     }
 
-    // para este punto ya se deberia tener a
-
     // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
     // tarjeta emisora y receptora
     for (const registro of registros) {
@@ -137,42 +163,56 @@ router.post('/traspasar-bienes', async (req, res) => {
     try {
         const { 
             idEmpleadoEmisor,
-            id_tarjeta_emisora,
             idEmpleadoReceptor,
             idsBienes,
             numerosTarjetaEmisor,
             numerosTarjetaReceptor
         } = req.body;
 
-        const actionTraspasoEmisor = {
-            type: 'Traspaso',
-            payload: {
-                id_tarjeta_emisora,
-                esRecepcion: false
+
+        // obtener el id de la tarjeta que contiene cada bien
+        const bienesConTarjeta = await Promise.all(idsBienes.map(async id_bien =>  {
+            let query = `
+                SELECT * FROM bien_activo
+                WHERE id_bien = ${id_bien};
+            `;
+            const [bien] = await mysql_exec_query(query);
+            return bien;
+        }));
+
+
+        const biensPorTarjeta = _.groupBy(bienesConTarjeta, 'id_tarjeta_responsabilidad');
+        for (let tarjeta in biensPorTarjeta) {
+            const actionTraspasoEmisor = {
+                type: 'Traspaso',
+                payload: {
+                    id_tarjeta_emisora: tarjeta,
+                    esRecepcion: false
+                }
+            };
+    
+            const actionTraspasoRecepetor = {
+                type: 'Traspaso',
+                payload: {
+                    id_tarjeta_emisora: tarjeta,
+                    esRecepcion: true
+                }
+            };
+            const idsBienes = biensPorTarjeta[tarjeta].map(bien => bien.id_bien);
+            const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor, actionTraspasoEmisor);
+            const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor, actionTraspasoRecepetor);
+    
+            // Se cargan los bienes al receptor, aqui se establece la tarjeta receptora de los registros
+            await ejecutarAccionTarjeta(idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
+            // Se descargan los bienes del emisor
+            for (let i = 0; i < registrosEmisor.length; i++) {
+                let regEmisor = registrosEmisor[i];
+                let regReceptor = registrosReceptor[i];
+                regEmisor.id_tarjeta_emisora = regReceptor.id_tarjeta_emisora;
+                regEmisor.id_tarjeta_receptora = regReceptor.id_tarjeta_receptora;
             }
-        };
-
-        const actionTraspasoRecepetor = {
-            type: 'Traspaso',
-            payload: {
-                id_tarjeta_emisora,
-                esRecepcion: true
-            }
-        };
-
-        const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor, actionTraspasoEmisor);
-        const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor, actionTraspasoRecepetor);
-
-        // Se cargan los bienes al receptor, aqui se establece la tarjeta receptora de los registros
-        await ejecutarAccionTarjeta(idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
-        // Se descargan los bienes del emisor
-        for (let i = 0; i < registrosEmisor.length; i++) {
-            let regEmisor = registrosEmisor[i];
-            let regReceptor = registrosReceptor[i];
-            regEmisor.id_tarjeta_emisora = regReceptor.id_tarjeta_emisora;
-            regEmisor.id_tarjeta_receptora = regReceptor.id_tarjeta_receptora;
+            await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
         }
-        await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
 
         respBody.setMessage('Bienes traspasados correctamente');
         res.send(respBody.getLiteralObject());
@@ -182,5 +222,22 @@ router.post('/traspasar-bienes', async (req, res) => {
         res.status(500).send(respBody.getLiteralObject());
     }
 });
+
+
+router.post('/desasignar-bienes', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_empleado, idsBienes, numerosTarjetas } = req.body;
+        const action = { type: 'Desasignación' }
+        const registros = await generarRegistrosDesvinculados(idsBienes, action);
+        ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
+        respBody.setMessage('Bienes desasignados correctamente');
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
 
 module.exports = router;

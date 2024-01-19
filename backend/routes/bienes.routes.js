@@ -122,8 +122,8 @@ router.get('/bienes-sin-asignar', async (req, res) => {
         const query = `
             SELECT * FROM bien
             INNER JOIN modelo USING(id_modelo)
-            LEFT OUTER JOIN registro_bien USING(id_bien)
-            WHERE registro_bien.id_registro_bien IS NULL;
+            LEFT OUTER JOIN tarjeta_responsabilidad USING(id_tarjeta_responsabilidad)
+            WHERE bien.id_tarjeta_responsabilidad IS NULL;
         `;
         const bienesSinAsignar = await mysql_exec_query(query);
         respBody.setData({bienesSinAsignar});

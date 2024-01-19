@@ -112,14 +112,22 @@ function TarjetasEmpleado() {
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
 
-            <div className='col-12 text-center text-'>
+            <div className='col-12 text-center text-center mt-0 pt-0'>
                 <h1 className='text-black-alpha-70'>Tarjetas de {empleado.nombres}</h1>
             </div>
 
-            <div className='col-12 grid flex flex-wrap md:justify-content-end'>
-                <div className='field col-12 md:max-w-max mb-0'>
-                    <div className='flex flex-wrap gap-1'>
-                        <div className='col-12 p-0'>
+            <div className='col-12 grid m-0'>
+                <div className='col-12 md:max-w-10rem'>
+                    <Button 
+                        label='Volver'
+                        icon='pi pi-arrow-left'
+                        className='p-button-outlined'
+                        onClick={() => navigate(-1)}
+                    />
+                </div>
+
+                <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
+                    <div className='col-12 md:max-w-max'>
                         <Dropdown 
                             optionLabel='numero' filter 
                             placeholder='Seleccionar Tarjeta'
@@ -128,26 +136,35 @@ function TarjetasEmpleado() {
                             style={{borderColor: '#878787b3'}}
                             onChange={e => setTarjeta(e.value)}
                         />
-                        </div>
                     </div>
-                </div>
-                <div className='field col-12 md:max-w-max mb-0'>
-                    <Button 
-                        label='Asignar Bienes'
-                        severity='success'
-                        icon='pi pi-plus'
-                        className='p-button-rounded md:w-auto'
-                        onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
-                    />
-                </div>
-                <div className='field col-12 md:max-w-max mb-0'>
-                    <Button 
-                        label='Desasignar Bienes'
-                        severity='danger'
-                        icon='pi pi-trash'
-                        className='p-button-rounded md:w-auto'
-                        onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
-                    />
+                    <div className='col-12 md:max-w-max'>
+                        <Button 
+                            label='Asignar Bienes'
+                            severity='success'
+                            icon='pi pi-plus'
+                            className='p-button-rounded md:w-auto p-button-outlined'
+                            onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
+                        />
+                    </div>
+                    <div className='col-12 md:max-w-max'>
+                        <Button
+                            type='button'
+                            label='Traspasar Bienes'
+                            severity='warning'
+                            icon='pi pi-arrow-right-arrow-left'
+                            className='p-button-rounded md:w-auto p-button-outlined'
+                            onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}/${tarjeta.id_tarjeta_responsabilidad}`)}
+                        />
+                    </div>
+                    <div className='col-12 md:max-w-max'>
+                        <Button 
+                            label='Desasignar Bienes'
+                            severity='danger'
+                            icon='pi pi-trash'
+                            className='p-button-rounded md:w-auto p-button-outlined'
+                            onClick={() => navigate(`/desasignar-bienes/${empleado.id_empleado}`)}
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -166,7 +183,11 @@ function TarjetasEmpleado() {
                     stripedRows
                     header={
                         <div className='grid p-0'>
-                            <div className='col-12 flex flex-wrap align-items-end justify-content-between xl:justify-content-between'>
+                            <div className='col-12 flex flex-wrap align-items-end justify-content-between pb-0'>
+                                <div className='field col max-w-max'>
+                                    <label className='font-bold text-black-alpha-70 block'>No. Tarjeta:</label>
+                                    <h1 className='p-0 m-0  text-black-alpha-70'>{tarjeta.numero}</h1>
+                                </div>
                                 <div className='field col max-w-max'>
                                     <label className='font-bold text-black-alpha-70 block'>Tarjeta No. {tarjeta.numero}</label>
                                     <Button 
@@ -188,7 +209,7 @@ function TarjetasEmpleado() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className='field col max-w-max'>
+                                {/* <div className='field col max-w-max'>
                                     <label className='font-bold text-black-alpha-70 block'>Bienes de Tarjeta:</label>
                                     <Button 
                                         type='button'
@@ -198,7 +219,7 @@ function TarjetasEmpleado() {
                                         className='md:w-auto flex-shrink-1 p-button-outlined'
                                         onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}/${tarjeta.id_tarjeta_responsabilidad}`)}
                                     />
-                                </div>
+                                </div> */}
                             </div>
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
@@ -230,7 +251,6 @@ function TarjetasEmpleado() {
                     <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe ,row)}/>
                     <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)}/>
                     <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)}/>
-                    <Column field='nota' header='Nota'/>
                 </DataTable>
 
             </div>

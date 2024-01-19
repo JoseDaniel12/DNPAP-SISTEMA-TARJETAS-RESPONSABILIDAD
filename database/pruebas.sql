@@ -11,10 +11,3 @@ select * from log;
 select * from modelo;
 select * from bien;
 select * from registro_bien;
-
-
-delete  from tarjeta_responsabilidad;
-
-SELECT * FROM ubicacion_bien;
-
-

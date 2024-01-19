@@ -245,10 +245,9 @@ async function colocarRegistro(tarjeta, registro, action) {
 
     // Se establcen los bienes como activos dentro de la tarjeta correspondiente
     for (const bien of registro.bienes) {
-        let tarjeta_bien = registro.ingreso? registro.id_tarjeta_responsabilidad : null;
         let query = `
             UPDATE bien
-            SET id_tarjeta_responsabilidad = ${tarjeta_bien}
+            SET id_tarjeta_responsabilidad = ${registro.id_tarjeta_receptora}
             WHERE id_bien = ${bien.id_bien};
         `;
         await mysql_exec_query(query);

@@ -11,12 +11,12 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 import { useToast } from '../../hooks/useToast';
 
 
-function AgregarBienesTarjeta() {
+function DesasignacionBienes() {
     const toast = useToast('bottom-right');
     const { id_empleado } = useParams();
     const navigate = useNavigate();
-    const [bienesSinAsignar, setBienesSinAsignar] = useState([]);
-    const [bienesPorAsignar, setBienesPorAsignar] = useState([]);
+    const [bienesEmpleado, setBienesEmpleado] = useState([]);
+    const [bienesPorDesasignar, setBienesPorDesasignar] = useState([]);
 
     // Filtros de la tabla de empleados
     const [globalFilterValue, setGlobalFilterValue] = useState('');
@@ -28,16 +28,16 @@ function AgregarBienesTarjeta() {
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
 
 
-    const handleAgregarBien = (id_bien) => {
-        const bien = bienesSinAsignar.find(b => b.id_bien === id_bien);
-        setBienesPorAsignar(prevBiens => [...prevBiens, bien]);
-        setBienesSinAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
+    const handleQuitarBien = (id_bien) => {
+        const bien = bienesEmpleado.find(b => b.id_bien === id_bien);
+        setBienesPorDesasignar(prevBiens => [...prevBiens, bien]);
+        setBienesEmpleado(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
-    const handleEliminarBien = (id_bien) => {
-        const bien = bienesPorAsignar.find(b => b.id_bien === id_bien);
-        setBienesSinAsignar(prevBiens => [...prevBiens, bien]);
-        setBienesPorAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
+    const handleDevolverBien = (id_bien) => {
+        const bien = bienesPorDesasignar.find(b => b.id_bien === id_bien);
+        setBienesEmpleado(prevBiens => [...prevBiens, bien]);
+        setBienesPorDesasignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
     const handleAgregarTarjeta = () => {
@@ -50,19 +50,19 @@ function AgregarBienesTarjeta() {
         setNumerosTarjetas(prevNumeros => prevNumeros.filter(n => n !== numero));
     }
 
-    const handleAgregarBienes = async () => {
-        if (!bienesPorAsignar.length) return;
+    const handleQuitarBienes = async () => {
+        if (!bienesPorDesasignar.length) return;
         if (numerosTarjetas.length !== cantTarjetasNesecarias) {
             const error = 'Debes ingresar la cantidad de tarjetas indicada.'
             return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
         }
         
-        const idsBienes = bienesPorAsignar.map(b => b.id_bien);
-        const response = await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
+        const response = await empleadoRequests.desasignarBienes({id_empleado, idsBienes, numerosTarjetas});
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {
-            setBienesPorAsignar([]);
+            setBienesPorDesasignar([]);
             const milisegundos = 2500;
             toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: milisegundos});
             setTimeout(() => navigate(-1), milisegundos);
@@ -94,30 +94,29 @@ function AgregarBienesTarjeta() {
 
 
     useEffect(() => {
-        const idsBienes = bienesPorAsignar.map(b => b.id_bien);
+        const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
         tarjetasRequests
         .getNumeroTarjetasNecesarias({id_empleado, idsBienes, operacion: 'ASIGNAR'})
         .then(res => {
            setCantTarjetasNecesarias(res.data);
         });
-    }, [bienesPorAsignar]);
+    }, [bienesPorDesasignar]);
 
 
     useEffect(() => {
-        bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data.bienesSinAsignar));
+        empleadoRequests.getBienes(id_empleado).then(res => setBienesEmpleado(res.data));
     }, []);
 
 
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
-                {/* <h1 className=' -mb-4 text-black-alpha-70'>Asignar Bienes</h1> */}
-                <h1 className='text-black-alpha-70 mb-1'>Asignar Bienes</h1>
+                <h1 className='text-black-alpha-70 mb-1'>Desasignar Bienes</h1>
             </div>
 
             <div className='col-12'>
                 <DataTable
-                    value={bienesSinAsignar}
+                    value={bienesEmpleado}
                     rows={10}
                     paginator
                     scrollable
@@ -130,7 +129,7 @@ function AgregarBienesTarjeta() {
                     header = {
                         <div>
                             <div className='col-12 pb-0'>
-                                <p>Bienes sin vincular:</p>
+                                <p>Bienes del empleado:</p>
                             </div>
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
@@ -149,15 +148,16 @@ function AgregarBienesTarjeta() {
                     <Column field='descripcion' header='Descripcion'/>
                     <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
                     <Column 
-                        header='Agregar'
+                        header='Quitar'
                         body = {
                             bien =>  (
                                 <Button 
-                                    type='button' 
-                                    icon='pi pi-plus'
+                                    type='button'
+                                    severity='danger'
+                                    icon='pi pi-trash'
                                     className='p-button-success p-button-outlined w-auto'
-                                    label='Agregar'
-                                    onClick={() => handleAgregarBien(bien.id_bien)}
+                                    label='Quitar'
+                                    onClick={() => handleQuitarBien(bien.id_bien)}
                                 />
                             )
                         }
@@ -165,7 +165,7 @@ function AgregarBienesTarjeta() {
                 </DataTable>
 
                 <DataTable
-                    value={bienesPorAsignar}
+                    value={bienesPorDesasignar}
                     rows={10}
                     paginator
                     scrollable
@@ -177,7 +177,7 @@ function AgregarBienesTarjeta() {
                     header = {
                         <div>
                             <div className='col-12 pb-0'>
-                                <p>Bienes Por Agregar:</p>
+                                <p>Bienes Por Desasignar:</p>
                             </div>
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
@@ -196,15 +196,16 @@ function AgregarBienesTarjeta() {
                     <Column field='descripcion' header='Descripcion'/>
                     <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
                     <Column 
-                        header='Eliminar'
+                        header='Devolver'
                         body = {
                             bien =>  (
                                 <Button 
                                     type='button' 
-                                    icon='pi pi-times'
-                                    className='p-button-danger p-button-outlined w-auto'
-                                    label='Eliminar'
-                                    onClick={() => handleEliminarBien(bien.id_bien)}
+                                    severity='warning'
+                                    icon='pi pi-arrow-left'
+                                    className='p-button-outlined w-auto'
+                                    label='Devolver'
+                                    onClick={() => handleDevolverBien(bien.id_bien)}
                                 />
                             )
                         }
@@ -245,6 +246,7 @@ function AgregarBienesTarjeta() {
                 </div>
             </div>
 
+            
             <div className='col-12'>
                 <div className='flex flex-wrap justify-content-between gap-2'>
                     <div className='col p-0'>
@@ -256,8 +258,8 @@ function AgregarBienesTarjeta() {
 
                     <div className='col p-0'>
                         <Button
-                            severity='info' label='Asignar Bienes' icon='pi pi-arrow-up'
-                            onClick={handleAgregarBienes}
+                            severity='info' label='Desasignar Bienes' icon='pi pi-arrow-down'
+                            onClick={handleQuitarBienes}
                         />
                     </div>
                 </div>
@@ -266,4 +268,4 @@ function AgregarBienesTarjeta() {
     );
 }
 
-export default AgregarBienesTarjeta;
+export default DesasignacionBienes;
