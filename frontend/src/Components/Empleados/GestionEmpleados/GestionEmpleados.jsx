@@ -6,9 +6,11 @@ import { InputText } from 'primereact/inputtext';
 import { DataTable } from 'primereact/datatable';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Column } from 'primereact/column';
-import { useAuth } from '../../Auth/Auth'
+import { useAuth } from '../../../Auth/Auth'
 
-function ListaEmpleados({ tarjetasEditables = false }) {
+import empleadoRequests from '../../../Requests/empleadoRequests';
+
+function GestionEmpleados() {
     const navigate = useNavigate();
     const { loginData } = useAuth();
     const editable = true;
@@ -21,6 +23,7 @@ function ListaEmpleados({ tarjetasEditables = false }) {
 
     // Empleados
     const [empleados, setEmpleados] = useState([]);
+    const [filaSelccionada, setFilaSelccionada] = useState(null);
 
 
     const initFilters = () => {
@@ -46,56 +49,19 @@ function ListaEmpleados({ tarjetasEditables = false }) {
     };
 
 
+    const handleGestionarBienesTarjetas = () => {
+        if (!filaSelccionada) return;
+        const empleado = empleados.find(e => e.id_empleado === filaSelccionada.id_empleado);
+        navigate('/tarjetas-empleado', { state: { empleado } });
+    };
+
+
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
         style: 'currency',
         currency: 'GTQ',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
-
-
-    let titulo = (
-        <>
-            <h1 className=' mb-0 text-black-alpha-70'>Buscar Empleado a Visualizar Tarjetas</h1>
-        </>
-    );
-    if (editable)  {
-        titulo = (
-            <>
-                <h1 className=' mb-0 text-black-alpha-70'>Administrar Tarjetas de Responsabilidad</h1>
-                <h1 className=' mt-0 text-black-alpha-70'>de Empleados del DNPAP</h1>
-            </>
-        );
-    }
-
-
-
-    const obtenerVinculoTarjeta = empleado  => {
-        if (editable) {
-            return (
-                <Button 
-                    type='button' 
-                    icon='pi pi-file-edit'
-                    className='p-button-warning p-button-outlined w-auto'
-                    label='Editar Tarjetas'
-                    onClick={() => {
-                        navigate('/tarjetas-empleado', { state: { empleado } });
-                    }}
-                />
-            );
-        } 
-        return (
-            <Button 
-                type='button' 
-                icon='pi pi-eye'
-                className='p-button-info p-button-outlined w-auto'
-                label='Ver Tarjetas'
-                onClick={() => {
-                    navigate('/tarjetas-empleado', { state: { empleado } });
-                }}
-            />
-        );
-    }
 
 
     const columnaMontoTemplate = (empleado) => {
@@ -106,9 +72,9 @@ function ListaEmpleados({ tarjetasEditables = false }) {
 
 
     useEffect(() => {
-        fetch('http://localhost:5000/empleados/lista-empleados')
-        .then(res => res.json())
-        .then(data => setEmpleados(data.empleados));
+        empleadoRequests.getEmpleados().then(response => {
+            setEmpleados(response.data?.empleados);
+        })
 
         initFilters();
     }, []);
@@ -117,12 +83,55 @@ function ListaEmpleados({ tarjetasEditables = false }) {
     return (
         <div className='grid col-11 md:col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
-                {titulo}
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestionar Empleados</h1>
+            </div>
+
+            <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
+                <div className='col-12 md:max-w-max'>
+                    <Button 
+                        label='Gestionar Bines y Tarjetas'
+                        severity='info'
+                        icon='pi pi-file-edit'
+                        className='p-button-rounded md:w-auto p-button-outlined'
+                        onClick={handleGestionarBienesTarjetas}
+                    />
+                </div>
+                <div className='col-12 md:max-w-max'>
+                    <Button 
+                        label='Registrar Empleado'
+                        severity='success'
+                        icon='pi pi-plus'
+                        className='p-button-rounded md:w-auto p-button-outlined'
+                        onClick={() => navigate('/registrar-empleado')}
+                    />
+                </div>
+                <div className='col-12 md:max-w-max'>
+                    <Button
+                        type='button'
+                        label='Editar Empleado'
+                        severity='warning'
+                        icon='pi pi-pencil'
+                        className='p-button-rounded md:w-auto p-button-outlined'
+                        onClick={() => {}}                    
+                    />
+                </div>
+                <div className='col-12 md:max-w-max'>
+                    <Button 
+                        label='Eliminar Empleado'
+                        severity='danger'
+                        icon='pi pi-trash'
+                        className='p-button-rounded md:w-auto p-button-outlined'
+                        onClick={() => {}}                    />
+                </div>
             </div>
 
             <div className='col-12'>
                 <DataTable 
-                    value={empleados} 
+                    value={empleados}
+                    selectionMode='single'
+                    selection={filaSelccionada}
+                    onSelectionChange={e => setFilaSelccionada(e.value)}
+                    rowClassName={fila => filaSelccionada?.id_empleado === fila.id_empleado ? 'bg-primary-100' : ''}
                     filters={filters}
                     paginator
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
@@ -146,8 +155,8 @@ function ListaEmpleados({ tarjetasEditables = false }) {
                         </div>
                     }
                 >
-                    <Column field='Index' header='No.' body={(data, props) => props.rowIndex + 1}/>
                     <Column field='dpi' header='DPI' />
+                    <Column field='nit' header='NIT' />
                     <Column field='nombres' header='Nombres' />
                     <Column field='apellidos' header='Apellidos' />
                     <Column field='cargo' header='Cargo' />
@@ -156,14 +165,10 @@ function ListaEmpleados({ tarjetasEditables = false }) {
                         header='Saldo' 
                         body={columnaMontoTemplate}
                     />
-                    <Column 
-                        header='Accion' 
-                        body = { obtenerVinculoTarjeta }
-                    />
                 </DataTable>
             </div>
         </div>
     );
 }
 
-export default ListaEmpleados;
+export default GestionEmpleados;

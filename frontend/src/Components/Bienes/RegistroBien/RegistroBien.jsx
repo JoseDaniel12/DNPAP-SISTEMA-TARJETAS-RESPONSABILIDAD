@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { DevTool } from '@hookform/devtools';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
@@ -14,7 +13,8 @@ import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Message } from 'primereact/message';
 import { Toast } from 'primereact/toast';
-import bienesRequest from '../../Requests/bienesRequests';
+
+import bienesRequest from '../../../Requests/bienesRequests';
 
 
 function RegistroBien() {
@@ -123,7 +123,6 @@ function RegistroBien() {
 
 
     const handleRegistrarBienes = async () => {
-        console.log(formDatosGenerales.getValues())
         let errores = false;
         if (bienes.length === 0) {
             errores = true;
@@ -187,6 +186,14 @@ function RegistroBien() {
     }
 
 
+    const handleKeyDowDescripcion = (e) => {
+        // Evita que se haga un salto de linea al presionar enter
+        if (e.keyCode === 13) {
+            e.preventDefault();
+        }
+    }
+
+
     useEffect(() => {
         // fetch('http://localhost:5000/programas/obtener-programas')
         // .then(res => res.json())
@@ -198,7 +205,7 @@ function RegistroBien() {
     return (
         <div className='grid col-11 md:col-9 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <Toast ref={toast}  position="bottom-right"/>
-            <h1 className='col-12 flex justify-content-center mb-0 text-black-alpha-80'>Registro de Bienes</h1>
+            <h1 className='col-12 flex justify-content-center text-black-alpha-80 m-0   '>Registro de Bienes</h1>
 
             <Divider className='mb-0'/>
             <h2 className='col-12 mb-0 text-black-alpha-80'>Datos en Comun:</h2>
@@ -212,6 +219,7 @@ function RegistroBien() {
                     rows={4}
                     className='f-wull' 
                     style={{resize: 'none'}}
+                    onKeyDown={handleKeyDowDescripcion}
                     { ...registerDatosGenerales('descripcion') }
                 />
                 { errorsDatosGenerales.descripcion && <Message severity='error' text={errorsDatosGenerales.descripcion?.message} className='mt-1 p-1'/> }

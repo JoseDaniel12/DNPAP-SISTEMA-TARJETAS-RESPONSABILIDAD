@@ -1,6 +1,23 @@
 const { mysql_exec_query } = require("../database/mysql/mysql_exec");
 let _ = require('lodash');
 
+
+async function obtenerEmepleado(id_empleado) {
+    let query = `
+        SELECT *
+        FROM empleado
+        WHERE id_empleado = ${id_empleado}
+        LIMIT 1;
+    `;
+    const outcome = await mysql_exec_query(query);
+    if (outcome.length) {
+        const [empleado] = outcome;
+        return empleado;
+    }
+    return null;
+}
+
+
 async function obtenerUltimaTarjeta(id_empleado) {
     query = `
         SELECT 

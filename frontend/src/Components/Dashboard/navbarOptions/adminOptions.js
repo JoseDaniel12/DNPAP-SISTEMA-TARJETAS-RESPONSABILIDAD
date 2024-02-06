@@ -4,30 +4,38 @@ const adminOptions = [
         icon: 'pi pi-box',
         url: '/registar-bienes'
     },
+    // {
+    //     label: 'Agrupar Bienes',
+    //     icon: 'pi pi-box',
+    //     url: '/agrupar-bienes'
+    // },
     {
-        label: 'Tarjetas',
-        icon: 'pi pi-fw pi-file',
-        url: '/administrar-tarjetas'
-    },
-    {
-        label: 'Auxiliares',
+        label: 'Personal',
         icon: 'pi pi-users',
-        url: '/gestionar-auxiliares'
+        items: [
+            {
+                label: 'Gestionar Empleados',
+                url: '/gestionar-empleados',
+            },
+            {
+                label: 'Gestionar Auxiliares',
+                url: '/gestionar-auxiliares',
+            }
+        ]
     },
     {
-        label: 'Departamentos',
+        label: 'Organización',
         icon: 'pi pi-sitemap',
-        url: '/gestionar-departamentos'
-    },
-    {
-        label: 'Programas',
-        icon: 'pi pi-sitemap',
-        url: '/gestionar-programas'
-    },
-    {
-        label: 'Empleados',
-        icon: 'pi pi-users',
-        url: '/gestionar-empleados'
+        items: [
+            {
+                label: 'Departamentos',
+                url: '/gestionar-departamentos'
+            },
+            {
+                label: 'Programas',
+                url: '/gestionar-programas'
+            },
+        ]
     },
     {
         label: 'Reportes',
@@ -45,8 +53,7 @@ const adminOptions = [
                 url: '/historial-modificaciones',
             }
         ]
-    },
-
+    }
 ];
 
 export default adminOptions;

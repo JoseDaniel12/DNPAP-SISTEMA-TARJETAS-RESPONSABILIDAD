@@ -2,7 +2,7 @@ const express = require('express');
 const url = require('url');
 const querystring = require('querystring');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
-const { determinarTarjetasRequeridas, obtenerTarjeta, generarPDF } = require('../utilities/tarjetas');
+const { determinarTarjetasRequeridas, obtenerTarjeta, generarPDF, generarExcel} = require('../utilities/tarjetas');
 const HTTPResponseBody  = require('./HTTPResponseBody');
 const fs = require('fs');
 
@@ -83,6 +83,44 @@ router.get('/generar-pdf-tarjeta/:id_tarjeta_responsabilidad/:fecha', async (req
             data => stream.write(data),
             () => stream.end()
         );
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.get('/generar-excel-tarjeta/:id_tarjeta_responsabilidad/:fecha', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let {id_tarjeta_responsabilidad,  fecha } = req.params;
+        const tarjeta = await obtenerTarjeta(id_tarjeta_responsabilidad, true);
+        fecha = (fecha == 'null')? null : new Date(fecha);
+        const excel = await generarExcel(tarjeta, fecha);
+        const blob = await excel.outputAsync();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=${tarjeta.numero}.xlsx`);
+        res.send(blob);
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.post('/numero-disponible', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_tarjeta_responsabilidad } = req.body;
+        let query = `
+            SELECT tarjeta_responsabilidad.numero FROM tarjeta_responsabilidad
+            WHERE tarjeta_responsabilidad.numero = '${id_tarjeta_responsabilidad}';
+        `;
+        const tarjetas = await mysql_exec_query(query);
+        respBody.setData(tarjetas.length === 0);
+        return res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)
         respBody.setError(error.toString());

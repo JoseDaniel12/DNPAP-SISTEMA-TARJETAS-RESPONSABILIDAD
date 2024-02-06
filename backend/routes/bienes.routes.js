@@ -116,6 +116,7 @@ router.post('/verificar-disponibilidad-noSerie', async (req, res) => {
     } 
 });
 
+
 router.get('/bienes-sin-asignar', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -134,5 +135,80 @@ router.get('/bienes-sin-asignar', async (req, res) => {
         res.status(500).send(respBody.getLiteralObject());
     } 
 });
+
+
+router.post('/crear-kit', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { precio, idsBienes, idBienRaiz } = req.body;
+        // Se crea el kit
+        let query = `
+            INSERT INTO kit (precio)
+            VALUES (${precio});
+        `;
+        const { insertId: id_kit } = await mysql_exec_query(query);
+
+        // se agregan los bienes al kit
+        query = `
+            UPDATE bien
+            SET id_kit = ${id_kit}
+            WHERE id_bien IN (${idsBienes.join(',')});
+        `;
+        await mysql_exec_query(query);
+
+        // Se configura el bien raiz (el que tentra el precio del kit)
+        query = `
+            UPDATE bien
+            SET es_raiz_kit = TRUE
+            WHERE id_bien = ${idBienRaiz};
+        `;
+        await mysql_exec_query(query);
+
+        respBody.setData('Bienes asignados correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.put('/acutalizar-kit', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_kit, idBiens, idBienRaiz } = req.body;
+        // Se desvinculan los bienes anteriores del kit
+        let query = `
+            UPDATE bien
+            SET id_kit = NULL, es_raiz_kit = FALSE
+            WHERE id_kit = ${id_kit};
+        `;
+
+        // se vinculan los nuevos bienes al kit
+        query = `
+            UPDATE bien
+            SET id_kit = ${id_kit}
+            WHERE id_bien IN (${idsBienes.join(',')});
+        `;
+        await mysql_exec_query(query);
+
+        // Se configura el bien raiz (el que tentra el precio del kit)
+        query = `
+            UPDATE bien
+            SET es_raiz_kit = TRUE
+            WHERE id_bien = ${idBienRaiz};
+        `;
+        await mysql_exec_query(query);
+
+        respBody.setData('Bienes asignados correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
 
 module.exports = router;

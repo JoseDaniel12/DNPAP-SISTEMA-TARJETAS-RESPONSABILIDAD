@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS tipo_unidad_servicio (
 CREATE TABLE IF NOT EXISTS unidad_servicio (
     id_unidad_servicio INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     nombre_nuclear VARCHAR(250),
+    siglas VARCHAR(250),
 
     id_unidad_superior INT,
     id_tipo_unidad_servicio INT,
@@ -65,18 +66,23 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
 	id_tarjeta_responsabilidad INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     numero VARCHAR(250),
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    saldo_que_viene DECIMAL(10, 3),
+    saldo_que_viene DECIMAL(10, 3) DEFAULT 0,
     unidad_servicio VARCHAR(250),
     departamento_guate VARCHAR(250),
     municipio VARCHAR(250),
     nombre_empleado VARCHAR(250),
     nit_empleado VARCHAR(250),
     cargo_empleado VARCHAR(250),
+    saldo_anverso DECIMAL(13, 3) UNSIGNED,
     saldo DECIMAL(13, 3) UNSIGNED,
-    lineas_restantes_anverso INT DEFAULT 34,
-    lineas_restantes_reverso INT DEFAULT 34,
+    lineas_restantes_anverso INT,
+    lineas_restantes_reverso INT,
 
-	id_empleado INT,
+    id_tarjeta_anterior INT,
+    id_tarjeta_posterior INT,
+    id_empleado INT,
+    FOREIGN KEY (id_tarjeta_anterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE,
+    FOREIGN KEY (id_tarjeta_posterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE,
     FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado) ON DELETE CASCADE
 );
 
@@ -87,6 +93,7 @@ CREATE TABLE IF NOT EXISTS registro (
     cantidad INT UNSIGNED,
     descripcion LONGTEXT,
     precio DECIMAL(10, 3),
+    saldo DECIMAL(10, 3),
     ingreso TINYINT(1),
     anverso TINYINT(1),
     es_nota TINYINT(1) DEFAULT 0,
@@ -130,6 +137,7 @@ CREATE TABLE IF NOT EXISTS bien (
     no_serie VARCHAR(250),
 	no_inventario VARCHAR(250),
     fecha_registro DATE,
+    es_raiz_kit TINYINT(1) DEFAULT 0,
 
     id_modelo INT,
     id_kit INT,
@@ -148,6 +156,47 @@ CREATE TABLE IF NOT EXISTS registro_bien (
     FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE CASCADE,
     FOREIGN KEY (id_bien) REFERENCES bien(id_bien) ON DELETE CASCADE
 );
+
+
+DELIMITER //
+CREATE TRIGGER update_saldos_tarjeta
+AFTER INSERT ON registro
+FOR EACH ROW
+BEGIN
+    -- Si el saldo va en el lado anverso se acutaliza el saldo anverso
+    IF NEW.anverso THEN
+        UPDATE tarjeta_responsabilidad
+        SET saldo_anverso = IF (NEW.ingreso = TRUE, saldo_anverso + NEW.precio, saldo_anverso - NEW.precio)
+        WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
+    END IF;
+
+    -- Se acutaliza el saldo general de la tarjeta (anverso/reverso)
+    UPDATE tarjeta_responsabilidad
+    SET saldo = IF (NEW.ingreso = TRUE, saldo + NEW.precio, saldo - NEW.precio)
+    WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
+END;
+//
+DELIMITER ;
+
+
+DELIMITER //
+CREATE TRIGGER update_saldo_empleado
+AFTER UPDATE ON tarjeta_responsabilidad
+FOR EACH ROW
+BEGIN
+    -- Se actualiza el saldo del empleado al modifcar sus tarjetas, que por logica siempre se modifica la ultima tarjeta
+    UPDATE empleado
+    SET empleado.saldo = (
+        SELECT tarjeta_responsabilidad.saldo
+        FROM tarjeta_responsabilidad
+        WHERE tarjeta_responsabilidad.id_empleado = NEW.id_empleado
+        ORDER BY tarjeta_responsabilidad.fecha DESC
+        LIMIT 1
+    )
+    WHERE empleado.id_empleado = NEW.id_empleado;
+END;
+//
+DELIMITER ;
 
 
 CREATE VIEW bien_activo AS
@@ -196,4 +245,21 @@ GROUP BY empleado.id_empleado, bien.id_bien
 HAVING (
     SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
     SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
-) = false
+) = FALSE;
+
+
+CREATE VIEW unidad_jerarquizada AS
+WITH RECURSIVE nombre_jerarquico_unidad AS (
+    SELECT us.*, us.siglas AS siglas_jerarquicas
+    FROM unidad_servicio us
+    WHERE id_unidad_superior IS NULL
+    UNION
+    SELECT us.*, CONCAT_WS('/', us.siglas, nju.siglas_jerarquicas) AS siglas_jerarquicas
+    FROM nombre_jerarquico_unidad nju
+    INNER JOIN unidad_servicio us ON us.id_unidad_superior = nju.id_unidad_servicio
+)
+SELECT
+    nju.*,
+    tipo_unidad_servicio.nombre AS tipo_unidad_servicio
+FROM nombre_jerarquico_unidad nju
+INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio);

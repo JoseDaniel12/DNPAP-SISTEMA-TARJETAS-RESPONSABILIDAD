@@ -7,14 +7,15 @@ import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 import { Divider } from 'primereact/divider';
 import { Message } from 'primereact/message';
-import { Dialog } from 'primereact/dialog';
+import { useToast } from '../../hooks/useToast';
+
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 
 
-
 function TraspasoBienes() {
+    const toast = useToast('bottom-right');
     const params = useParams();
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
     const id_tarjeta_responsabilidad = parseInt(params.id_tarjeta_responsabilidad);
@@ -65,16 +66,35 @@ function TraspasoBienes() {
         setBienes(prevBienes => prevBienes.filter(bien => bien.id_bien !== id_bien));
     };
 
+    const validarNumTarjeta = async numeroTarjeta => {
+        if (
+            numerosTarjetasEmisor.includes(numeroTarjeta) ||
+            numerosTarjetasReceptor.includes(numeroTarjeta)
+        ) return false;
+        return await tarjetasRequests.numeroDisponible(numeroTarjeta).then(res => res.data);
+    };
 
-    const handleAgregarTarjetaEmisor = () => {
+    const handleAgregarTarjetaEmisor = async () => {
         if (numeroTarjetaEmisor === '') return;
-        setNumerosTarjetasEmisor(prevNumeros => [...prevNumeros, numeroTarjetaEmisor]);
+        const numDisponible = await validarNumTarjeta(numeroTarjetaEmisor);
+        if (!numDisponible) {
+            const error = `El numero de tarjeta ${numeroTarjetaEmisor} ya existe.`;
+            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
+        } else {
+            setNumerosTarjetasEmisor(prevNumeros => [...prevNumeros, numeroTarjetaEmisor]);
+        }
         setNumeroTarjetEmisor('');
     };
 
-    const handleAgregarTarjetaReceptor = () => {
+    const handleAgregarTarjetaReceptor = async () => {
         if (numeroTarjetaReceptor === '') return;
-        setNumerosTarjetasReceptor(prevNumeros => [...prevNumeros, numeroTarjetaReceptor]);
+        const numDisponible = await validarNumTarjeta(numeroTarjetaReceptor);
+        if (!numDisponible) {
+            const error = `El numero de tarjeta ${numeroTarjetaReceptor} ya existe.`;
+            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
+        } else {
+            setNumerosTarjetasReceptor(prevNumeros => [...prevNumeros, numeroTarjetaReceptor]);
+        }
         setNumeroTarjetaReceptor('');
     };
 
@@ -87,6 +107,7 @@ function TraspasoBienes() {
             numerosTarjetaEmisor: numerosTarjetasEmisor,
             numerosTarjetaReceptor: numerosTarjetasReceptor,
         });
+        navigate(-1);
     }
 
 
@@ -128,8 +149,9 @@ function TraspasoBienes() {
     }, [bienesPorTraspasar]);
 
     useEffect(() => {
-        empleadoRequests.obtenerEmpleados().then(response => {
-            const empleados = response.empleados.filter(empleado => empleado.id_empleado !== id_empleado_emisor);
+        empleadoRequests.getEmpleados().then(response => {
+            console.log(response.data);
+            const empleados = response.data.empleados.filter(empleado => empleado.id_empleado !== id_empleado_emisor);
             setEmpleados(empleados);
         });
 

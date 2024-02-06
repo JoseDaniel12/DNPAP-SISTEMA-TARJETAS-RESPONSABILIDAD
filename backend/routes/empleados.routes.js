@@ -1,6 +1,7 @@
 const express = require('express');
 const _ = require('lodash');
 const HTTPResponseBody  = require('./HTTPResponseBody');
+const { encriptar } = require('../helpers/encryption');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { obtenerUltimaTarjeta } = require('../utilities/empleado');
 const { 
@@ -9,13 +10,163 @@ const {
     generarRegistrosDesvinculados
 } = require('../utilities/tarjetas');
 const { determinarTarjetasRequeridas } = require('../utilities/tarjetas');
+const userRoles = require('../types/userRoles');
+const { parse } = require('querystring');
 const router = express.Router();
 
 
-router.get('/lista-empleados', async (req, res,) => {
-    const empleados = await mysql_exec_query('SELECT * FROM empleado');
-    return res.status(200).json({empleados});
+router.get('/lista-empleados', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let query = `
+            SELECT
+                empleado.*
+            FROM empleado
+            INNER JOIN rol USING (id_rol)
+            WHERE rol.nombre = '${userRoles.ORDINARIO}';
+        `;
+        const empleados = await mysql_exec_query(query);
+        respBody.setData({empleados});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        return res.status(500).json({error: error.toString()});
+    }
 });
+
+
+router.get('/empleado/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_empleado } = req.params;
+        let query = `
+            SELECT
+                empleado.*
+            FROM empleado
+            WHERE id_empleado = ${id_empleado};
+        `;
+        const [empleado] = await mysql_exec_query(query);
+        respBody.setData({empleado});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.put('/editar-auxiliar/:idAuxiliar', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const idAuxiliar = parseInt(req.params.idAuxiliar);
+        const { dpi, nombres, apellidos, correo, acutalizarContrasenia, contrasenia } = req.body;
+
+        let query = `
+            UPDATE empleado
+            SET dpi = '${dpi}',
+                nombres = '${nombres}',
+                apellidos = '${apellidos}',
+                correo = '${correo}'
+            WHERE id_empleado = ${idAuxiliar};
+        `;
+
+        if (acutalizarContrasenia) {
+            const  contraseniaEncriptada = encriptar(contrasenia);
+            query = `
+                UPDATE empleado
+                SET dpi = '${dpi}',
+                    nombres = '${nombres}',
+                    apellidos = '${apellidos}',
+                    correo = '${correo}',
+                    contrasenia = '${contraseniaEncriptada}'
+                WHERE id_empleado = ${idAuxiliar};
+            `;
+        }
+
+        await mysql_exec_query(query);
+
+        // Obtener el auxiliar actualizado
+        query = `
+            SELECT *
+            FROM empleado
+            WHERE id_empleado = ${idAuxiliar};
+        `;
+        const [auxiliar] = await mysql_exec_query(query);
+        respBody.setData({auxiliar});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.delete('/eliminar-empleado/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_empleado = parseInt(req.params.id_empleado);
+        let query = `
+            DELETE FROM empleado
+            WHERE id_empleado = ${id_empleado};
+        `;
+        await mysql_exec_query(query);
+        respBody.setData({id_empleado});
+        respBody.setMessage('Empleado eliminado correctamente');
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.post('/crear-empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { 
+            dpi, 
+            nit, 
+            cargo, 
+            nombres, 
+            apellidos, 
+            correo, 
+            contrasenia, 
+            id_unidad_servicio,
+            darPermisosAuxiliar
+        } = req.body;
+
+        const contraseniaEncriptada = bcrypt.hashSync(contrasenia, 10);
+
+        let query = `
+            INSERT INTO empleado (
+                dpi, 
+                nit, 
+                cargo, 
+                nombres,
+                apellidos, 
+                correo,
+                contrasenia, 
+                id_unidad_servicio)
+            VALUES (
+                '${dpi}',
+                '${nit}',
+                '${cargo}',
+                '${nombres}',
+                '${apellidos}',
+                '${correo}',
+                '${contraseniaEncriptada}',
+                ${id_unidad_servicio},
+                ${darPermisosAuxiliar}
+            );
+        `;
+        const { insert: id_empleado } = await mysql_exec_query(query);
+
+        respBody.setData(empleado);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
 
 
 router.get('/obtener-bienes/:id_empleado', async (req, res) => {
@@ -117,7 +268,7 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
     let ultimaTarjeta = await obtenerUltimaTarjeta(id_empleado);
     if (!ultimaTarjeta) {
         const numeroTarjeta = numerosTarjetas.shift();
-        ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, 0);
+        ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta);
     }
 
     // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
@@ -132,7 +283,7 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
 			} else {
 				// Si no cabe en el lado reverso, se crea una nueva tarjeta para colocar el bien
                 const numeroTarjeta = numerosTarjetas.shift();
-                ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, ultimaTarjeta.saldo);
+                ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, ultimaTarjeta);
 			}
         }
 

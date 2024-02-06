@@ -40,9 +40,15 @@ function DesasignacionBienes() {
         setBienesPorDesasignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
-    const handleAgregarTarjeta = () => {
+    const handleAgregarTarjeta = async () => {
         if (numeroTarjeta === '') return;
-        setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
+        const numDisponible = await tarjetasRequests.numeroDisponible(numeroTarjeta).then(res => res.data);
+        if (!numDisponible || numerosTarjetas.includes(numeroTarjeta)) {
+            const error = `El numero de tarjeta ${numeroTarjeta} ya existe.`;
+            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
+        } else {
+            setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
+        }
         setNumeroTarjeta('');
     }
 

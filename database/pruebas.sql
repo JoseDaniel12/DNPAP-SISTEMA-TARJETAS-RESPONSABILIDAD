@@ -10,4 +10,7 @@ select * from registro;
 select * from log;
 select * from modelo;
 select * from bien;
+select * from kit;
 select * from registro_bien;
+
+select  * from unidad_jerarquizada

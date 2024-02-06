@@ -2,16 +2,12 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { Divider } from 'primereact/divider';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { format } from 'date-fns';
-import { ColumnGroup } from 'primereact/columngroup';
-import { Row } from 'primereact/row';
-import AgregarBienesTarjeta from '../AgregarBienesTarjeta/AgregarBienesTarjeta';
+import { Tag } from 'primereact/tag';
 
-import registros from './registros';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
   
 
@@ -45,13 +41,13 @@ function TarjetasEmpleado() {
     }
 
 
-    const handleGenerarPDF = async () => {
-        const blob = await tarjetasRequests.generarPDF(tarjeta.id_tarjeta_responsabilidad, fecha);
+    const handleGenerarExcel = async () => {
+        const blob = await tarjetasRequests.generarExcel(tarjeta.id_tarjeta_responsabilidad, fecha);
         const url = window.URL.createObjectURL(blob);
         // Creación de un enlace temporal y simulación de un clic en él para iniciar la descarga
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${tarjeta.numero}.pdf`;
+        a.download = `${tarjeta.numero}.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -99,6 +95,13 @@ function TarjetasEmpleado() {
     }
 
 
+    const sideTemplate = (registro) => {
+        const label = registro.anverso ? 'Anverso' : 'Reverso';
+        const severity = registro.anverso ? 'primary' : 'warning';
+        return <Tag value={label} severity={severity} className='p-2 text-sm'></Tag>;
+    }
+
+
     useEffect(() => {
         tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
             const tarejasPorNumero = response.data;
@@ -127,7 +130,7 @@ function TarjetasEmpleado() {
                 </div>
 
                 <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
-                    <div className='col-12 md:max-w-max'>
+                    <div className='col-12 md:max-w-min'>
                         <Dropdown 
                             optionLabel='numero' filter 
                             placeholder='Seleccionar Tarjeta'
@@ -178,24 +181,33 @@ function TarjetasEmpleado() {
                     currentPageReportTemplate='Registro {first} a {last} de  {totalRecords}'
                     rows={20}
                     scrollable
-                    scrollHeight='400px'
+                    scrollHeight='800px'
                     showGridlines
                     stripedRows
                     header={
                         <div className='grid p-0'>
-                            <div className='col-12 flex flex-wrap align-items-end justify-content-between pb-0'>
+                            <div className='col-12 flex flex-wrap justify-content-between pb-0'>
                                 <div className='field col max-w-max'>
                                     <label className='font-bold text-black-alpha-70 block'>No. Tarjeta:</label>
-                                    <h1 className='p-0 m-0  text-black-alpha-70'>{tarjeta.numero}</h1>
+                                    <h1 className='p-0 m-0 text-black-alpha-70'>{tarjeta.numero}</h1>
+                                </div>
+                                <div className='col-12 md:col max-w-max'>
+                                    <label className='font-bold text-black-alpha-70 block mb-1 md:mb-2'>Saldo de Tarjeta:</label>
+                                    <label className='font-bold text-black-alpha-70 block '>
+                                        Entrante: <span className='font-normal'>{tarjeta.saldo_que_viene}</span>
+                                    </label>
+                                    <label className='font-bold text-black-alpha-70 block'>
+                                        Saliente: <span className='font-normal'>{tarjeta.saldo}</span>
+                                    </label>
                                 </div>
                                 <div className='field col max-w-max'>
                                     <label className='font-bold text-black-alpha-70 block'>Tarjeta No. {tarjeta.numero}</label>
                                     <Button 
-                                        label='Generar PDF de Tarjeta'
-                                        severity='help'
-                                        icon='pi pi-file-pdf'
+                                        label='Generar EXCEL de Tarjeta'
+                                        icon='pi pi-file-excel'
                                         className='md:w-auto flex-shrink-2 p-button-outlined'
-                                        onClick={handleGenerarPDF}
+                                        style={{color: '#217346'}}
+                                        onClick={handleGenerarExcel}
                                     />
                                 </div>
                                 <div className='field col max-w-max'>
@@ -209,17 +221,6 @@ function TarjetasEmpleado() {
                                         </div>
                                     </div>
                                 </div>
-                                {/* <div className='field col max-w-max'>
-                                    <label className='font-bold text-black-alpha-70 block'>Bienes de Tarjeta:</label>
-                                    <Button 
-                                        type='button'
-                                        severity='warning'
-                                        label='Traspasar Bienes a Otro Empleado'
-                                        icon='pi pi-arrow-right-arrow-left'
-                                        className='md:w-auto flex-shrink-1 p-button-outlined'
-                                        onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}/${tarjeta.id_tarjeta_responsabilidad}`)}
-                                    />
-                                </div> */}
                             </div>
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
@@ -251,6 +252,7 @@ function TarjetasEmpleado() {
                     <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe ,row)}/>
                     <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)}/>
                     <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)}/>
+                    <Column field='anverso' header='Lado'  body={sideTemplate}/>
                 </DataTable>
 
             </div>

@@ -26,13 +26,22 @@ const tarjetasRequests = {
         }).then(response => response.json());
     },
 
-    generarPDF: async (id_tarjeta_responsabilidad, fecha) => {
-        let url = `http://localhost:5000/tarjetas/generar-pdf-tarjeta/${id_tarjeta_responsabilidad}/${fecha}`;
+    generarExcel: async (id_tarjeta_responsabilidad, fecha) => {
+        let url = `http://localhost:5000/tarjetas/generar-excel-tarjeta/${id_tarjeta_responsabilidad}/${fecha}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
 
         }).then(response => response.blob());
+    },
+
+    numeroDisponible: async (id_tarjeta_responsabilidad) => {
+        let url = `http://localhost:5000/tarjetas/numero-disponible`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'POST',
+            body: JSON.stringify({ id_tarjeta_responsabilidad })
+        }).then(response => response.json());
     },
 }
 

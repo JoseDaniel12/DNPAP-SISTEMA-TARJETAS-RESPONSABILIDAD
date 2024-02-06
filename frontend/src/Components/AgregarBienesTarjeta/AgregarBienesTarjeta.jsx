@@ -1,14 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
+import { useToast } from '../../hooks/useToast';
+
 import bienesRequests from '../../Requests/bienesRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 import empleadoRequests from '../../Requests/empleadoRequests';
-import { useToast } from '../../hooks/useToast';
+
 
 
 function AgregarBienesTarjeta() {
@@ -40,9 +42,17 @@ function AgregarBienesTarjeta() {
         setBienesPorAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
-    const handleAgregarTarjeta = () => {
+
+    const handleAgregarTarjeta = async () => {
         if (numeroTarjeta === '') return;
-        setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
+        // Verificación de que la tarjeta no exista ya
+        const numDisponible = await tarjetasRequests.numeroDisponible(numeroTarjeta).then(res => res.data);
+        if (!numDisponible || numerosTarjetas.includes(numeroTarjeta)) {
+            const error = `El numero de tarjeta ${numeroTarjeta} ya existe.`;
+            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
+        } else {
+            setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
+        }
         setNumeroTarjeta('');
     }
 
@@ -65,7 +75,7 @@ function AgregarBienesTarjeta() {
             setBienesPorAsignar([]);
             const milisegundos = 2500;
             toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: milisegundos});
-            setTimeout(() => navigate(-1), milisegundos);
+            navigate(-1);
         }
     }
 

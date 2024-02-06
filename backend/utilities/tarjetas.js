@@ -1,28 +1,27 @@
-const { mysql_exec_query } = require("../database/mysql/mysql_exec");
+const XlsxPopulate = require('xlsx-populate');
+const path = require('path');
 const { format } = require('date-fns');
-const PDFDocument = require('pdfkit');
 const _ = require('lodash');
+const { mysql_exec_query } = require('../database/mysql/mysql_exec');
+const { obtenerNombreJerarquico } = require('./unidadServicio');
 
 const opracionesTarjetas = {
     ASIGNACION: 'Asignacion',
     DESCARGO: 'Descargo'
 }
 
-const DIMENSION_TARJETA = {
-    LAYOUR: 'lanscape',
-    SIZE: 'A4',
-
-    // Especificaciones para la columna de descripciones
-    LINEAS_POR_PAGINA: 34,
-    CARACTERES_POR_LINEA: 98,
-
-    // Posiciones en el eje horizontal donde cominzan las columnas
-    POS_X_COL_FECHA: 22.6772,
-    POS_X_COL_CANTIDAD: 73.7008,
-    POS_X_COL_DESCRIPCION: 133.228,
-    POS_X_COL_DEBE: 487.5591,
-    POS_X_COL_HABER: 569.7638,	
-    POS_X_COL_SALDO: 649.1339,
+const FORMATO_TARJETA = {
+    LINEAS_POR_PAGINA: 39,
+    CARACTERES_POR_LINEA: 63,
+    FONT: 'Courier New',
+    FONT_SIZE: 9,
+    FILA_PRIMER_REGISTRO: 5,
+    COL_FECHA: 2,
+    COL_CANTIDAD: 3,
+    COL_DESCRIPCION: 4,
+    COL_DEBE: 5,
+    COL_HABER: 6,
+    COL_SALDO: 7,
 }
 
 
@@ -32,16 +31,16 @@ function getNoLineas(texto) {
 
 
 function formatearDescripcionBien(descripcion) {
-    const caracteresPorLinea = DIMENSION_TARJETA.CARACTERES_POR_LINEA;
+    const caracteresPorLinea = FORMATO_TARJETA.CARACTERES_POR_LINEA;
     const palabras = descripcion.split(' ');
     let resultado = '';
     let lineaActual = '';
     for (const palabra of palabras) {
-    if ((lineaActual + palabra).length > caracteresPorLinea) {
-        resultado += lineaActual.trim() + '\n';
-        lineaActual = '';
-    }
-    lineaActual += palabra + ' ';
+        if ((lineaActual + palabra).length > caracteresPorLinea) {
+            resultado += lineaActual.trim() + '\n';
+            lineaActual = '';
+        }
+        lineaActual += palabra + ' ';
     }
     resultado += lineaActual.trim();
     return resultado;
@@ -52,35 +51,39 @@ function getDescripcionRegistro(bienes) {
     if (!bienes.length) return '';
 
     if (bienes.length === 1) {
-        let descripcion = bienes[0].descripcion;
-        descripcion += `\nPrecio unitario: ${bienes[0].precio}`;
-        descripcion += `\nSCOIN No.: ${bienes[0].sicoin}`;
-        descripcion += `\nNo. de Serie: ${bienes[0].no_serie}`;
-        descripcion += `\nNo. de Inventario: ${bienes[0].no_inventario}`;
+        const bien = bienes[0];
+        let descripcion = bien.descripcion;
+        if (descripcion.trim().charAt(descripcion.length - 1) !== '.') descripcion += '.';
+        descripcion += ` Precio: ${bien.precio}. `;
+        if (bien.sicoin) descripcion += `No. de SICOIN: ${bien.sicoin}. `;
+        if (bien.no_serie) descripcion += `No. de Serie: ${bien.no_serie}. `;
+        if (bien.no_inventario) descripcion += `No. de Inventario: ${bien.no_inventario}.`;
         return descripcion;
     }
 
     let descripcionGrupo = bienes[0].descripcion;
-    descripcionGrupo += `\nPrecio unitario: ${bienes[0].precio}`;
+    if (descripcionGrupo.trim().charAt(descripcionGrupo.length - 1) !== '.') descripcionGrupo += '.';
+    descripcionGrupo += ` Precio unitario: ${bienes[0].precio}. `;
 
-    descripcionGrupo += `\nSCOIN Nos.: `;
-    for (const bien of bienes) {
-        descripcionGrupo += `${bien.sicoin} `;
+    const numerosSICOIN = bienes.map(bien => bien.sicoin);
+    if (numerosSICOIN.length) {
+        descripcionGrupo += 'Nos. de SCOIN: ';
+        descripcionGrupo += numerosSICOIN.join(', ') + '. ';    
     }
-    descripcionGrupo.trim();
 
-    descripcionGrupo += `\nNos. de Serie: `;
-    for (const bien of bienes) {
-        descripcionGrupo += `${bien.no_serie} `;
+    const numerosSerie = bienes.map(bien => bien.no_serie);
+    if (numerosSerie.length) {
+        descripcionGrupo += 'Nos. de Serie: ';
+        descripcionGrupo += numerosSerie.join(', ') + '. ';
     }
-    descripcionGrupo.trim();
 
-    descripcionGrupo += `\nNos. de Inventarios: `;
-    for (const bien of bienes) {
-        descripcionGrupo += `${bien.no_inventario} `;
+    const numerosInventario = bienes.map(bien => bien.no_inventario);
+    if (numerosInventario.length) {
+        descripcionGrupo += 'Nos. de Inventarios: ';
+        descripcionGrupo += numerosInventario.join(', ') + '.';
     }
-    descripcionGrupo.trim();
-    return descripcionGrupo;
+
+    return descripcionGrupo.trim();
 }
 
 
@@ -152,8 +155,8 @@ async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
 				// Si no cabe en el lado reverso, se agrega una nueva tarjeta
 				noTarjetasNecesarioas += 1;
 				// Se reinicia el espacio de los lados de la tarjeta, ya que se ha creado una nueva
-				espacioRestanteAnverso = DIMENSION_TARJETA.LINEAS_POR_PAGINA;
-				espacioRestanteReverso = DIMENSION_TARJETA.LINEAS_POR_PAGINA;
+				espacioRestanteAnverso = FORMATO_TARJETA.LINEAS_POR_PAGINA;
+				espacioRestanteReverso = FORMATO_TARJETA.LINEAS_POR_PAGINA;
 				// Se coloca el bien en el lado anverso de la nueva tarjeta
 				espacioRestanteAnverso -=  lineasRegistro;
 			}
@@ -255,11 +258,32 @@ async function colocarRegistro(tarjeta, registro, action) {
 }
 
 
-async function crearTarjeta(empleado, numeroTarjeta, saldoQueViene) {
-    let query = `
+async function crearTarjeta(empleado, numeroTarjeta, tarjetaAnterior = null) {
+    let id_tarjeta_anterior = null;
+    let saldo_que_viene = 0;
+
+    if (tarjetaAnterior) {
+        id_tarjeta_anterior = tarjetaAnterior.id_tarjeta_responsabilidad;
+        saldo_que_viene = tarjetaAnterior.saldo;
+
+        // Se deshabilita la tarjeta anterior
+        tarjetaAnterior.lineas_restantes_reverso = 0;
+        let query = `
+            UPDATE tarjeta_responsabilidad
+            SET lineas_restantes_reverso = 0
+            WHERE id_tarjeta_responsabilidad = ${tarjetaAnterior.id_tarjeta_responsabilidad};
+        `;
+        await mysql_exec_query(query);
+    }
+
+    const nombreJerarquicoUnidad = await obtenerNombreJerarquico(empleado.id_unidad_servicio);
+
+    // Se crea la nueva tarjeta
+    query = `
         INSERT INTO tarjeta_responsabilidad (
             numero,
             saldo_que_viene,
+            saldo_anverso,
             unidad_servicio,
             departamento_guate,
             municipio,
@@ -269,19 +293,22 @@ async function crearTarjeta(empleado, numeroTarjeta, saldoQueViene) {
             saldo,
             lineas_restantes_anverso,
             lineas_restantes_reverso,
+            id_tarjeta_anterior,
             id_empleado
         ) VALUES (
             '${numeroTarjeta}',
-            ${saldoQueViene},
-            'Unidad de Servicio Pendiente',
+            ${saldo_que_viene},
+            ${saldo_que_viene},
+            '${nombreJerarquicoUnidad}',
             '${empleado.departamento_guate}',
             '${empleado.municipio}',
-            '${empleado.nombre}',
+            '${empleado.nombres + ' ' + empleado.apellidos}',
             '${empleado.nit}',
             '${empleado.cargo}',
-            ${saldoQueViene},
-            ${DIMENSION_TARJETA.LINEAS_POR_PAGINA},
-            ${DIMENSION_TARJETA.LINEAS_POR_PAGINA},
+            ${saldo_que_viene},
+            ${FORMATO_TARJETA.LINEAS_POR_PAGINA},
+            ${FORMATO_TARJETA.LINEAS_POR_PAGINA},
+            ${id_tarjeta_anterior},
             ${empleado.id_empleado}
         );
     `;
@@ -291,6 +318,17 @@ async function crearTarjeta(empleado, numeroTarjeta, saldoQueViene) {
         WHERE id_tarjeta_responsabilidad = ${insertId}
     `;
     const [tarjeta] = await mysql_exec_query(query);
+
+    if (tarjetaAnterior) {
+        // Se actualiza la tarjeta anterior para que apunte a la nueva tarjeta como su sucesora
+        let query = `
+            UPDATE tarjeta_responsabilidad
+            SET id_tarjeta_posterior = ${insertId}
+            WHERE id_tarjeta_responsabilidad = ${tarjetaAnterior.id_tarjeta_responsabilidad};
+        `;
+        await mysql_exec_query(query);
+    }
+
     return tarjeta;
 }
 
@@ -316,59 +354,120 @@ async function obtenerTarjeta(id_tarjeta, conRegistros = false) {
 }
 
 
-function generarPDF(tarjeta, fecha, dataCallback, endCallback) {
-    const doc = new PDFDocument({
-        layout: 'lanscape',
-        size: 'A4',
-    });
-    doc.on('data', dataCallback);
-    doc.on('end', endCallback);
+function getXPosition(doc, texto, posXBegin, posXEnd) {
+    const width = doc.widthOfString(texto);
+    return (posXBegin + posXEnd)/2 - width/2 ;
+}
 
-    let posX = 100;
-    let posY = 100;
-    const offset =  10;
 
-    let enReverso = false;    
+async function generarExcel(tarjeta, fecha) {
+    const rutaPlantilla = path.join(__dirname, '../PlantillasExcel/TarjetaResponsabilidad.xlsx');
+    const excel = await XlsxPopulate.fromFileAsync(rutaPlantilla);
+    let hoja = excel.sheet(0);
+
+    let saldoSalienteAnverso = 0;
     for (const registro of tarjeta.registros) {
-        // Si el registro va en el reverso y aun no se esta en el reverso entonces, se crea 
-        // una nueva pagina para el reverso y se coloca en ella
-        if (!registro.anverso && !enReverso) {
-            doc.addPage();
-            enReverso = true;
-            posY = 0;
-        }
-
-        // Se determina si el registro debe ser impreso a color o no, si la fecha es null se 
-        // imprimen todos los registros a color, de lo contrario unicamente si los reigstros
-        // tienen fecha mayor a la indicada.
-        if (fecha === null || registro.fecha >= fecha) {
-            doc.fillColor('#000000');
-        } else {
-            doc.fillColor('white');
-        }
-
-        // Fecha del Registro
-        posX = DIMENSION_TARJETA.POS_X_COL_FECHA;
-        const fechaString = format(new Date(registro.fecha), 'dd/MM/yyyy');
-        doc.fontSize(10).text(fechaString, posX, posY);
-
-        // Cantidad de bienes en el registro
-        posX = DIMENSION_TARJETA.POS_X_COL_CANTIDAD;
-        const cantidad = registro.cantidad.toFixed(2);
-        doc.fontSize(10).text(cantidad, posX, posY);
-
-        // Descripción del registro
-        posX = DIMENSION_TARJETA.POS_X_COL_DESCRIPCION;
-        doc.fontSize(10).text(registro.descripcion, posX, posY);
-
-        posY += doc.heightOfString(registro.descripcion) + 10;
+        if (registro.anverso) { 
+            saldoSalienteAnverso += registro.ingreso? registro.precio : -1 * registro.precio;
+        } 
     }
 
-    // Agrega la pagina del reverso en caso de no haberla utilizado
-    if (!enReverso) doc.addPage();
+    let fila = FORMATO_TARJETA.FILA_PRIMER_REGISTRO;
+    let columna = FORMATO_TARJETA.COL_DESCRIPCION;
 
-    doc.end();
+    // Se coloca Nota del saldo entrante en la tarjeta
+    let notaSaldoEntrante = 'SALDO QUE VIENE...';
+    if (tarjeta.id_tarjeta_anterior !== null) {
+        const tarjetaAnterior = await obtenerTarjeta(tarjeta.id_tarjeta_anterior);
+        notaSaldoEntrante = `SALDO QUE VIENE DE LA TARJETA No. ${tarjetaAnterior.numero} ...`;
+    }
+    hoja.row(fila).cell(columna).value(notaSaldoEntrante);
+    const saldoEntranteString = tarjeta.saldo_que_viene.toFixed(2).toString();
+    columna = FORMATO_TARJETA.COL_SALDO;
+    hoja.row(fila).cell(columna).value(saldoEntranteString);
+    fila += 1;
+
+    let enAnverso = true;
+    let saldoAcumulado = tarjeta.saldo_que_viene;
+    for (const registro of tarjeta.registros) {
+        // Si el registro va en el reverso y aun se esta en el anverso, se cambia al reverso
+        if (!registro.anverso && enAnverso) {
+            // Antes de cambiar al reverso se coloca la nota del saldo saliente en el anverso
+            const saldoSalienteAnversoString = tarjeta.saldo_anverso.toFixed(2).toString();
+            columna = FORMATO_TARJETA.COL_DESCRIPCION;
+            const celdaDescripcionSaldoSalienteAnverso = hoja.row(fila).cell(columna);
+            celdaDescripcionSaldoSalienteAnverso.style({ horizontalAlignment: 'right' });
+            celdaDescripcionSaldoSalienteAnverso.value('SALDO QUE VA...');
+            columna = FORMATO_TARJETA.COL_SALDO;
+            hoja.row(fila).cell(columna).value(saldoSalienteAnversoString);
+
+            // Se cambia al reverso y se reinicia la posicion de fila
+            enAnverso = false;
+            hoja = excel.sheet(1);
+            fila = FORMATO_TARJETA.FILA_PRIMER_REGISTRO;
+
+            // Se coloca Nota del nota del saldo entrante al reverso
+            columna = FORMATO_TARJETA.COL_DESCRIPCION;
+            const celdaDescripcionSaldoEntranteReverso = hoja.row(fila).cell(columna);
+            celdaDescripcionSaldoEntranteReverso.style({ horizontalAlignment: 'right' });
+            celdaDescripcionSaldoEntranteReverso.value('SALDO QUE VIENE...');            
+            columna = FORMATO_TARJETA.COL_SALDO;
+            hoja.row(fila).cell(columna).value(saldoSalienteAnversoString);
+            fila += 1;
+        }
+
+        // Columna Fecha
+        columna = FORMATO_TARJETA.COL_FECHA;
+        const fechaString = format(new Date(registro.fecha), 'dd/MM/yyyy');
+        hoja.row(fila).cell(columna).value(fechaString);
+
+        // Columna Cantidad
+        columna = FORMATO_TARJETA.COL_CANTIDAD;
+        const cantidadString = registro.cantidad.toString();
+        hoja.row(fila).cell(columna).value(cantidadString);
+
+        // Columna de Debe o Haber
+        const montoString = registro.precio.toFixed(2).toString();
+        if (registro.ingreso) {
+            columna = FORMATO_TARJETA.COL_DEBE;
+        } else {
+            columna = FORMATO_TARJETA.COL_HABER;
+        }
+        hoja.row(fila).cell(columna).value(montoString);
+
+        // Columna Saldo
+        columna = FORMATO_TARJETA.COL_SALDO;
+        saldoAcumulado = registro.ingreso? saldoAcumulado + registro.precio : saldoAcumulado - registro.precio;
+        const saldoAcumuladoString = saldoAcumulado.toFixed(2).toString();
+        hoja.row(fila).cell(columna).value(saldoAcumuladoString);
+
+        // Columna Descripción
+        columna = FORMATO_TARJETA.COL_DESCRIPCION;
+        const lineasDescripcion = registro.descripcion.split('\n');
+        for (const linea of lineasDescripcion) {
+            hoja.row(fila).cell(columna).value(linea);
+            fila += 1;
+        }
+    }
+
+    if (tarjeta.lineas_restantes_reverso === 0 && tarjeta.id_tarjeta_posterior !== null) {
+        // Se coloca la nota del saldo saliente del reverso tarjeta si ya se lleno el reverso
+        const tarjetaPosterior = await obtenerTarjeta(tarjeta.id_tarjeta_posterior);
+        let descripcionSaldoSalienteReverso = `SALDO QUE VA A LA TARJETA No. ${tarjetaPosterior.numero} ...`;
+
+        columna = FORMATO_TARJETA.COL_DESCRIPCION;
+        const celdaDescripcionSaldoSalienteReverso = hoja.row(fila).cell(columna);
+        celdaDescripcionSaldoSalienteReverso.style({ horizontalAlignment: 'right' });
+        celdaDescripcionSaldoSalienteReverso.value(descripcionSaldoSalienteReverso);
+        columna = FORMATO_TARJETA.COL_SALDO;
+        const saldoSalienteReversoString = tarjeta.saldo.toFixed(2).toString();
+        hoja.row(fila).cell(columna).value(saldoSalienteReversoString);
+    }
+
+    return excel;
 }
+
+
 
 async function generarRegistrosDesvinculados(idsBienes, action) {
     // Obtener la información de los bienes de los cuales se crearan registros
@@ -386,33 +485,37 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
     const biensPorModelo = _.groupBy(bienes, 'id_modelo');
 
     // Se generan los registros
-    const registros = Object.values(biensPorModelo).map(bienes => {
+    const registros = [];
+    for (let bienes of Object.values(biensPorModelo)) {
         let descripcionRegistro = getDescripcionRegistro(bienes);
         if (action.type === 'Traspaso') {
+            const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
             const plantillaNumeroTarjeta = '╦'.repeat(8);
+            let nota = '';
             if (!action.payload.esRecepcion) {
-                const nota = `Se descarga el contenido del presente registro de la tarjeta No. ${plantillaNumeroTarjeta + 'E'} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}`;
-                descripcionRegistro = nota + '. ' + descripcionRegistro;
+                nota = `Se descarga el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
             } else {
-                const nota = `Se recibe el contenido del presente registro de la tarjeta No. ${plantillaNumeroTarjeta + 'E'}`;
-                descripcionRegistro = nota + '. ' + descripcionRegistro;
+                nota = `Se recibe el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero}: `;
             }
+            descripcionRegistro = nota + descripcionRegistro;
         }
 
-        const descripcionConFormato = formatearDescripcionBien(descripcionRegistro);
-        return {
-            descripcion: descripcionConFormato,
+        const descripcionFormateada = formatearDescripcionBien(descripcionRegistro);
+        const cantLineas = getNoLineas(descripcionFormateada);
+
+        registros.push({
+            descripcion: descripcionFormateada,
             anverso: true,
             ingreso: true,
-            lineas: getNoLineas(descripcionRegistro),
+            lineas: cantLineas,
             precio: bienes.reduce((precio, bien) => precio + parseFloat(bien.precio), 0),
             cantidad: bienes.length,
             id_tarjeta_emisora: null,
             id_tarjeta_receptora: null,
             id_tarjeta_responsabilidad: null,
             bienes
-        };
-    });
+        });
+    }
 
     return registros;
 }
@@ -426,5 +529,5 @@ module.exports = {
     crearTarjeta,
     obtenerTarjeta,
     generarRegistrosDesvinculados,
-    generarPDF
+    generarExcel
 }
