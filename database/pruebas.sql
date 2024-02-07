@@ -13,4 +13,7 @@ select * from bien;
 select * from kit;
 select * from registro_bien;
 
-select  * from unidad_jerarquizada
+
+            SELECT unidad_jerarquizada.*
+            FROM unidad_jerarquizada
+            WHERE id_unidad_servicio = 1;

@@ -9,7 +9,7 @@ import AgregarBienesTarjeta from '../Components/AgregarBienesTarjeta/AgregarBien
 import TraspasoBienes from '../Components/TraspasoBienes/TraspasoBienes';
 import DesasignacionBienes from '../Components/DesasignacionBienes/DesasignacionBienes';
 import TarjetasEmpleado from '../Components/TarjetasEmpleado/TarjetasEmpleado';
-import GestionDepartamentos from '../Components/GestionDepartamentos/GestionDepartamentos';
+import GestionDepartamentos from '../Components/Departamentos/GestionDepartamentos/GestionDepartamentos';
 import GestionProgramas from '../Components/GestionProgramas/GestionProgramas';
 import RegistroEmpleado from '../Components/Empleados/RegistroEmpleado/RegistroEmpleado';
 import RegistroAuxiliar from '../Components/Auxiliares/RegistroAuxiliar/RegistroAuxiliar';

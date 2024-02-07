@@ -12,9 +12,9 @@ import empleadoRequests from '../../../Requests/empleadoRequests';
 
 function RegistroAuxiliar({ onAuxiliarRegistrado }) {
     const auxiliarFormSchema = yup.object({
-        dpi: yup.string().required('DPI Requerido'),
+        dpi: yup.string().required('DPI requerido'),
         nombres: yup.string().required('Nombres requeridos'),
-        apellidos: yup.string().required('Apellidos Requeridos'),
+        apellidos: yup.string().required('Apellidos requeridos'),
         correo: yup.string().email('Correo inválido').required('Correo requerido'),
         contrasenia: yup.string().required('Contraseña requerida'),
         confirmContrasenia: yup.string().required('Confirmación requerida'),
