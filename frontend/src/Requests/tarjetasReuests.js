@@ -9,6 +9,14 @@ const tarjetasRequests = {
         }).then(response => response.json());
     },
 
+    getRegistrosTarjeta: async (id_tarjeta_responsabilidad) => {
+        let url = `http://localhost:5000/tarjetas/registros-tarjeta/${id_tarjeta_responsabilidad}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET',
+        }).then(response => response.json());
+    },
+
     getNumeroTarjetasNecesarias: async (body) => {
         let url = 'http://localhost:5000/tarjetas/calcular-numero-tarjetas-necesarias';
         return await fetch(url, {
@@ -34,6 +42,7 @@ const tarjetasRequests = {
 
         }).then(response => response.blob());
     },
+    
 
     numeroDisponible: async (id_tarjeta_responsabilidad) => {
         let url = `http://localhost:5000/tarjetas/numero-disponible`;

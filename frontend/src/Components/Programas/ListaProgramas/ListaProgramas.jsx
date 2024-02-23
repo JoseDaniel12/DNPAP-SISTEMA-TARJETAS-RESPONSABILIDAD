@@ -6,7 +6,7 @@ import { FilterMatchMode } from 'primereact/api';
 import { Column } from 'primereact/column';
 
 
-function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoEdicion, onSelectModoEliminacion }) {
+function ListaProgramas({ programas, onSelectPrograma, onSelectModoEdicion, onSelectModoEliminacion }) {
     const [filaSelccionada, setFilaSelccionada] = useState(null);
 
     // ______________________________  Filtros ______________________________
@@ -33,7 +33,7 @@ function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoE
 
     const handleSelectionRow = (e) => {
         setFilaSelccionada(e.value); 
-        onSelectDepartamento(e.value.id_unidad_servicio);
+        onSelectPrograma(e.value.id_unidad_servicio);
     };
    
 
@@ -60,7 +60,7 @@ function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoE
                     <span className='p-input-icon-left flex align-items-center'>
                         <i className='pi pi-search' />
                         <InputText
-                            id='busquedaDepartamento'
+                            id='busquedaPrograma'
                             value={globalFilterValue}
                             placeholder='Buscar por valor clave'
                             onChange={onGlobalFilterChange} 
@@ -97,7 +97,7 @@ function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoE
     return (
         <div className='col-12'>
             <DataTable 
-                value={departamentos}
+                value={programas}
                 selectionMode='single'
                 selection={filaSelccionada}
                 onSelectionChange={handleSelectionRow}
@@ -106,7 +106,7 @@ function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoE
                 paginator
                 paginatorPosition='top'
                 paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
-                currentPageReportTemplate='Departamento {first} a {last} de  {totalRecords}'
+                currentPageReportTemplate='Programa {first} a {last} de  {totalRecords}'
                 rows={20}
                 scrollable
                 scrollHeight='268px'
@@ -122,4 +122,4 @@ function ListaDepartamentos({ departamentos, onSelectDepartamento, onSelectModoE
     );
 }
 
-export default ListaDepartamentos;
+export default ListaProgramas;

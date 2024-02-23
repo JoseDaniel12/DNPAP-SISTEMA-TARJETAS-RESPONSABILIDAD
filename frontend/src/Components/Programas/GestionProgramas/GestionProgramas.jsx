@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import RegistroDepartamento from '../RegistroDepartamento/RegistroDepartamento';
-import EdicionDepartamento from '../EdicionDepartamento/EdicionDepartamento';
-import ListaDepartamentos from '../ListaDepartamentos/ListaDepartamentos';
+import RegistroPrograma from '../RegistroPrograma/RegistroPrograma';
+import EdicionPrograma from '../EdicionPrograma/EdicionPrograma';
+import ListaProgramas from '../ListaProgramas/ListaProgramas';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 
@@ -10,17 +10,19 @@ import unidadesServicioRequests from '../../../Requests/unidadesServicioRequests
 import { tiposUnidadesServicio } from '../../../types/unidadesServicio';
 
 
-function GestionDepartamentos() {
+function GestionProgramas() {
     const toast = useToast('bottom-right');
 
-    // Departamentos
-    const [departamentos, setDepartamentos] = useState([]);
+    // Programas
+    const [programas, setProgramas] = useState([]);
+    const [idProgramaSeleccionado, setIdProgramaSeleccionado] = useState(null);
+
     const [enEdicion, setEnEdicion] = useState(false);
-    const [idDepartamentoSeleccionado, setIdDepartamentoSeleccionado] = useState(null);
+    const [departamentos, setDepartamentos] = useState([]);
 
 
-    const onSelectDepartamento = (idDepartamento) => {
-        setIdDepartamentoSeleccionado(idDepartamento);
+    const onSelectPrograma = (idPrograma) => {
+        setIdProgramaSeleccionado(idPrograma);
     }
 
 
@@ -29,30 +31,32 @@ function GestionDepartamentos() {
     }
 
 
-    const onDepartamentoRegistrado = () => {
-        setDepartamentos(prevDepartamentos => [...prevDepartamentos, departamento]);
+    const onProgramaRegistrado = (programa) => {
+        setProgramas(prevProgramas => [...prevProgramas, programa]);
     }
 
 
     const onCancelEdicion = () => {
-        setIdDepartamentoSeleccionado(null);
+        setIdProgramaSeleccionado(null);
         setEnEdicion(false);
     }
 
 
-    const onDepartamentoEditado = (departamento) => {
-        setDepartamentos(prevDepas => prevDepas.map(depa => {
-            if (depa.id_unidad_servicio !== departamento.id_unidad_servicio) return depa;
-            return departamento;
+    const onProgramaEditado = (programaEditado) => {
+        setProgramas(prevProgramas => prevProgramas.map(programa => {
+            if (programa.id_unidad_servicio !== programaEditado.id_unidad_servicio) return programa;
+            return programaEditado;
         }));
     };
 
 
-    const eliminarDepartamento = (idDepartamento) => {
-        unidadesServicioRequests.eliminarDepartamento(idDepartamento).then(response => {
+    const eliminarPrograma = (idPrograma) => {
+        unidadesServicioRequests.eliminarUnidadServicio(idPrograma).then(response => {
             if (!response.error) {
-                setDepartamentos(prevDepas => prevDepas.filter(depa => depa.id_unidad_servicio !== idDepartamento));
-                toast.current.show({severity: 'info', summary: 'Eliminación de Departamento', detail: 'Eliminación exitosa.', life: 3000});
+                setProgramas(prevProgramas => prevProgramas.filter(programa => programa.id_unidad_servicio !== idPrograma));
+                toast.current.show({severity: 'info', summary: 'Eliminación de Programa', detail: 'Eliminación exitosa.', life: 3000});
+            } else  {
+                toast.current.show({severity: 'error', summary: 'Eliminación de Departamento', detail: response.error, life: 5000});
             }
         });
     };
@@ -61,17 +65,21 @@ function GestionDepartamentos() {
     const onSelectModoEliminacion = () => {
         setEnEdicion(false);
         confirmDialog({
-            header: 'Eliminación de Departamento',
-            message: 'Estas Seguro de eliminar este Departamento?',
+            header: 'Eliminación de Programa',
+            message: 'Estas Seguro de eliminar este Programa?',
             icon: 'pi pi-info-circle',
             acceptClassName: 'p-button-danger',
-            accept: () => eliminarDepartamento(idDepartamentoSeleccionado),
+            accept: () => eliminarPrograma(idProgramaSeleccionado),
             reject: () => {}
         });
     }
 
 
     useEffect(() => {
+        unidadesServicioRequests.getUnidadesServicio(tiposUnidadesServicio.PROGRAMA).then(response => {
+            setProgramas(response.data.unidadesServicio);
+        });
+
         unidadesServicioRequests.getUnidadesServicio(tiposUnidadesServicio.DEPARTAMENTO).then(response => {
             setDepartamentos(response.data.unidadesServicio);
         });
@@ -83,26 +91,27 @@ function GestionDepartamentos() {
             <ConfirmDialog dismissableMask={true} />
 
             <div className='col-12 text-center'>
-                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestión de Departamentos</h1>
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestión de Programas</h1>
             </div>
 
             <div className='col-12 md:col-4'>
                 {
                     enEdicion
-                    ? <EdicionDepartamento
-                        idDepartamentoSeleccionado={idDepartamentoSeleccionado}
+                    ? <EdicionPrograma
+                        idProgramaSeleccionado={idProgramaSeleccionado}
                         onCancelEdicion={onCancelEdicion}
-                        onDepartamentoEditado={onDepartamentoEditado}
+                        onProgramaEditado={onProgramaEditado}
+                        departamentos={departamentos}
                     />
-                    : <RegistroDepartamento
-                        onDepartamentoRegistrado={onDepartamentoRegistrado}
+                    : <RegistroPrograma
+                        onProgramaRegistrado={onProgramaRegistrado}
                     />
                 }
             </div>  
             <div className='col-12 md:col-8'>
-                <ListaDepartamentos 
-                    departamentos={departamentos}
-                    onSelectDepartamento={onSelectDepartamento}
+                <ListaProgramas 
+                    programas={programas}
+                    onSelectPrograma={onSelectPrograma}
                     onSelectModoEdicion={onSelectModoEdicion}
                     onSelectModoEliminacion={onSelectModoEliminacion}
                 />
@@ -111,4 +120,4 @@ function GestionDepartamentos() {
     );
 }
 
-export default GestionDepartamentos;
+export default GestionProgramas;

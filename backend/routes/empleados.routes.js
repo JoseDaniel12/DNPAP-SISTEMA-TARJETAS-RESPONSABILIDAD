@@ -3,13 +3,12 @@ const _ = require('lodash');
 const HTTPResponseBody  = require('./HTTPResponseBody');
 const { encriptar } = require('../helpers/encryption');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
-const { obtenerUltimaTarjeta } = require('../utilities/empleado');
 const { 
     colocarRegistro, crearTarjeta,
     getDescripcionRegistro, getNoLineas, formatearDescripcionBien,
     generarRegistrosDesvinculados
 } = require('../utilities/tarjetas');
-const { determinarTarjetasRequeridas } = require('../utilities/tarjetas');
+const { ejecutarAccionTarjeta } = require('../utilities/tarjetas');
 const userRoles = require('../types/userRoles');
 const { parse } = require('querystring');
 const router = express.Router();
@@ -118,52 +117,85 @@ router.delete('/eliminar-empleado/:id_empleado', async (req, res) => {
 });
 
 
-router.post('/crear-empleado', async (req, res) => {
+router.put('/registar-empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        const { 
-            dpi, 
-            nit, 
-            cargo, 
-            nombres, 
-            apellidos, 
-            correo, 
-            contrasenia, 
-            id_unidad_servicio,
-            darPermisosAuxiliar
-        } = req.body;
+        const { dpi, nit, nombres, apellidos, id_unidad_servicio, cargo } = req.body;
 
-        const contraseniaEncriptada = bcrypt.hashSync(contrasenia, 10);
-
+        // Se obtiene el id del rol de trabajador
         let query = `
+            SELECT id_rol FROM rol
+            WHERE nombre = '${userRoles.ORDINARIO}';
+        `;
+        const [{ id_rol }] = await mysql_exec_query(query);
+
+
+        query = `
             INSERT INTO empleado (
-                dpi, 
-                nit, 
-                cargo, 
+                dpi,
+                nit,
                 nombres,
-                apellidos, 
-                correo,
-                contrasenia, 
-                id_unidad_servicio)
-            VALUES (
+                apellidos,
+                cargo,
+                id_rol,
+                id_unidad_servicio
+            ) VALUES (
                 '${dpi}',
                 '${nit}',
-                '${cargo}',
                 '${nombres}',
                 '${apellidos}',
-                '${correo}',
-                '${contraseniaEncriptada}',
-                ${id_unidad_servicio},
-                ${darPermisosAuxiliar}
+                '${cargo}',
+                ${id_rol},
+                '${id_unidad_servicio}'
             );
         `;
-        const { insert: id_empleado } = await mysql_exec_query(query);
+        const { insertId: id_empleado } = await mysql_exec_query(query);
+        const empleado = {
+            ...req.body,
+            id_empleado
+        }
+        respBody.setData({empleado});
 
-        respBody.setData(empleado);
         res.status(200).send(respBody.getLiteralObject());
     } catch(error) {
+        console.log(error);
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.put('/editar-empleado/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_empleado = parseInt(req.params.id_empleado);
+        const { dpi, nit, nombres, apellidos, id_unidad_servicio, cargo } = req.body;
+
+        let query = `
+            UPDATE empleado
+            SET
+                dpi = '${dpi}',
+                nit = '${nit}',
+                nombres = '${nombres}',
+                apellidos = '${apellidos}',
+                cargo = '${cargo}',
+                id_unidad_servicio = '${id_unidad_servicio}'
+            WHERE id_empleado = ${id_empleado};
+        `;
+        await mysql_exec_query(query);
+
+        // Obtener el empleado actualizado
+        query = `
+            SELECT *
+            FROM empleado
+            WHERE id_empleado = ${id_empleado};
+        `;
+        const [empleado] = await mysql_exec_query(query);
+        respBody.setData({empleado});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
+        return res.status(500).json({error: error.toString()});
     }
 });
 
@@ -232,13 +264,7 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
             tarjeta.registros = registros;
             
         }
-
-        // Indexar las tarjetas por su numero
-        const tarjetasPorNumero = _.keyBy(tarjetas, 'numero');
-        respBody.setData(tarjetasPorNumero);
-
-
-
+        respBody.setData(tarjetas);
         res.status(200).send(respBody.getLiteralObject());
     } catch(error) {
         console.log(error)
@@ -246,51 +272,6 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
         res.status(500).send(respBody.getLiteralObject());
     }
 });
-
-
-const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, action) => {
-    // Obtener el empleado al cual se le cargaran los registros
-    const [empleado] = await mysql_exec_query(`
-        SELECT
-            empleado.*,
-            unidad_servicio.nombre_nuclear AS unidad_servicio_nuclear,
-            municipio.nombre AS municipio,
-            departamento_guate.nombre AS departamento_guate
-        FROM empleado
-        INNER JOIN unidad_servicio ON empleado.id_unidad_servicio = unidad_servicio.id_unidad_servicio
-        INNER JOIN municipio ON unidad_servicio.id_municipio = municipio.id_municipio
-        INNER JOIN departamento_guate ON municipio.id_departamento_guate = departamento_guate.id_departamento_guate
-        WHERE id_empleado = ${id_empleado}
-        LIMIT 1;
-    `);
-
-    // Obtener la ultima tarjeta del empleado
-    let ultimaTarjeta = await obtenerUltimaTarjeta(id_empleado);
-    if (!ultimaTarjeta) {
-        const numeroTarjeta = numerosTarjetas.shift();
-        ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta);
-    }
-
-    // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
-    // tarjeta emisora y receptora
-    for (const registro of registros) {
-	    // Por defecto se inteara colocar en el anverso
-		if (registro.lineas > ultimaTarjeta.lineas_restantes_anverso) {
-            // Si no cabe en el lado anverso, verificar si cabe en el lado reverso
-			if (registro.lineas <= ultimaTarjeta.lineas_restantes_reverso) {
-				// Se coloca en el lado reverso, esto deshabilitará el lado anverso al colocarse
-                registro.anverso = false;
-			} else {
-				// Si no cabe en el lado reverso, se crea una nueva tarjeta para colocar el bien
-                const numeroTarjeta = numerosTarjetas.shift();
-                ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, ultimaTarjeta);
-			}
-        }
-
-        // Una vez completa la información del registro se coloca en la tarjeta correspondiente
-        await colocarRegistro(ultimaTarjeta, registro, action);
-	}
-}
 
 
 router.post('/asignar-bienes', async (req, res) => {
@@ -350,8 +331,8 @@ router.post('/traspasar-bienes', async (req, res) => {
                 }
             };
             const idsBienes = biensPorTarjeta[tarjeta].map(bien => bien.id_bien);
-            const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor, actionTraspasoEmisor);
-            const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor, actionTraspasoRecepetor);
+            const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor);
+            const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor);
     
             // Se cargan los bienes al receptor, aqui se establece la tarjeta receptora de los registros
             await ejecutarAccionTarjeta(idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
@@ -365,8 +346,8 @@ router.post('/traspasar-bienes', async (req, res) => {
             await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
         }
 
-        respBody.setMessage('Bienes traspasados correctamente');
-        res.send(respBody.getLiteralObject());
+        respBody.setMessage('Bienes traspasados correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
     } catch(error) {
         console.log(error)
         respBody.setError(error.toString());
@@ -388,6 +369,34 @@ router.post('/desasignar-bienes', async (req, res) => {
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
     }
+});
+
+
+router.post('/comentar-tarjeta/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_empleado = parseInt(req.params.id_empleado);
+        const { numerosTarjetas, comentario } = req.body;
+
+        // Se formatea el comentario que ira en la descripción del registro
+        const descripcionFormateada = formatearDescripcionBien(comentario);
+        const cantLineas = getNoLineas(descripcionFormateada);
+        const registro = {
+            descripcion: descripcionFormateada,
+            lineas: cantLineas,
+            es_nota: true  
+        };
+        
+        const tarjetasConNuevosRegistros = await ejecutarAccionTarjeta(id_empleado, [registro], numerosTarjetas, { type: 'Comentario' });
+        const tarjetaConNuevoRegistro = Object.values(tarjetasConNuevosRegistros)[0];
+        respBody.setData(tarjetaConNuevoRegistro);
+        respBody.setMessage('Comentario agregado correctamente.');
+        return res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
 });
 
 

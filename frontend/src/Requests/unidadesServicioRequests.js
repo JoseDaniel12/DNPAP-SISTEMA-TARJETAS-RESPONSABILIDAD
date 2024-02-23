@@ -37,7 +37,7 @@ const unidadesServicioRequests = {
         const url = `http://localhost:5000/unidadesServicio/registrar-departamento`;
         return await fetch(url, {
             ...requestSettings,
-            method: 'PUT',
+            method: 'POST',
             body: JSON.stringify(body),
         }).then(response => response.json());
     },
@@ -51,8 +51,26 @@ const unidadesServicioRequests = {
         }).then(response => response.json());
     },
 
-    eliminarDepartamento: async (idDepartamento) => {
-        const url = `http://localhost:5000/unidadesServicio/eliminar-departamento/${idDepartamento}`;
+    registrarPrograma: async (body) => {
+        const url = `http://localhost:5000/unidadesServicio/registrar-programa`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'POST',
+            body: JSON.stringify(body),
+        }).then(response => response.json());
+    },
+
+    editarPrograma: async (idPrograma, body) => {
+        const url = `http://localhost:5000/unidadesServicio/editar-programa/${idPrograma}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+            body: JSON.stringify(body),
+        }).then(response => response.json());
+    },
+
+    eliminarUnidadServicio: async (idUnidad) => {
+        const url = `http://localhost:5000/unidadesServicio/eliminar-unidadesServicio/${idUnidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'DELETE',

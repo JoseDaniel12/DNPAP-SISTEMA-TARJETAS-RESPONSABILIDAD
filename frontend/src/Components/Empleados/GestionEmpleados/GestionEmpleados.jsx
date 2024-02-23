@@ -6,24 +6,23 @@ import { InputText } from 'primereact/inputtext';
 import { DataTable } from 'primereact/datatable';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Column } from 'primereact/column';
-import { useAuth } from '../../../Auth/Auth'
+import { ConfirmDialog } from 'primereact/confirmdialog';
+import { confirmDialog } from 'primereact/confirmdialog';
+
 
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
+
 function GestionEmpleados() {
     const navigate = useNavigate();
-    const { loginData } = useAuth();
-    const editable = true;
-    // const editable = loginData?.usuario.tipo_usuario === 'AUXILIAR';
 
-    // Filtros de la tabla de empleados
+    const [empleados, setEmpleados] = useState([]);
+    const [filaSelccionada, setFilaSelccionada] = useState(null);
+
+    // ______________________________  Filtros ______________________________
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [filters, setFilters] = useState(null);
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
-    // Empleados
-    const [empleados, setEmpleados] = useState([]);
-    const [filaSelccionada, setFilaSelccionada] = useState(null);
 
 
     const initFilters = () => {
@@ -47,6 +46,7 @@ function GestionEmpleados() {
         setFilters(_filters);
         setGlobalFilterValue(value);
     };
+    // ______________________________________________________________________
 
 
     const handleGestionarBienesTarjetas = () => {
@@ -54,6 +54,43 @@ function GestionEmpleados() {
         const empleado = empleados.find(e => e.id_empleado === filaSelccionada.id_empleado);
         navigate('/tarjetas-empleado', { state: { empleado } });
     };
+
+
+    const handleEditarEmpleado = () => {
+        if (!filaSelccionada) return;
+        const empleado = empleados.find(e => e.id_empleado === filaSelccionada.id_empleado);
+        navigate('/editar-empleado', { state: { empleado } });
+    };
+
+
+    const eliminarEmpleado = () => {
+        empleadoRequests.eliminarEmpleado(filaSelccionada.id_empleado).then(response => {
+            if (!response.error) {
+                setEmpleados(prevEmpleados => prevEmpleados.filter(e => e.id_empleado !== filaSelccionada.id_empleado));
+            }
+        });
+    };
+
+
+    const handleEliminarEmpleado = () => {
+        if (!filaSelccionada) return;
+        confirmDialog({
+            header: 'Eliminación de Empleado',
+            message: '¿Estas seguro de eliminar al empleado?, Se eliminaran todas sus tarjetas con él.',
+            icon: 'pi pi-info-circle',
+            acceptClassName: 'p-button-danger',
+            accept: eliminarEmpleado
+        });
+    };
+
+
+    useEffect(() => {
+        empleadoRequests.getEmpleados().then(response => {
+            setEmpleados(response.data?.empleados);
+        })
+
+        initFilters();
+    }, []);
 
 
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
@@ -71,19 +108,22 @@ function GestionEmpleados() {
     };
 
 
-    useEffect(() => {
-        empleadoRequests.getEmpleados().then(response => {
-            setEmpleados(response.data?.empleados);
-        })
-
-        initFilters();
-    }, []);
-
-
     return (
         <div className='grid col-11 md:col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+            <ConfirmDialog dismissableMask={true} />
+
             <div className='col-12 text-center'>
                 <h1 className='text-black-alpha-70 m-0 mb-2'>Gestionar Empleados</h1>
+            </div>
+
+            <div className='col-12 md:max-w-max align-self-start'>
+                    <Button 
+                        label='Registrar Empleado'
+                        severity='success'
+                        icon='pi pi-plus'
+                        className='md:w-auto p-button-outlined'
+                        onClick={() => navigate('/registrar-empleado')}
+                    />
             </div>
 
             <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
@@ -92,17 +132,8 @@ function GestionEmpleados() {
                         label='Gestionar Bines y Tarjetas'
                         severity='info'
                         icon='pi pi-file-edit'
-                        className='p-button-rounded md:w-auto p-button-outlined'
+                        className='md:w-auto p-button-outlined'
                         onClick={handleGestionarBienesTarjetas}
-                    />
-                </div>
-                <div className='col-12 md:max-w-max'>
-                    <Button 
-                        label='Registrar Empleado'
-                        severity='success'
-                        icon='pi pi-plus'
-                        className='p-button-rounded md:w-auto p-button-outlined'
-                        onClick={() => navigate('/registrar-empleado')}
                     />
                 </div>
                 <div className='col-12 md:max-w-max'>
@@ -111,8 +142,8 @@ function GestionEmpleados() {
                         label='Editar Empleado'
                         severity='warning'
                         icon='pi pi-pencil'
-                        className='p-button-rounded md:w-auto p-button-outlined'
-                        onClick={() => {}}                    
+                        className='md:w-auto p-button-outlined'
+                        onClick={handleEditarEmpleado}                    
                     />
                 </div>
                 <div className='col-12 md:max-w-max'>
@@ -120,8 +151,9 @@ function GestionEmpleados() {
                         label='Eliminar Empleado'
                         severity='danger'
                         icon='pi pi-trash'
-                        className='p-button-rounded md:w-auto p-button-outlined'
-                        onClick={() => {}}                    />
+                        className='md:w-auto p-button-outlined'
+                        onClick={handleEliminarEmpleado}                    
+                    />
                 </div>
             </div>
 

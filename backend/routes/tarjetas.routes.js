@@ -1,12 +1,36 @@
 const express = require('express');
-const url = require('url');
-const querystring = require('querystring');
+const _ = require('lodash');
+const accionesTarjeta = require('../types/accionesTarjeta');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
-const { determinarTarjetasRequeridas, obtenerTarjeta, generarPDF, generarExcel} = require('../utilities/tarjetas');
+const { 
+    determinarTarjetasRequeridas, 
+    obtenerTarjeta, generarPDF, generarExcel, getNoLineas,
+    formatearDescripcionBien, getDescripcionRegistro
+} = require('../utilities/tarjetas');
 const HTTPResponseBody  = require('./HTTPResponseBody');
-const fs = require('fs');
+const { parse } = require('querystring');
 
 const router = express.Router();
+
+router.get('/registros-tarjeta/:id_tarjeta_responsabilidad', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_tarjeta_responsabilidad = parseInt(req.params.id_tarjeta_responsabilidad);
+        let query = `
+            SELECT *
+            FROM registro
+            WHERE registro.id_tarjeta_responsabilidad = ${id_tarjeta_responsabilidad}
+            ORDER BY registro.fecha;
+        `;
+        const registros = await mysql_exec_query(query);
+        respBody.setData(registros);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
 
 router.get('/bienes-activos-tarjeta/:id_tarjeta_responsabilidad', async (req, res) => {
     const respBody = new HTTPResponseBody();
@@ -56,8 +80,38 @@ router.get('/bienes-activos-tarjeta/:id_tarjeta_responsabilidad', async (req, re
 router.post('/calcular-numero-tarjetas-necesarias', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        const { id_empleado, idsBienes, operacion } = req.body;
-        const cantTarjetas = await determinarTarjetasRequeridas(id_empleado, idsBienes, operacion);
+        const { id_empleado, operacion, comentario, idsBienes } = req.body;
+
+        if (operacion === accionesTarjeta.COMENTACION) {
+            const lineasRequeridas = getNoLineas(formatearDescripcionBien(comentario));
+            const cantTarjetas = await determinarTarjetasRequeridas(id_empleado, [lineasRequeridas]);
+            respBody.setData(cantTarjetas);
+            return res.status(200).send(respBody.getLiteralObject());
+        } 
+
+        if (!idsBienes.length) {
+            respBody.setData(0);
+            return res.status(200).send(respBody.getLiteralObject());
+        }
+
+        // Obtener la información de los bienes a los cuales se crearan los registros en las tarjetas
+        let query = `
+            SELECT *
+            FROM bien
+            INNER JOIN modelo USING(id_modelo)
+            WHERE (
+                bien.id_bien IN (${idsBienes.join(',')})
+            )
+        `;
+        const bienes = await mysql_exec_query(query);
+
+        // Agrupar los bienes por modelo para obtener los registros que se crearan en las tarjetas
+        const binesPorModelo = _.groupBy(bienes, 'id_modelo');
+        const registros = Object.values(binesPorModelo).map(bienes => {
+            return getNoLineas(formatearDescripcionBien(getDescripcionRegistro(bienes)));
+        });
+
+        const cantTarjetas = await determinarTarjetasRequeridas(id_empleado, registros);
         respBody.setData(cantTarjetas);
         return res.status(200).send(respBody.getLiteralObject());
     } catch (error) {

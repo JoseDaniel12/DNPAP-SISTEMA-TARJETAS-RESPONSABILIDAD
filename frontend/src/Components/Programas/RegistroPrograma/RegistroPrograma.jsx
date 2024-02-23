@@ -1,29 +1,31 @@
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { InputText } from 'primereact/inputtext';
+import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
-import { useAuth } from '../../../Auth/Auth';
 
-import { userRoles } from '../../../types/userRoles';
+import { tiposUnidadesServicio } from '../../../types/unidadesServicio';
 import unidadesServicioRequests from '../../../Requests/unidadesServicioRequests';
 
 
-function RegistroDepartamento({ onDepartamentoRegistrado }) {
-    const { loginData } = useAuth();
+function RegistroPrograma({ onProgramaRegistrado }) {
+    const [departamentos, setDepartamentos] = useState([]);
 
-    const departamentoFormSchema = yup.object({
+    const programaFormSchema = yup.object({
         nombre: yup.string().required('Nombre requerido'),
         siglas: yup.string().required('Siglas requeridas'),
+        idDepartamento: yup.number().required('Dirección requerida')
     });
 
-    const departamentoForm = useForm({
+    const programaForm = useForm({
         defaultValues: {
             nombre: '',
             siglas: ''
         },
-        resolver: yupResolver(departamentoFormSchema),
+        resolver: yupResolver(programaFormSchema),
         mode: 'onSubmit'
     });
 
@@ -32,7 +34,7 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
         handleSubmit,
         setError,
         formState: { errors },
-    } = departamentoForm;
+    } = programaForm;
 
 
     const validateDisponibilidadNombre = async (nombre) => {
@@ -46,7 +48,7 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
     };
 
 
-    const handleRegistrarDepartamento = async (datosDepartamento) => {
+    const handleRegistrarPrograma = async (datosDepartamento) => {
         const disponibilidadNombre = await validateDisponibilidadNombre(datosDepartamento.nombre);
         if (!disponibilidadNombre) {
             setError('nombre', {
@@ -63,13 +65,12 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
             });
         }
 
-        if (Object.keys(departamentoForm.formState.errors).length > 0) return;
+        if (Object.keys(programaForm.formState.errors).length > 0) return;
 
-        datosDepartamento.idDireccion = loginData.usuario.idDireccion; 
-        unidadesServicioRequests.registrarDepartamento(datosDepartamento).then(response => {
+        unidadesServicioRequests.registrarPrograma(datosDepartamento).then(response => {
             if (!response.error) {
-                departamentoForm.reset();
-                onDepartamentoRegistrado(response.data.departamento);
+                programaForm.reset();
+                onProgramaRegistrado(response.data.programa);
             } else {
                 alert('Error al registrar el departamento');
             }
@@ -77,11 +78,18 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
     };
 
 
+    useEffect(() => {
+        unidadesServicioRequests.getUnidadesServicio(tiposUnidadesServicio.DEPARTAMENTO).then(response => {
+            setDepartamentos(response.data.unidadesServicio);
+        });
+    }, []);
+
+
     return (
         <div className='col-12 flex flex-wrap align-content-start'>
             <div className='col-12 m-0'>
                 <h1 className='justify-self-end text-black-alpha-80 text-lg m-0'>
-                    Registrar Departamento:
+                    Registrar Programa:
                 </h1>
             </div>
 
@@ -98,7 +106,6 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
                 { errors.nombre && <Message severity='error' text={errors.nombre?.message} className='mt-1 p-1'/> }
             </div>
 
-            
             <div className='col-12 field m-0'>
                 <label className='font-bold text-black-alpha-70 block'> Siglas: </label>
                 <InputText 
@@ -112,13 +119,32 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
                 { errors.siglas && <Message severity='error' text={errors.siglas?.message} className='mt-1 p-1'/> }
             </div>
 
+            <div className='col-12 field m-0'>
+                <label className='font-bold text-black-alpha-70 block'> Departamento: </label>
+                <Controller
+                    name='idDepartamento'
+                    control={programaForm.control}
+                    render={({ field }) => (
+                        <Dropdown 
+                            {...field}
+                            options={departamentos}
+                            placeholder='Seleccione un Departamento'
+                            optionLabel='siglas_jerarquicas'
+                            optionValue='id_unidad_servicio'
+                            onChange={e => field.onChange(e.value)}
+                        />
+                    )}
+                />
+                { errors.idDepartamento && <Message severity='error' text={errors.idDepartamento?.message} className='mt-1 p-1'/> }
+            </div>
+
             <div className='col-12'>
                 <Button
                     severity='success'
                     label='Registrar'
                     icon='pi pi-plus'
                     iconPos='left'
-                    onClick={handleSubmit(handleRegistrarDepartamento)}
+                    onClick={handleSubmit(handleRegistrarPrograma)}
                     className='w-full'
                 />
             </div>
@@ -126,4 +152,4 @@ function RegistroDepartamento({ onDepartamentoRegistrado }) {
     );
 }
 
-export default RegistroDepartamento;
+export default RegistroPrograma;

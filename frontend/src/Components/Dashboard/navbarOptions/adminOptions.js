@@ -2,7 +2,18 @@ const adminOptions = [
     {
         label: 'Bienes',
         icon: 'pi pi-box',
-        url: '/registar-bienes'
+        items: [
+            {
+                label: 'Registrar Bienes',
+                icon: 'pi pi-arrow-up',
+                url: '/registar-bienes',
+            },
+            {
+                label: 'Editar Bienes Desasignados',
+                icon: 'pi pi-pencil',
+                url: '/editar-bien-desasignado',
+            }
+        ]
     },
     // {
     //     label: 'Agrupar Bienes',
@@ -14,17 +25,17 @@ const adminOptions = [
         icon: 'pi pi-users',
         items: [
             {
-                label: 'Gestionar Empleados',
+                label: 'Empleados',
                 url: '/gestionar-empleados',
             },
             {
-                label: 'Gestionar Auxiliares',
+                label: 'Auxiliares',
                 url: '/gestionar-auxiliares',
             }
         ]
     },
     {
-        label: 'Organización',
+        label: 'Unides de Servicio',
         icon: 'pi pi-sitemap',
         items: [
             {

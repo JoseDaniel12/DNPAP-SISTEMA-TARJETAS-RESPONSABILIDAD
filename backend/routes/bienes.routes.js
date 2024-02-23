@@ -7,11 +7,13 @@ const router = express.Router();
 
 router.post('/registro-bienes-comunes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    conn.beginTransaction();
     try {
-        conn.beginTransaction();
         let {
             descripcion,
             precio,
+            marca,
+            codigoModelo,
             fecha_registro,
             datos_espeficos_bienes,
         } = req.body;
@@ -19,25 +21,29 @@ router.post('/registro-bienes-comunes', async (req, res) => {
         bienes = datos_espeficos_bienes.map(bien => ({
             descripcion,
             precio,
+            marca,
+            codigoModelo,
             fecha_registro,
             ...bien,
         }));
     
         // Se verifica si el modelo ya existe o si se debe crear uno nuevo
-        let [modelo] = await mysql_exec_query(`
-            SELECT * from modelo 
+        let query = `
+            SELECT * from modelo
             WHERE (
                 descripcion = '${descripcion}' AND
-                precio = '${precio}'
+                precio = '${precio}' AND
+                marca = '${marca}' AND
+                codigo = '${codigoModelo}'
             )
             LIMIT 1;
-        `);
-        
-        let idModelo = modelo?.id_modelo;;
+        `;
+        let [modelo] = await mysql_exec_query(query);
+        let idModelo = modelo?.id_modelo;
         if (!idModelo) {
             let { insertId } = await mysql_exec_query(`
-                INSERT INTO modelo (descripcion, precio)
-                VALUES ('${descripcion}', ${precio});
+                INSERT INTO modelo (descripcion, precio, marca, codigo)
+                VALUES ('${descripcion}', ${precio}, '${marca}', '${codigoModelo}');
             `);
             idModelo = insertId;
         } 
@@ -62,7 +68,6 @@ router.post('/registro-bienes-comunes', async (req, res) => {
             `);
             if (result.error) throw new Error(result.error.message);
         }
-
         conn.commit();
         respBody.setMessage('Bienes registrados correctamente.');
         respBody.setData({bienes});

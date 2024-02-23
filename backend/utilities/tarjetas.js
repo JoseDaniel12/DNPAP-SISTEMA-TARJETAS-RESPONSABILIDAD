@@ -3,16 +3,14 @@ const path = require('path');
 const { format } = require('date-fns');
 const _ = require('lodash');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
+const accionesTarjeta = require('../types/accionesTarjeta');
 const { obtenerNombreJerarquico } = require('./unidadServicio');
+const { obtenerUltimaTarjeta } = require('../utilities/empleado');
 
-const opracionesTarjetas = {
-    ASIGNACION: 'Asignacion',
-    DESCARGO: 'Descargo'
-}
 
 const FORMATO_TARJETA = {
-    LINEAS_POR_PAGINA: 39,
-    CARACTERES_POR_LINEA: 63,
+    LINEAS_POR_PAGINA: 30,      // No incluye las 2 lineas de saldo entrante y saliente
+    CARACTERES_POR_LINEA: 65,
     FONT: 'Courier New',
     FONT_SIZE: 9,
     FILA_PRIMER_REGISTRO: 5,
@@ -26,6 +24,7 @@ const FORMATO_TARJETA = {
 
 
 function getNoLineas(texto) {
+    if (texto === '') return 0;
     return texto.split('\n').length; 
 }
 
@@ -87,25 +86,8 @@ function getDescripcionRegistro(bienes) {
 }
 
 
-async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
-    if (!idsBienes.length) return 0;
-
-    // Obtener la información de los bienes a los cuales se les crearan registros en las tarjetas
-    let query = `
-        SELECT *
-        FROM bien
-        INNER JOIN modelo USING(id_modelo)
-        WHERE (
-            bien.id_bien IN (${idsBienes.join(',')})
-        )
-    `;
-    const bienes = await mysql_exec_query(query);
-
-    // Agrupar los bienes por modelo para obtener los registros que se crearan en las tarjetas
-    const biensPorModelo = _.groupBy(bienes, 'id_modelo');
-    const lineasRegistros = Object.values(biensPorModelo).map(bienes => {
-        return getNoLineas(formatearDescripcionBien(getDescripcionRegistro(bienes)));
-    });
+async function determinarTarjetasRequeridas(id_empleado, registros) {
+    if (!registros.length) return 0;
 
     let noTarjetasNecesarioas = 0;
 	let espacioRestanteAnverso = 0;
@@ -140,7 +122,14 @@ async function determinarTarjetasRequeridas(id_empleado, idsBienes, operacion) {
         espacioRestanteReverso = ultimaTarjeta.lineas_restantes_reverso;
     }
 
-	for (const lineasRegistro of lineasRegistros) {
+	for (const lineasRegistro of registros) {
+        if (lineasRegistro.length === 0) continue;
+
+        // Si el registro excede el formato de la tarjeta se lanza un error
+        if (lineasRegistro > FORMATO_TARJETA.LINEAS_POR_PAGINA) {
+            throw new Error(`Los registros de tarjetas no deben execderse de ${FORMATO_TARJETA.LINEAS_POR_PAGINA} lineas, con ${FORMATO_TARJETA.CARACTERES_POR_LINEA} caracteres c/u.`);
+        }
+
 		// Verificar si el bien cabe en el lado anverso
 		if (lineasRegistro <= espacioRestanteAnverso) {
             // Si cabe en el lado anverso, colocarlo ahi
@@ -171,15 +160,15 @@ async function colocarRegistro(tarjeta, registro, action) {
     // Dada la acción bajo la que se coloca el registro se determina si es un ingreso o egreso
     // y se establece la tarjeta emisora y receptora
     switch (action.type) {
-        case 'Asignación':
+        case accionesTarjeta.ASIGNACION:
             registro.ingreso = true;
             registro.id_tarjeta_receptora = tarjeta.id_tarjeta_responsabilidad;
             break;
-        case 'Desasignación':
+        case accionesTarjeta.DESASIGNACION:
             registro.ingreso = false;
             registro.id_tarjeta_emisora = tarjeta.id_tarjeta_responsabilidad;
             break;
-        case 'Traspaso':
+        case accionesTarjeta.TRASPASO:
             registro.ingreso = action.payload.esRecepcion;
             const plantillaNumeroTarjeta = '╦'.repeat(8);
             if (action.payload.esRecepcion) {
@@ -187,35 +176,51 @@ async function colocarRegistro(tarjeta, registro, action) {
                 registro.id_tarjeta_receptora = tarjeta.id_tarjeta_responsabilidad;
             }
             const tarjetaEmisora = await obtenerTarjeta(registro.id_tarjeta_emisora);
-            const id_tarjeta_receptora = await obtenerTarjeta(registro.id_tarjeta_receptora);
+            const tarjetaReceptora = await obtenerTarjeta(registro.id_tarjeta_receptora);
             registro.descripcion = registro.descripcion.replace(plantillaNumeroTarjeta + 'E', tarjetaEmisora.numero);
-            registro.descripcion = registro.descripcion.replace(plantillaNumeroTarjeta + 'R', id_tarjeta_receptora.numero);
-
+            registro.descripcion = registro.descripcion.replace(plantillaNumeroTarjeta + 'R', tarjetaReceptora.numero);
             break;
     }
 
-    // Se inserta el registro en la db
+    // Se establece la consulta para insertar el registro dependinedo si es una nota o no
     let query = `
         INSERT INTO registro (
             anverso,
-            ingreso,
-            id_tarjeta_emisora,
-            id_tarjeta_receptora,
-            cantidad,
             descripcion,
-            precio,
+            es_nota,
             id_tarjeta_responsabilidad
         ) VALUES (
-            ${registro.anverso? 1 : 0},
-            ${registro.ingreso? 1 : 0},
-            ${registro.id_tarjeta_emisora},
-            ${registro.id_tarjeta_receptora},
-            ${registro.cantidad},
+            ${registro.anverso},
             '${registro.descripcion}',
-            ${parseFloat(registro.precio)},
+            ${true},
             ${tarjeta.id_tarjeta_responsabilidad}
-        );
+        )
     `;
+    if (!registro.es_nota) {
+        query = `
+            INSERT INTO registro (
+                anverso,
+                ingreso,
+                id_tarjeta_emisora,
+                id_tarjeta_receptora,
+                cantidad,
+                descripcion,
+                precio,
+                id_tarjeta_responsabilidad
+            ) VALUES (
+                ${registro.anverso},
+                ${registro.ingreso},
+                ${registro.id_tarjeta_emisora},
+                ${registro.id_tarjeta_receptora},
+                ${registro.cantidad},
+                '${registro.descripcion}',
+                ${parseFloat(registro.precio)},
+                ${tarjeta.id_tarjeta_responsabilidad}
+            );
+        `;
+    }
+
+    // Se inserta el registro en la db
     const  { insertId: id_registro } = await mysql_exec_query(query);
 
     // Se actualiza el espacio restante en la tarjeta donde se inserto el registro
@@ -234,27 +239,39 @@ async function colocarRegistro(tarjeta, registro, action) {
     `
     await mysql_exec_query(query);
 
-    // Se vincula el registro con los bienes que utilizo para su creación
-    for (const bien of registro.bienes) {
-        query = `
-            INSERT INTO registro_bien (id_registro, id_bien) 
-            VALUES (${id_registro}, ${bien.id_bien});
-        `;
-        await mysql_exec_query(query);
+
+    if (!registro.es_nota) {
+        // Se vincula el registro con los bienes que utilizo para su creación
+        for (const bien of registro.bienes) {
+            query = `
+                INSERT INTO registro_bien (id_registro, id_bien) 
+                VALUES (${id_registro}, ${bien.id_bien});
+            `;
+            await mysql_exec_query(query);
+        }
+
+        // Se establecen los bienes como activos dentro de la tarjeta correspondiente
+        for (const bien of registro.bienes) {
+            let query = `
+                UPDATE bien
+                SET id_tarjeta_responsabilidad = ${registro.id_tarjeta_receptora}
+                WHERE id_bien = ${bien.id_bien};
+            `;
+            await mysql_exec_query(query);
+        }
     }
 
-    // Esperar un milisgundo para que el siguiente registro tenga fecha distinta
+    // Se obtiene el registro insertado en la db
+    query = `
+        SELECT * FROM registro
+        WHERE id_registro = ${id_registro};
+    `;
+    const [registroInsertado] = await mysql_exec_query(query);
+
+    // Esperar un milisgundo para que el siguiente registro que se cree tenga una fecha distinta
     await new Promise(resolve => setTimeout(resolve, 1));
 
-    // Se establcen los bienes como activos dentro de la tarjeta correspondiente
-    for (const bien of registro.bienes) {
-        let query = `
-            UPDATE bien
-            SET id_tarjeta_responsabilidad = ${registro.id_tarjeta_receptora}
-            WHERE id_bien = ${bien.id_bien};
-        `;
-        await mysql_exec_query(query);
-    }
+    return registroInsertado;
 }
 
 
@@ -354,12 +371,6 @@ async function obtenerTarjeta(id_tarjeta, conRegistros = false) {
 }
 
 
-function getXPosition(doc, texto, posXBegin, posXEnd) {
-    const width = doc.widthOfString(texto);
-    return (posXBegin + posXEnd)/2 - width/2 ;
-}
-
-
 async function generarExcel(tarjeta, fecha) {
     const rutaPlantilla = path.join(__dirname, '../PlantillasExcel/TarjetaResponsabilidad.xlsx');
     const excel = await XlsxPopulate.fromFileAsync(rutaPlantilla);
@@ -421,25 +432,27 @@ async function generarExcel(tarjeta, fecha) {
         const fechaString = format(new Date(registro.fecha), 'dd/MM/yyyy');
         hoja.row(fila).cell(columna).value(fechaString);
 
-        // Columna Cantidad
-        columna = FORMATO_TARJETA.COL_CANTIDAD;
-        const cantidadString = registro.cantidad.toString();
-        hoja.row(fila).cell(columna).value(cantidadString);
+        if (!registro.es_nota) {
+            // Columna Cantidad
+            columna = FORMATO_TARJETA.COL_CANTIDAD;
+            const cantidadString = registro.cantidad.toString();
+            hoja.row(fila).cell(columna).value(cantidadString);
 
-        // Columna de Debe o Haber
-        const montoString = registro.precio.toFixed(2).toString();
-        if (registro.ingreso) {
-            columna = FORMATO_TARJETA.COL_DEBE;
-        } else {
-            columna = FORMATO_TARJETA.COL_HABER;
+            // Columna de Debe o Haber
+            const montoString = registro.precio.toFixed(2).toString();
+            if (registro.ingreso) {
+                columna = FORMATO_TARJETA.COL_DEBE;
+            } else {
+                columna = FORMATO_TARJETA.COL_HABER;
+            }
+            hoja.row(fila).cell(columna).value(montoString);
+
+            // Columna Saldo
+            columna = FORMATO_TARJETA.COL_SALDO;
+            saldoAcumulado = registro.ingreso? saldoAcumulado + registro.precio : saldoAcumulado - registro.precio;
+            const saldoAcumuladoString = saldoAcumulado.toFixed(2).toString();
+            hoja.row(fila).cell(columna).value(saldoAcumuladoString);
         }
-        hoja.row(fila).cell(columna).value(montoString);
-
-        // Columna Saldo
-        columna = FORMATO_TARJETA.COL_SALDO;
-        saldoAcumulado = registro.ingreso? saldoAcumulado + registro.precio : saldoAcumulado - registro.precio;
-        const saldoAcumuladoString = saldoAcumulado.toFixed(2).toString();
-        hoja.row(fila).cell(columna).value(saldoAcumuladoString);
 
         // Columna Descripción
         columna = FORMATO_TARJETA.COL_DESCRIPCION;
@@ -486,12 +499,13 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
 
     // Se generan los registros
     const registros = [];
-    for (let bienes of Object.values(biensPorModelo)) {
+    for (const modelo in biensPorModelo) {
+        const bienes = biensPorModelo[modelo];
         let descripcionRegistro = getDescripcionRegistro(bienes);
-        if (action.type === 'Traspaso') {
-            const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
-            const plantillaNumeroTarjeta = '╦'.repeat(8);
+        if (action.type === 'Traspaso') {            
             let nota = '';
+            const plantillaNumeroTarjeta = '╦'.repeat(8);
+            const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
             if (!action.payload.esRecepcion) {
                 nota = `Se descarga el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
             } else {
@@ -520,6 +534,61 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
     return registros;
 }
 
+
+const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, action) => {
+    // Obtener el empleado al cual se le cargaran los registros
+    const [empleado] = await mysql_exec_query(`
+        SELECT
+            empleado.*,
+            unidad_servicio.nombre_nuclear AS unidad_servicio_nuclear
+        FROM empleado
+        INNER JOIN unidad_servicio ON empleado.id_unidad_servicio = unidad_servicio.id_unidad_servicio
+        WHERE id_empleado = ${id_empleado}
+        LIMIT 1;
+    `);
+
+    // Obtener la ultima tarjeta del empleado
+    let ultimaTarjeta = await obtenerUltimaTarjeta(id_empleado);
+    if (!ultimaTarjeta) {
+        const numeroTarjeta = numerosTarjetas.shift();
+        ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta);
+    }
+
+    const tarjetasPorIdConNuevosRegistros = {};
+    // Para cada registro se determina en que tarjeta y lado debe ir y se establece su
+    // tarjeta emisora y receptora
+    for (let registro of registros) {
+	    // Por defecto se los registros se intentarán colocar en el lado anverso
+        registro.anverso = true;
+		if (registro.lineas > ultimaTarjeta.lineas_restantes_anverso) {
+            // Si no cabe en el lado anverso, verificar si cabe en el lado reverso
+			if (registro.lineas <= ultimaTarjeta.lineas_restantes_reverso) {
+				// Se coloca en el lado reverso, esto deshabilitará el lado anverso al colocarse
+                registro.anverso = false;
+			} else {
+				// Si no cabe en el lado reverso, se crea una nueva tarjeta para colocar el bien
+                const numeroTarjeta = numerosTarjetas.shift();
+                ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, ultimaTarjeta);
+			}
+        }
+
+        // Una vez determina el destino del registro se coloca en la tarjeta correspondiente
+        registro = await colocarRegistro(ultimaTarjeta, registro, action);
+
+        if (tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad]) {
+            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad].registros.push(registro);
+        } else {
+            ultimaTarjeta.registros = [registro];
+            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = ultimaTarjeta;
+        }
+
+        return tarjetasPorIdConNuevosRegistros;
+	}
+
+    // Se las tarjetas donde se insertaron registros y los registros insertados
+    return { tarjetas, registros };
+}
+
 module.exports = {
     getNoLineas,
     formatearDescripcionBien,
@@ -529,5 +598,6 @@ module.exports = {
     crearTarjeta,
     obtenerTarjeta,
     generarRegistrosDesvinculados,
-    generarExcel
+    generarExcel,
+    ejecutarAccionTarjeta
 }

@@ -61,7 +61,7 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
         const disponibilidadNombre = await validateDisponibilidadNombre(formData.nombre);
         if (departamentoForm.getFieldState('nombre').isDirty && !disponibilidadNombre) {
             setError('nombre', {
-                message: 'El DPI ya está registrado',
+                message: 'El nombre ya está registrado',
                 type: 'manual'
             });
         }
@@ -69,7 +69,7 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
         const disponibilidadSiglas = await validateDisponibilidadSiglas(formData.siglas);
         if (departamentoForm.getFieldState('siglas').isDirty && !disponibilidadSiglas) {
             setError('siglas', {
-                message: 'El correo ya está registrado',
+                message: 'Las siglas ya registradas',
                 type: 'manual'
             });
         }

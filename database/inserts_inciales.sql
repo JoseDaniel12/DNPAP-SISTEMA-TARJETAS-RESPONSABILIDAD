@@ -1,7 +1,6 @@
 USE dnpap;
 
 # _______________________ Departamentos guate _______________________
-DELETE FROM departamento_guate;
 ALTER TABLE departamento_guate AUTO_INCREMENT = 1;
 INSERT INTO departamento_guate (nombre) VALUES ('Guatemala');
 INSERT INTO departamento_guate (nombre) VALUES ('Sacatepéquez');
@@ -28,8 +27,6 @@ INSERT INTO departamento_guate (nombre) VALUES ('El Progreso');
 
 
 # _______________________ Municipios _______________________
-DELETE FROM municipio;
-ALTER TABLE municipio AUTO_INCREMENT = 1;
 # Gautemala
 INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('Guatemala', 1);
 # Sacatepéquez
@@ -40,8 +37,6 @@ INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('Chimaltenango', 3
 INSERT INTO municipio (nombre, id_departamento_guate) VALUES ('San Pedro Sacatepéquez', 3);
 
 # _______________________ Tipos de Unidades de Servicio _______________________
-DELETE FROM tipo_unidad_servicio;
-ALTER TABLE tipo_unidad_servicio AUTO_INCREMENT = 1;
 INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Dirección');
 INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Departamento');
 INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Programa');
@@ -49,22 +44,17 @@ INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Programa');
 
 # _______________________ Unidades de Servicio _______________________
 # Direcciones:
-DELETE FROM unidad_servicio;
-ALTER TABLE unidad_servicio AUTO_INCREMENT = 1;
 INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_tipo_unidad_servicio, id_municipio)
 VALUES ('Direccion de Normatividad de Programas de Atención a las Personas', 'DNPAP', 1, 1);
-INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_tipo_unidad_servicio, id_municipio)
-VALUES ('Direccion de Recursos Humanos', 'DRH', 1, 1);
 # Departamentos:
-INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio, id_municipio)
-VALUES ('Departamento de Inmunizaciones', 'DI', 1, 2, 1);
+INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
+VALUES ('Departamento de Inmunizaciones', 'DI', 1, 2);
 # Programas:
-INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio, id_municipio)
-VALUES ('Programa de Salud Buco Dental', 'PSBD', 2, 3, 1);
+INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
+VALUES ('Programa de Salud Buco Dental', 'PSBD', 2, 3);
 
 
 # _______________________ Roles _______________________
-DELETE FROM rol;
 ALTER TABLE rol AUTO_INCREMENT = 1;
 INSERT INTO rol (nombre) VALUES ('Coordinador');
 INSERT INTO rol (nombre) VALUES ('Auxiliar');
@@ -72,18 +62,13 @@ INSERT INTO rol (nombre) VALUES ('Ordinario');
 
 
 # _______________________ Empleados _______________________
-DELETE FROM empleado;
-ALTER TABLE empleado AUTO_INCREMENT = 1;
 INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
 VALUES ('admin@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'José Miguel', 'Alvarado Aguilar', '3645832900101', '3645832900', 'Admin1', 1, 1);
 INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
 VALUES ('admin2@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Paco Sebastian', 'Batres Feuntes', '89530993422102', '78345678', 'Admin2', 1, 1);
 INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('auxiliar@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Daniel  Armando', 'Fajardo Figueroa', '7356343899272', '3645832900', 'Auxiliar1', 3, 2);
-INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('empleado@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Mario Ernesto', 'Montes Recions', '756342567723', '5645832900', 'Empleado1', 4, 3);
-
--- Deletes
-DELETE FROM tarjeta_responsabilidad;
-DELETE FROM registro;
-DELETE FROM registro_bien;
+VALUES ('auxiliar@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Daniel  Armando', 'Fajardo Figueroa', '7356343899272', '3645832900', 'Auxiliar1', 2, 2);
+INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+VALUES ('Mario Ernesto', 'Montes Recions', '756342567723', '5645832900', 'Empleado1', 3, 3);
+INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+VALUES ('Pedro Paco', 'Gutierrez Lopez', '89356743455152', '893567434', 'Empleado2', 3, 3);

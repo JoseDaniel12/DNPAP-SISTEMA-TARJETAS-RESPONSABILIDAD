@@ -95,7 +95,7 @@ router.get('/disponibilidad-siglas/:siglas', async (req, res) => {
 });
 
 
-router.put('/registrar-departamento', async (req, res) => {
+router.post('/registrar-departamento', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const { nombre, siglas, idDireccion } = req.body;
@@ -188,19 +188,105 @@ router.put('/editar-departamento/:idDepartamento', async (req, res) => {
 });
 
 
-router.delete('/eliminar-departamento/:idDepartamento', async (req, res) => {
+router.post('/registrar-programa', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        const idDepartamento = parseInt(req.params.idDepartamento);
+        const { nombre, siglas, idDepartamento } = req.body;
+
+        // Obtención del id del tipo de servicio para Programas
+        let query = `
+            SELECT id_tipo_unidad_servicio
+            FROM tipo_unidad_servicio
+            WHERE nombre = '${tiposUnidadesServicio.PROGRAMA}';
+        `;
+        let [tipoUnidad] = await mysql_exec_query(query);
+        const id_tipo_unidad_servicio = tipoUnidad.id_tipo_unidad_servicio;
+
+        // Crear el Programa
+        query = `
+            INSERT INTO unidad_servicio (
+                nombre_nuclear,
+                siglas,
+                id_unidad_superior,
+                id_tipo_unidad_servicio
+            )
+            VALUES (
+                '${nombre}',
+                '${siglas}',
+                ${idDepartamento},
+                ${id_tipo_unidad_servicio}
+            );
+        `;
+        const { insertId: idPrograma } = await mysql_exec_query(query);
+
+        // Obtener el programa creado
+        query = `
+            SELECT *
+            FROM unidad_jerarquizada
+            WHERE id_unidad_servicio = ${idPrograma};
+        `;
+        const [programa] = await mysql_exec_query(query);
+        respBody.setData({programa});
+        respBody.setMessage('Programa registrado correctamente');
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.put('/editar-programa/:idPrograma', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const idPrograma = parseInt(req.params.idPrograma);
+        const { nombre, siglas, idDepartamento } = req.body;
+
+        // Actualizacion del programa
+        let query = `
+            UPDATE unidad_servicio
+            SET nombre_nuclear = '${nombre}', 
+                siglas = '${siglas}',
+                id_unidad_superior = ${idDepartamento}
+            WHERE id_unidad_servicio = ${idPrograma};
+        `;
+        await mysql_exec_query(query);
+
+        // Obtener el programa actualizado
+        query = `
+            SELECT *
+            FROM unidad_jerarquizada
+            WHERE id_unidad_servicio = ${idPrograma};
+        `;
+        const [programa] = await mysql_exec_query(query);
+        respBody.setData({programa});
+        
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.delete('/eliminar-unidadesServicio/:idUnidad', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const idUnidad = parseInt(req.params.idUnidad);
 
         // Actualizacion del departamento
         let query = `
             DELETE FROM unidad_servicio
-            WHERE id_unidad_servicio = ${idDepartamento};
+            WHERE id_unidad_servicio = ${idUnidad};
         `;
-        await mysql_exec_query(query);
-        respBody.setData({idDepartamento});
-        respBody.setMessage('Departamento eliminado correctamente');
+        const outcome = await mysql_exec_query(query);
+        if (!outcome?.error) {
+            respBody.setData({idUnidad});
+            respBody.setMessage('Unidad de Servicio eliminada correctamente');
+        } else {
+            respBody.setError('Asegurese de que la unidad de servicio no tenga dependencias como subdivisiones o empleados.');
+        }
         res.send(respBody.getLiteralObject());
     } catch(error) {
         respBody.setError(error.toString());

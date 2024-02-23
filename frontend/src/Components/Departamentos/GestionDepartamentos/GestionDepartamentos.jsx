@@ -49,10 +49,12 @@ function GestionDepartamentos() {
 
 
     const eliminarDepartamento = (idDepartamento) => {
-        unidadesServicioRequests.eliminarDepartamento(idDepartamento).then(response => {
+        unidadesServicioRequests.eliminarUnidadServicio(idDepartamento).then(response => {
             if (!response.error) {
                 setDepartamentos(prevDepas => prevDepas.filter(depa => depa.id_unidad_servicio !== idDepartamento));
                 toast.current.show({severity: 'info', summary: 'Eliminación de Departamento', detail: 'Eliminación exitosa.', life: 3000});
+            } else {
+                toast.current.show({severity: 'error', summary: 'Eliminación de Departamento', detail: response.error, life: 5000});
             }
         });
     };

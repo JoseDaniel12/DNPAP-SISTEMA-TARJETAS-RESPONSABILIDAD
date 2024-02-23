@@ -1,16 +1,16 @@
 import requestSettings from './requestSettings';
 
 const empleadoRequests = {
-    getEmpleado: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/empleado/${id_empleado}`;
+    getEmpleados: async () => {
+        const url = 'http://localhost:5000/empleados/lista-empleados';
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
         }).then(response => response.json());
     },
 
-    getEmpleados: async (body) => {
-        const url = 'http://localhost:5000/empleados/lista-empleados';
+    getEmpleado: async (id_empleado) => {
+        const url = `http://localhost:5000/empleados/empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -51,6 +51,25 @@ const empleadoRequests = {
         }).then(response => response.json());
     },
 
+    registrarEmpleado: async (body) => {
+        const url = 'http://localhost:5000/empleados/registar-empleado';
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+            body: JSON.stringify(body),
+        }).then(response => response.json());
+    },
+
+    editarEmpleado: async (id_empleado, body) => {
+        const url = `http://localhost:5000/empleados/editar-empleado/${id_empleado}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+            body: JSON.stringify(body),
+        }).then(response => response.json());
+    },
+
+
     eliminarEmpleado: async (id_empleado) => {
         const url = `http://localhost:5000/empleados/eliminar-empleado/${id_empleado}`;
         return await fetch(url, {
@@ -87,6 +106,15 @@ const empleadoRequests = {
 
     desasignarBienes: async (body) => {
         const url = 'http://localhost:5000/empleados/desasignar-bienes';
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'POST',
+            body: JSON.stringify(body)
+        }).then(response => response.json());
+    },
+
+    comentarTarjetas: async (id_empleado, body) => {
+        const url = `http://localhost:5000/empleados/comentar-tarjeta/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',

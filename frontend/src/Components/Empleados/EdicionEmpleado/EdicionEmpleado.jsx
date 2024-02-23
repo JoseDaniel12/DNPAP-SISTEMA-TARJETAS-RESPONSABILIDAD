@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -8,6 +8,9 @@ import { Button } from 'primereact/button';
 import { RadioButton } from 'primereact/radiobutton';
 import { Dropdown } from 'primereact/dropdown';
 import { Message } from 'primereact/message';
+import { ConfirmDialog } from 'primereact/confirmdialog';
+import { confirmDialog } from 'primereact/confirmdialog';
+        
 
 import { useToast } from '../../../hooks/useToast';
 import { tiposUnidadesServicio } from '../../../types/unidadesServicio';
@@ -17,8 +20,9 @@ import unidadesServicioRequests from '../../../Requests/unidadesServicioRequests
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
-function RegistroEmpleado() {
+function EdicionEmpleado() {
     const navigate = useNavigate();
+    const { state: { empleado } } = useLocation();
     const toast = useToast('bottom-right');
 
     const [tipoUnidadServicio, setTipoUnidadServicio] = useState(tiposUnidadesServicio.DIRECCION);
@@ -36,11 +40,11 @@ function RegistroEmpleado() {
 
     const empleadoForm = useForm({
         defaultValues: {
-            dpi: '',
-            nit: '',
-            nombres: '',
-            apellidos: '',
-            cargo: '',
+            dpi: empleado.dpi,
+            nit: empleado.dpi,
+            nombres: empleado.nombres,
+            apellidos: empleado.apellidos,
+            cargo: empleado.cargo,
             id_unidad_servicio: null
         },
         resolver: yupResolver(empleadoFormSchema),
@@ -69,27 +73,10 @@ function RegistroEmpleado() {
     };
 
 
-    const validateDisponibilidadDPI = async (dpi) => {
-        const response = await authRequests.verificarDisponibilidadDpi(dpi, userRoles.ORDINARIO);
-        return response.data?.disponibilidad || false;
-    };
-
-
-    const handleCrearEmpleado = async (datosEmpleado) => {
-        const disponibilidadDPI = await validateDisponibilidadDPI(datosEmpleado.dpi);
-        if (!disponibilidadDPI) {
-            setError('dpi', {
-                message: 'El DPI ya está registrado',
-                type: 'manual'
-            });
-        }
-
-        if (Object.keys(empleadoForm.formState.errors).length > 0) return;
-
-        empleadoRequests.registrarEmpleado(datosEmpleado).then(response => {
+    const editarEmpleado = async () => {
+        const datosEmpleado = empleadoForm.getValues();
+        empleadoRequests.editarEmpleado(empleado.id_empleado, datosEmpleado).then(response => {
             if (!response.error) {
-                empleadoForm.reset();
-                setUnidadServicioSeleccionada(null);
                 toast.current.show({severity: 'success', summary: 'Registro de Empleado', detail: 'Registro exitoso.', life: 3000});
             } else {
                 toast.current.show({severity: 'error', summary: 'Registro de Empleado', detail: response.error, life: 3000});
@@ -98,19 +85,57 @@ function RegistroEmpleado() {
     };
 
 
+    const validateDisponibilidadDPI = async (dpi) => {
+        const response = await authRequests.verificarDisponibilidadDpi(dpi, userRoles.ORDINARIO);
+        return response.data?.disponibilidad || false;
+    };
+
+
+    const handleEditarEmpleado = async (datosEmpleado) => {
+        const disponibilidadDPI = await validateDisponibilidadDPI(datosEmpleado.dpi);
+        if (empleadoForm.getFieldState('dpi').isDirty && !disponibilidadDPI) {
+            setError('dpi', {
+                message: 'El DPI ya está registrado',
+                type: 'manual'
+            });
+        }
+
+        if (Object.keys(empleadoForm.formState.errors).length > 0) return;
+
+        confirmDialog({
+            header: 'Edición de Empleado Ordinario',
+            message: '¿Está seguro que desea editar el empleado?',
+            icon: 'pi pi-exclamation-triangle',
+            accept: editarEmpleado,
+            reject: () => {}
+        });
+    };
+
+
+    useEffect(() => {
+        unidadesServicioRequests.getUnidadServicio(empleado.id_unidad_servicio).then(response => {
+            const { unidadServicio } = response.data;
+            setTipoUnidadServicio(unidadServicio.tipo_unidad_servicio);
+            setUnidadServicioSeleccionada(unidadServicio);
+            empleadoForm.setValue('id_unidad_servicio', unidadServicio.id_unidad_servicio);
+        })
+    }, []);
+
+
     useEffect(() => {
         unidadesServicioRequests.getUnidadesServicio(tipoUnidadServicio).then(response => {
             setUnidadesServicio(response.data.unidadesServicio);
         });
-    }, [tipoUnidadServicio]); 
+    }, [tipoUnidadServicio]);
 
 
     return (
         <div className='grid col-8 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+            <ConfirmDialog />
 
             <div className='col-12 m-0'>
                 <h1 className='text-lg text-black-alpha-80 m-0 mb-1'>
-                    Registrar Empleado:
+                    Editar Empleado:
                 </h1>
             </div>
 
@@ -196,7 +221,7 @@ function RegistroEmpleado() {
                     </div>
                 </div>
                 <Dropdown 
-                    options={unidadesServicio}
+                    options={unidadesServicio.filter(u => u.tipo_unidad_servicio === tipoUnidadServicio)}
                     value={unidadServicioSeleccionada}
                     optionLabel='siglas_jerarquicas'
                     placeholder='Seleccione una Unidad'
@@ -227,9 +252,9 @@ function RegistroEmpleado() {
                 </div>
                 <div className='col-12 md:col p-0'>
                     <Button
-                        severity='info' label='Registrar Empleado' icon='pi pi-plus'
+                        severity='info' label='Editar Empleado' icon='pi pi-pencil'
                         className='w-full'
-                        onClick={handleSubmit(handleCrearEmpleado)}
+                        onClick={handleSubmit(handleEditarEmpleado)}
                     />
                 </div>
             </div>
@@ -237,4 +262,4 @@ function RegistroEmpleado() {
     );
 }
 
-export default RegistroEmpleado;
+export default EdicionEmpleado;

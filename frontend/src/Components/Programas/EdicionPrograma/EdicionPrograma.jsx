@@ -1,26 +1,31 @@
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
 import { Message } from 'primereact/message';
 import { confirmDialog } from 'primereact/confirmdialog';
-        
 import { useToast } from '../../../hooks/useToast';
+
+import { tiposUnidadesServicio } from '../../../types/unidadesServicio';
 import unidadesServicioRequests from '../../../Requests/unidadesServicioRequests';
 
 
-function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDepartamentoEditado }) {
+function EdicionPrograma({ idProgramaSeleccionado, departamentos, onCancelEdicion, onProgramaEditado }) {
     const toast = useToast('bottom-right');
+    // const [departamentos, setDepartamentos] = useState([]);
+    const [departamentoSeleccionado, setDepartamentoSeleccionado] = useState(null);
 
-    const departamentoFormSchema = yup.object({
-        nombre: yup.string().required('Nombre Requerido'),
+    const programaFormSchema = yup.object({
+        nombre: yup.string().required('Nombre requerido'),
         siglas: yup.string().required('Siglas requeridas'),
+        idDepartamento: yup.number().required('Departamento requerido'),
     });
 
-    const departamentoForm = useForm({
-        resolver: yupResolver(departamentoFormSchema),
+    const programaForm = useForm({
+        resolver: yupResolver(programaFormSchema),
         mode: 'onSubmit'
     });
 
@@ -29,8 +34,9 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
         handleSubmit,
         setError,
         formState: { errors },
-    } = departamentoForm;
+    } = programaForm;
 
+    const idDepartamento = programaForm.watch('idDepartamento');
 
     const validateDisponibilidadNombre = async (nombre) => {
         const response = await unidadesServicioRequests.verificarDisponibilidadNombre(nombre);
@@ -44,22 +50,23 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
     };
     
 
-    const editarDepartamento = async () => {
-        const formData = departamentoForm.getValues();
-        unidadesServicioRequests.editarDepartamento(idDepartamentoSeleccionado, formData).then(response => {
+    const editarPrograma = async () => {
+        const formData = programaForm.getValues();
+        unidadesServicioRequests.editarPrograma(idProgramaSeleccionado, formData).then(response => {
             if (response.error) {
                 alert("error")
             } else {
-                onDepartamentoEditado(response.data.departamento);
-                toast.current.show({ severity: 'success', summary: 'Exito', detail: 'Departamento editado correctamente.' });
+                console.log(response.data.programa);
+                onProgramaEditado(response.data.programa);
+                toast.current.show({ severity: 'success', summary: 'Exito', detail: 'Programa editado correctamente.' });
             }
         });
     };
 
 
-    const handleEditarDepartamentoSubmit = async (formData) => {
+    const handleEditarProgramaSubmit = async (formData) => {
         const disponibilidadNombre = await validateDisponibilidadNombre(formData.nombre);
-        if (departamentoForm.getFieldState('nombre').isDirty && !disponibilidadNombre) {
+        if (programaForm.getFieldState('nombre').isDirty && !disponibilidadNombre) {
             setError('nombre', {
                 message: 'El DPI ya está registrado',
                 type: 'manual'
@@ -67,36 +74,44 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
         }
 
         const disponibilidadSiglas = await validateDisponibilidadSiglas(formData.siglas);
-        if (departamentoForm.getFieldState('siglas').isDirty && !disponibilidadSiglas) {
+        if (programaForm.getFieldState('siglas').isDirty && !disponibilidadSiglas) {
             setError('siglas', {
                 message: 'El correo ya está registrado',
                 type: 'manual'
             });
         }
 
-        if (Object.keys(departamentoForm.formState.errors).length > 0) return;
+        if (Object.keys(programaForm.formState.errors).length > 0) return;
 
         confirmDialog({
-            header: 'Edición de Departamento',
-            message: '¿Está seguro que desea editar el departamento?',
+            header: 'Edición de Programa',
+            message: '¿Está seguro que desea editar el programa?',
             icon: 'pi pi-exclamation-triangle',
-            accept: editarDepartamento,
+            accept: editarPrograma,
             reject: () => {}
         });
     };
 
-    
+
     useEffect(() => {
-        unidadesServicioRequests.getUnidadServicio(idDepartamentoSeleccionado).then(response => {
+        unidadesServicioRequests.getUnidadServicio(idProgramaSeleccionado).then(response => {
             if (!response.error) {
                 const unidadServicio = response.data.unidadServicio;
-                departamentoForm.reset({
+                programaForm.reset({
                     nombre: unidadServicio.nombre_nuclear,
                     siglas: unidadServicio.siglas,
+                    idDepartamento: unidadServicio.id_unidad_superior
                 });
+                setDepartamentoSeleccionado(departamentos.find(d => d.id_unidad_servicio === unidadServicio.id_unidad_superior));
             }
         });
-    }, [idDepartamentoSeleccionado]);
+    }, [idProgramaSeleccionado]);
+
+
+    const selectedDepartamentoTemplate = (option, props) => {
+        if (option)  return <div> {option.siglas_jerarquicas} </div>;
+        return <div> {props.placeholder} </div>
+    }
 
 
     return (
@@ -104,7 +119,7 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
 
             <div className='col-12 m-0'>
                 <h1 className='justify-self-end text-black-alpha-80 text-lg m-0'>
-                    Editar Departamento:
+                    Editar Programa:
                 </h1>
             </div>
 
@@ -134,6 +149,21 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
                 { errors.siglas && <Message severity='error' text={errors.siglas?.message} className='mt-1 p-1'/> }
             </div>
 
+            <div className='col-12 field m-0'>
+                <label className='font-bold text-black-alpha-70 block'> Departamento: </label>
+                <Dropdown 
+                    options={departamentos}
+                    value={departamentoSeleccionado}
+                    placeholder='Seleccione un Departamento'
+                    optionLabel='siglas_jerarquicas'
+                    valueTemplate={selectedDepartamentoTemplate}
+                    onChange={e => {
+                        programaForm.setValue('idDepartamento', e.value.id_unidad_servicio);
+                        setDepartamentoSeleccionado(e.value);
+                    }}
+                />   
+                { errors.idDepartamento && <Message severity='error' text={errors.idDepartamento?.message} className='mt-1 p-1'/> }
+            </div>
 
             <div className='col-12 md:col-6'>
                 <Button
@@ -152,7 +182,7 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
                     label='Editar'
                     icon='pi pi-pencil'
                     iconPos='left'
-                    onClick={handleSubmit(handleEditarDepartamentoSubmit)}
+                    onClick={handleSubmit(handleEditarProgramaSubmit)}
                     className='w-full'
                 />
             </div>
@@ -160,4 +190,4 @@ function EdicionDepartamento({ idDepartamentoSeleccionado, onCancelEdicion, onDe
     );
 }
 
-export default EdicionDepartamento;
+export default EdicionPrograma;

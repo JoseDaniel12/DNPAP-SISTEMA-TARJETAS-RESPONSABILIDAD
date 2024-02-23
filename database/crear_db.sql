@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS municipio (
     nombre VARCHAR(250),
 
     id_departamento_guate INT,
-    FOREIGN KEY (id_departamento_guate) REFERENCES departamento_guate(id_departamento_guate) ON DELETE CASCADE
+    FOREIGN KEY (id_departamento_guate) REFERENCES departamento_guate(id_departamento_guate)
 );
 
 
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS unidad_servicio (
     id_unidad_superior INT,
     id_tipo_unidad_servicio INT,
     id_municipio INT,
-    FOREIGN KEY (id_unidad_superior) REFERENCES unidad_servicio(id_unidad_servicio) ON DELETE CASCADE,
-    FOREIGN KEY (id_tipo_unidad_servicio) REFERENCES tipo_unidad_servicio(id_tipo_unidad_servicio) ON DELETE CASCADE,
-    FOREIGN KEY (id_municipio) REFERENCES municipio(id_municipio) ON DELETE CASCADE
+    FOREIGN KEY (id_unidad_superior) REFERENCES unidad_servicio(id_unidad_servicio),
+    FOREIGN KEY (id_tipo_unidad_servicio) REFERENCES tipo_unidad_servicio(id_tipo_unidad_servicio),
+    FOREIGN KEY (id_municipio) REFERENCES municipio(id_municipio)
 );
 
 
@@ -57,8 +57,8 @@ CREATE TABLE IF NOT EXISTS empleado (
 
     id_rol INT,
     id_unidad_servicio INT,
-    FOREIGN KEY (id_rol) REFERENCES rol(id_rol) ON DELETE CASCADE,
-    FOREIGN KEY (id_unidad_servicio) REFERENCES unidad_servicio(id_unidad_servicio) ON DELETE CASCADE
+    FOREIGN KEY (id_rol) REFERENCES rol(id_rol),
+    FOREIGN KEY (id_unidad_servicio) REFERENCES unidad_servicio(id_unidad_servicio)
 );
 
 
@@ -66,7 +66,7 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
 	id_tarjeta_responsabilidad INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     numero VARCHAR(250),
     fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
-    saldo_que_viene DECIMAL(10, 3) DEFAULT 0,
+    saldo_que_viene DECIMAL(10, 2) DEFAULT 0,
     unidad_servicio VARCHAR(250),
     departamento_guate VARCHAR(250),
     municipio VARCHAR(250),
@@ -81,8 +81,8 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
     id_tarjeta_anterior INT,
     id_tarjeta_posterior INT,
     id_empleado INT,
-    FOREIGN KEY (id_tarjeta_anterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE,
-    FOREIGN KEY (id_tarjeta_posterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE,
+    FOREIGN KEY (id_tarjeta_anterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad),
+    FOREIGN KEY (id_tarjeta_posterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad),
     FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado) ON DELETE CASCADE
 );
 
@@ -92,8 +92,8 @@ CREATE TABLE IF NOT EXISTS registro (
     fecha DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
     cantidad INT UNSIGNED,
     descripcion LONGTEXT,
-    precio DECIMAL(10, 3),
-    saldo DECIMAL(10, 3),
+    precio DECIMAL(10, 2),
+    saldo DECIMAL(10, 2),
     ingreso TINYINT(1),
     anverso TINYINT(1),
     es_nota TINYINT(1) DEFAULT 0,
@@ -119,15 +119,17 @@ CREATE TABLE IF NOT EXISTS log (
 
 CREATE TABLE IF NOT EXISTS modelo (
 	id_modelo INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    marca VARCHAR(250),
+    codigo VARCHAR(250),
 	descripcion LONGTEXT,
-    precio DECIMAL(10, 3)
+    precio DECIMAL(10, 2)
 );
 
 
 CREATE TABLE IF NOT EXISTS kit (
 	id_kit INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
     descripcion LONGTEXT,
-    precio DECIMAL(10, 3)
+    precio DECIMAL(10, 2)
 );
 
 
@@ -143,8 +145,8 @@ CREATE TABLE IF NOT EXISTS bien (
     id_kit INT,
     id_tarjeta_responsabilidad INT,
     FOREIGN KEY (id_modelo) REFERENCES modelo(id_modelo) ON DELETE CASCADE,
-    FOREIGN KEY (id_kit) REFERENCES kit(id_kit) ON DELETE CASCADE,
-    FOREIGN KEY (id_tarjeta_responsabilidad) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE
+    FOREIGN KEY (id_kit) REFERENCES kit(id_kit) ON DELETE SET NULL,
+    FOREIGN KEY (id_tarjeta_responsabilidad) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE SET NULL
 );
 
 

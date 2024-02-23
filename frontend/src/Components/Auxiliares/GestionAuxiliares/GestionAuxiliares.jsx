@@ -62,7 +62,7 @@ function GestionAuxiliares() {
 
     const eliminarAuxiliar = (idAuxiliar) => {
         empleadoRequests.eliminarEmpleado(idAuxiliar).then(response => {
-            if (!response.error) {
+            if (!response?.error) {
                 setAuxiliares(prevAuxs => prevAuxs.filter(aux => aux.id_empleado !== idAuxiliar));
                 toast.current.show({severity: 'info', summary: 'Eliminación de Auxiliar', detail: 'Eliminación exitosa.', life: 3000});
             }
