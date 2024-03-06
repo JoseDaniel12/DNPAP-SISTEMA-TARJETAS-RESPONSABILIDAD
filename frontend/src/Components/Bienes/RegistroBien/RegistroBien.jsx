@@ -95,17 +95,17 @@ function RegistroBien() {
             }
         }
         const response = await bienesRequest.validarDisponibilidadSicoin(sicoin);
-        return response.data.disponibilidad;
+        return response.data;
     }
 
-    const validateDisponibilidadnoSerie= async (noSerie) => {
+    const validateDisponibilidadnoSerie = async (noSerie) => {
         for (const bien of bienes) {
             if (bien.noSerie === noSerie) {
                return  false;
             }
         }
         const response = await bienesRequest.validarDisponibilidadNoSerie(noSerie);
-        return response.data.disponibilidad ;
+        return response.data;
     }
 
     const datosEspecificosSchema = yup.object({
@@ -138,18 +138,17 @@ function RegistroBien() {
         const { sicoin, noSerie, noInventario } = datosEspecificos;
         if ([sicoin, noSerie, noInventario].every(valor => valor === '')) return;
 
-        const sicoinDisomible = await validateDisponibilidadSicoin(sicoin);
-        if (!sicoinDisomible) return setErrorDatosEspecificos('sicoin', {
+        const sicoinDisponible = await validateDisponibilidadSicoin(sicoin);
+        if (!sicoinDisponible) return setErrorDatosEspecificos('sicoin', {
             type: 'manual',
-            message: 'SICOIN ya registrado'
+            message: 'SICOIN ya registrado.'
         });
 
         const noSerieDisponible = await validateDisponibilidadnoSerie(noSerie);
         if (!noSerieDisponible) return setErrorDatosEspecificos('noSerie', {
             type: 'manual',
-            message: 'No. Serie ya registrado'
+            message: 'No. Serie ya registrado.'
         });
-
 
         setBienes(prevBienes => [...prevBienes, datosEspecificos]);
         formDatosEspecificos.reset();
@@ -248,7 +247,7 @@ function RegistroBien() {
             <div className='field col-12 md:col-3 mb-0'>
                 <label htmlFor='precio' className='font-bold block'>Marca: </label>
                 <InputText 
-                    id='noSerie'
+                    id='marca'
                     placeholder='Sin marca'
                     { ...registerDatosGenerales('marca') }
                 />
@@ -258,7 +257,7 @@ function RegistroBien() {
             <div className='field col-12 md:col-3 mb-0'>
                 <label htmlFor='precio' className='font-bold block'>Codigo de Modelo: </label>
                 <InputText 
-                    id='noSerie'
+                    id='codigoModelo'
                     placeholder='Sin modelo'
                     { ...registerDatosGenerales('codigoModelo') }
                 />

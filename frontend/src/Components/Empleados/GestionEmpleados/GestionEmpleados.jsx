@@ -52,7 +52,7 @@ function GestionEmpleados() {
     const handleGestionarBienesTarjetas = () => {
         if (!filaSelccionada) return;
         const empleado = empleados.find(e => e.id_empleado === filaSelccionada.id_empleado);
-        navigate('/tarjetas-empleado', { state: { empleado } });
+        navigate(`/tarjetas-empleado/${empleado.id_empleado}`);
     };
 
 

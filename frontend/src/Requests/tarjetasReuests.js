@@ -34,16 +34,14 @@ const tarjetasRequests = {
         }).then(response => response.json());
     },
 
-    generarExcel: async (id_tarjeta_responsabilidad, fecha) => {
-        let url = `http://localhost:5000/tarjetas/generar-excel-tarjeta/${id_tarjeta_responsabilidad}/${fecha}`;
+    generarExcel: async (id_tarjeta_responsabilidad) => {
+        let url = `http://localhost:5000/tarjetas/generar-excel-tarjeta/${id_tarjeta_responsabilidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
-
         }).then(response => response.blob());
     },
     
-
     numeroDisponible: async (id_tarjeta_responsabilidad) => {
         let url = `http://localhost:5000/tarjetas/numero-disponible`;
         return await fetch(url, {
@@ -52,6 +50,15 @@ const tarjetasRequests = {
             body: JSON.stringify({ id_tarjeta_responsabilidad })
         }).then(response => response.json());
     },
+
+    cambiarNumeroTarjeta: async (id_tarjeta_responsabilidad, nuevoNumero) => {
+        let url = `http://localhost:5000/tarjetas/cambiar-numero/${id_tarjeta_responsabilidad}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+            body: JSON.stringify({ nuevoNumero })
+        }).then(response => response.json());
+    }
 }
 
 export default tarjetasRequests;

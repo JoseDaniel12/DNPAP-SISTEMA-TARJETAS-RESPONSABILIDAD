@@ -1,16 +1,16 @@
 const express = require('express');
 const _ = require('lodash');
 const HTTPResponseBody  = require('./HTTPResponseBody');
+const { obtenerEmepleado } = require('../utilities/empleado');
 const { encriptar } = require('../helpers/encryption');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { 
-    colocarRegistro, crearTarjeta,
-    getDescripcionRegistro, getNoLineas, formatearDescripcionBien,
+    getNoLineas,
+    formatearDescripcionBien,
     generarRegistrosDesvinculados
 } = require('../utilities/tarjetas');
 const { ejecutarAccionTarjeta } = require('../utilities/tarjetas');
 const userRoles = require('../types/userRoles');
-const { parse } = require('querystring');
 const router = express.Router();
 
 
@@ -37,13 +37,7 @@ router.get('/empleado/:id_empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const { id_empleado } = req.params;
-        let query = `
-            SELECT
-                empleado.*
-            FROM empleado
-            WHERE id_empleado = ${id_empleado};
-        `;
-        const [empleado] = await mysql_exec_query(query);
+        const empleado = await obtenerEmepleado(id_empleado);
         respBody.setData({empleado});
         res.status(200).json(respBody.getLiteralObject());
     } catch(error) {

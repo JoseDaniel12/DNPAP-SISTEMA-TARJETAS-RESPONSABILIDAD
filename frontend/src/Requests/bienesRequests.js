@@ -35,6 +35,31 @@ const bienesRequests = {
             method: 'GET'
         }).then(response => response.json());
     },
+
+    getBienesAsignados: async () => {
+        let url = 'http://localhost:5000/bienes/bienes-asignados';
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.json());
+    },
+
+    getBien: async (id_bien) => {
+        let url = `http://localhost:5000/bienes/bien/${id_bien}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.json());
+    },
+
+    editarBien: async (id_bien, requestBody) => {
+        let url = `http://localhost:5000/bienes/editar-bien/${id_bien}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+            body: JSON.stringify(requestBody)
+        }).then(response => response.json());
+    }
 }
 
 export default bienesRequests;

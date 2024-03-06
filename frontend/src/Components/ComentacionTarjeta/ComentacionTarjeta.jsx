@@ -52,6 +52,10 @@ function ComentacionTarjeta({visible, setVisible, id_empleado, onComentarTarjeta
 
 
     const handleComentarTarjetas = async () => {
+        if (data.comentario === '') {
+            return onHide();
+        };
+
         const res = await empleadoRequests.comentarTarjetas(id_empleado, data);
         if (!res.error) {
             const tarjetaConNuevoRegistro = res.data;

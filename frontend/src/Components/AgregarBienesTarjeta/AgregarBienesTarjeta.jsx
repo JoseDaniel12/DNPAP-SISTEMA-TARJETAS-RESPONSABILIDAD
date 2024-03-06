@@ -4,13 +4,12 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { Chip } from 'primereact/chip';
 import { useToast } from '../../hooks/useToast';
+import  AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 
 import bienesRequests from '../../Requests/bienesRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 import empleadoRequests from '../../Requests/empleadoRequests';
-
 
 
 function AgregarBienesTarjeta() {
@@ -36,29 +35,13 @@ function AgregarBienesTarjeta() {
         setBienesSinAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
+
     const handleEliminarBien = (id_bien) => {
         const bien = bienesPorAsignar.find(b => b.id_bien === id_bien);
         setBienesSinAsignar(prevBiens => [...prevBiens, bien]);
         setBienesPorAsignar(prevBiens => prevBiens.filter(b => b.id_bien !== id_bien));
     }
 
-
-    const handleAgregarTarjeta = async () => {
-        if (numeroTarjeta === '') return;
-        // Verificación de que la tarjeta no exista ya
-        const numDisponible = await tarjetasRequests.numeroDisponible(numeroTarjeta).then(res => res.data);
-        if (!numDisponible || numerosTarjetas.includes(numeroTarjeta)) {
-            const error = `El numero de tarjeta ${numeroTarjeta} ya existe.`;
-            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
-        } else {
-            setNumerosTarjetas(prevNumeros => [...prevNumeros, numeroTarjeta]);
-        }
-        setNumeroTarjeta('');
-    }
-
-    const handleEliminarTarjeta = (numero) => {
-        setNumerosTarjetas(prevNumeros => prevNumeros.filter(n => n !== numero));
-    }
 
     const handleAgregarBienes = async () => {
         if (!bienesPorAsignar.length) return;
@@ -114,7 +97,7 @@ function AgregarBienesTarjeta() {
 
 
     useEffect(() => {
-        bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data.bienesSinAsignar));
+        bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data));
     }, []);
 
 
@@ -223,36 +206,11 @@ function AgregarBienesTarjeta() {
             </div>
 
             <div className='col-12'>
-                <p>Se requieren <b>{cantTarjetasNesecarias}</b> tarjetas nuevas: </p>
-                <div className='field col max-w-max p-0'>
-                    <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
-                    <div className='flex flex-wrap gap-1'>
-                        <div className='col p-0'>
-                            <InputText 
-                                id='search' type='text' placeholder='No. Tarjeta'
-                                value={numeroTarjeta}
-                                onChange={(e) => setNumeroTarjeta(e.target.value)}
-                            />
-                        </div>
-                        <div className='col-12 lg:max-w-max p-0'>
-                            <Button 
-                                severity='success' label='Agregar' icon='pi pi-plus'
-                                onClick={handleAgregarTarjeta}
-                            />
-                        </div>
-                    </div>
-                </div>
-                <div className='card flex flex-wrap gap-2 mb-4'>
-                    {
-                        numerosTarjetas.map((numero, index) => (
-                            <Chip
-                                key={numero}
-                                label={numero} className='p-mr-2 p-mb-2' removable
-                                onRemove={() => handleEliminarTarjeta(numero)}
-                            />
-                        ))
-                    }
-                </div>
+                <AgregacionNumerosTarjeta
+                    cantTarjetas={cantTarjetasNesecarias}
+                    numerosTarjetas={numerosTarjetas}
+                    setNumerosTarjetas={setNumerosTarjetas}
+                />
             </div>
 
             <div className='col-12'>

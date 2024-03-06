@@ -16,13 +16,21 @@ router.get('/registros-tarjeta/:id_tarjeta_responsabilidad', async (req, res) =>
     const respBody = new HTTPResponseBody();
     try {
         const id_tarjeta_responsabilidad = parseInt(req.params.id_tarjeta_responsabilidad);
-        let query = `
-            SELECT *
-            FROM registro
-            WHERE registro.id_tarjeta_responsabilidad = ${id_tarjeta_responsabilidad}
-            ORDER BY registro.fecha;
-        `;
-        const registros = await mysql_exec_query(query);
+        const tarjeta = await obtenerTarjeta(id_tarjeta_responsabilidad, true);
+        const registros = tarjeta.registros;
+        let saldoAcumulado = tarjeta.saldo_que_viene;
+        registros.map(registro => {
+            if (registro.es_nota) return registro;
+            if (registro.ingreso) {
+                registro.debe = registro.precio;
+                saldoAcumulado += registro.precio;
+            } else {
+                registro.haber = registro.precio;
+                saldoAcumulado -= registro.precio;
+            }
+            registro.saldo = saldoAcumulado;
+            return registro;
+        });
         respBody.setData(registros);
         res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
@@ -145,13 +153,12 @@ router.get('/generar-pdf-tarjeta/:id_tarjeta_responsabilidad/:fecha', async (req
 });
 
 
-router.get('/generar-excel-tarjeta/:id_tarjeta_responsabilidad/:fecha', async (req, res) => {
+router.get('/generar-excel-tarjeta/:id_tarjeta_responsabilidad', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        let {id_tarjeta_responsabilidad,  fecha } = req.params;
+        let { id_tarjeta_responsabilidad } = req.params;
         const tarjeta = await obtenerTarjeta(id_tarjeta_responsabilidad, true);
-        fecha = (fecha == 'null')? null : new Date(fecha);
-        const excel = await generarExcel(tarjeta, fecha);
+        const excel = await generarExcel(tarjeta);
         const blob = await excel.outputAsync();
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=${tarjeta.numero}.xlsx`);
@@ -174,6 +181,40 @@ router.post('/numero-disponible', async (req, res) => {
         `;
         const tarjetas = await mysql_exec_query(query);
         respBody.setData(tarjetas.length === 0);
+        return res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.put('/cambiar-numero/:id_tarjeta_responsabilidad', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_tarjeta_responsabilidad = parseInt(req.params.id_tarjeta_responsabilidad);
+        const { nuevoNumero } = req.body;
+
+        const tarjeta = await obtenerTarjeta(id_tarjeta_responsabilidad);
+
+        // Se acutaliza el numero de la tarjeta
+        let query = `
+            UPDATE tarjeta_responsabilidad
+            SET numero = '${nuevoNumero}'
+            WHERE id_tarjeta_responsabilidad = ${id_tarjeta_responsabilidad};
+        `;
+        await mysql_exec_query(query);
+
+        // Se actualiza la descripción de todos aquellos registros en los que se referenciaba
+        // al numero de tarjeta
+        query = `
+            UPDATE registro
+            SET descripcion = REPLACE(descripcion, 'No. ${tarjeta.numero}', 'No. ${nuevoNumero}')
+        `;
+        await mysql_exec_query(query);
+
+        respBody.setMessage('Numero de tarjeta actualizado correctamente.');
         return res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)

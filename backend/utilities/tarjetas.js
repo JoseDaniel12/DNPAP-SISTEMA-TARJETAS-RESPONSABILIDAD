@@ -5,14 +5,22 @@ const _ = require('lodash');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const accionesTarjeta = require('../types/accionesTarjeta');
 const { obtenerNombreJerarquico } = require('./unidadServicio');
-const { obtenerUltimaTarjeta } = require('../utilities/empleado');
+const { obtenerEmepleado, obtenerUltimaTarjeta } = require('../utilities/empleado');
 
 
 const FORMATO_TARJETA = {
+    POS_UNIDAD_SERVICIO: { fila: 2, columna: 4 },
+    POS_MUNICIPIO: { fila: 2, columna: 5 },
+    POS_DEPARTAMENTO: { fila: 2, columna: 8 },
+    POS_EMPLEADO: { fila: 3, columna: 3 },
+    POS_NIT: { fila: 3, columna: 5 },
+    POS_CARGO: { fila: 3, columna: 7 },
+
     LINEAS_POR_PAGINA: 30,      // No incluye las 2 lineas de saldo entrante y saliente
     CARACTERES_POR_LINEA: 65,
     FONT: 'Courier New',
     FONT_SIZE: 9,
+    FORMATO_PRECIO: '_(Q* #,##0.00_);_(Q* (#,##0.00);_(@_)',
     FILA_PRIMER_REGISTRO: 5,
     COL_FECHA: 2,
     COL_CANTIDAD: 3,
@@ -371,10 +379,39 @@ async function obtenerTarjeta(id_tarjeta, conRegistros = false) {
 }
 
 
-async function generarExcel(tarjeta, fecha) {
+async function colocarEncabezadoTarjeta(hojaExcel, empleado) {
+    // Unidad de Servicio
+    let { fila, columna } = FORMATO_TARJETA.POS_UNIDAD_SERVICIO;
+    hojaExcel.row(fila).cell(columna).value(empleado.unidad_servicio + ' - ' + empleado.siglas_jerarquicas);
+
+    // Municipio    
+    ({ fila, columna } = FORMATO_TARJETA.POS_MUNICIPIO);
+    hojaExcel.row(fila).cell(columna).value(empleado.municipio);
+
+    // Departamento
+    ({ fila, columna } = FORMATO_TARJETA.POS_DEPARTAMENTO);
+    hojaExcel.row(fila).cell(columna).value(empleado.departamento_guate);
+
+    // Nombre del Empleado
+    ({ fila, columna } = FORMATO_TARJETA.POS_EMPLEADO);
+    hojaExcel.row(fila).cell(columna).value(empleado.nombres + ' ' + empleado.apellidos);
+
+    // NIT
+    ({ fila, columna } = FORMATO_TARJETA.POS_NIT);
+    hojaExcel.row(fila).cell(columna).value(empleado.nit);
+
+    // Cargo
+    ({ fila, columna } = FORMATO_TARJETA.POS_CARGO);
+    hojaExcel.row(fila).cell(columna).value(empleado.cargo);
+}
+
+
+async function generarExcel(tarjeta) {
     const rutaPlantilla = path.join(__dirname, '../PlantillasExcel/TarjetaResponsabilidad.xlsx');
     const excel = await XlsxPopulate.fromFileAsync(rutaPlantilla);
     let hoja = excel.sheet(0);
+    const empleado = await obtenerEmepleado(tarjeta.id_empleado);
+    colocarEncabezadoTarjeta(hoja, empleado);
 
     let saldoSalienteAnverso = 0;
     for (const registro of tarjeta.registros) {
@@ -386,16 +423,17 @@ async function generarExcel(tarjeta, fecha) {
     let fila = FORMATO_TARJETA.FILA_PRIMER_REGISTRO;
     let columna = FORMATO_TARJETA.COL_DESCRIPCION;
 
-    // Se coloca Nota del saldo entrante en la tarjeta
+    // Se coloca la nota del saldo entrante y su monto en la tarjeta
     let notaSaldoEntrante = 'SALDO QUE VIENE...';
     if (tarjeta.id_tarjeta_anterior !== null) {
         const tarjetaAnterior = await obtenerTarjeta(tarjeta.id_tarjeta_anterior);
         notaSaldoEntrante = `SALDO QUE VIENE DE LA TARJETA No. ${tarjetaAnterior.numero} ...`;
     }
     hoja.row(fila).cell(columna).value(notaSaldoEntrante);
-    const saldoEntranteString = tarjeta.saldo_que_viene.toFixed(2).toString();
+
     columna = FORMATO_TARJETA.COL_SALDO;
-    hoja.row(fila).cell(columna).value(saldoEntranteString);
+    hoja.row(fila).cell(columna).value(tarjeta.saldo_que_viene);
+    hoja.row(fila).cell(columna).style({ numberFormat: FORMATO_TARJETA.FORMATO_PRECIO });
     fila += 1;
 
     let enAnverso = true;
@@ -403,18 +441,20 @@ async function generarExcel(tarjeta, fecha) {
     for (const registro of tarjeta.registros) {
         // Si el registro va en el reverso y aun se esta en el anverso, se cambia al reverso
         if (!registro.anverso && enAnverso) {
-            // Antes de cambiar al reverso se coloca la nota del saldo saliente en el anverso
-            const saldoSalienteAnversoString = tarjeta.saldo_anverso.toFixed(2).toString();
+            // Antes de cambiar al reverso se coloca la nota del saldo saliente y su monto en el anverso
             columna = FORMATO_TARJETA.COL_DESCRIPCION;
             const celdaDescripcionSaldoSalienteAnverso = hoja.row(fila).cell(columna);
             celdaDescripcionSaldoSalienteAnverso.style({ horizontalAlignment: 'right' });
             celdaDescripcionSaldoSalienteAnverso.value('SALDO QUE VA...');
+
             columna = FORMATO_TARJETA.COL_SALDO;
-            hoja.row(fila).cell(columna).value(saldoSalienteAnversoString);
+            hoja.row(fila).cell(columna).value(tarjeta.saldo_anverso);
+            hoja.row(fila).cell(columna).style({ numberFormat: FORMATO_TARJETA.FORMATO_PRECIO });
 
             // Se cambia al reverso y se reinicia la posicion de fila
             enAnverso = false;
             hoja = excel.sheet(1);
+            colocarEncabezadoTarjeta(hoja, empleado);
             fila = FORMATO_TARJETA.FILA_PRIMER_REGISTRO;
 
             // Se coloca Nota del nota del saldo entrante al reverso
@@ -423,7 +463,8 @@ async function generarExcel(tarjeta, fecha) {
             celdaDescripcionSaldoEntranteReverso.style({ horizontalAlignment: 'right' });
             celdaDescripcionSaldoEntranteReverso.value('SALDO QUE VIENE...');            
             columna = FORMATO_TARJETA.COL_SALDO;
-            hoja.row(fila).cell(columna).value(saldoSalienteAnversoString);
+            hoja.row(fila).cell(columna).value(tarjeta.saldo_anverso);
+            hoja.row(fila).cell(columna).style({ numberFormat: FORMATO_TARJETA.FORMATO_PRECIO });
             fila += 1;
         }
 
@@ -435,23 +476,22 @@ async function generarExcel(tarjeta, fecha) {
         if (!registro.es_nota) {
             // Columna Cantidad
             columna = FORMATO_TARJETA.COL_CANTIDAD;
-            const cantidadString = registro.cantidad.toString();
-            hoja.row(fila).cell(columna).value(cantidadString);
+            hoja.row(fila).cell(columna).value(registro.cantidad);
 
             // Columna de Debe o Haber
-            const montoString = registro.precio.toFixed(2).toString();
             if (registro.ingreso) {
                 columna = FORMATO_TARJETA.COL_DEBE;
             } else {
                 columna = FORMATO_TARJETA.COL_HABER;
             }
-            hoja.row(fila).cell(columna).value(montoString);
+            hoja.row(fila).cell(columna).value(registro.precio);
+            hoja.row(fila).cell(columna).style({ numberFormat: FORMATO_TARJETA.FORMATO_PRECIO });
 
             // Columna Saldo
             columna = FORMATO_TARJETA.COL_SALDO;
             saldoAcumulado = registro.ingreso? saldoAcumulado + registro.precio : saldoAcumulado - registro.precio;
-            const saldoAcumuladoString = saldoAcumulado.toFixed(2).toString();
-            hoja.row(fila).cell(columna).value(saldoAcumuladoString);
+            hoja.row(fila).cell(columna).value(saldoAcumulado);
+            hoja.row(fila).cell(columna).style({ numberFormat: FORMATO_TARJETA.FORMATO_PRECIO });
         }
 
         // Columna Descripción

@@ -8,6 +8,7 @@ import { Chip } from 'primereact/chip';
 import { Divider } from 'primereact/divider';
 import { Message } from 'primereact/message';
 import { useToast } from '../../hooks/useToast';
+import AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
@@ -148,6 +149,7 @@ function TraspasoBienes() {
         });
     }, [bienesPorTraspasar]);
 
+    
     useEffect(() => {
         empleadoRequests.getEmpleados().then(response => {
             console.log(response.data);
@@ -158,7 +160,6 @@ function TraspasoBienes() {
         empleadoRequests.getBienes(id_empleado_emisor).then(response => {
             setBienes(response.data);
         });
-
     }, []);
 
 
@@ -343,8 +344,14 @@ function TraspasoBienes() {
 
                 <Divider layout='vertical hidden md:inline'/>
 
-                <div className='col-12 md:col'>
+                <div className='col-12 md:col-6'>
                     { errorEmpleadoReceptor && <Message severity='error' text='Se debe seleccionar al empleado receptor.' className='mt-1 p-1'/> }
+
+                    {/* <AgregacionNumerosTarjeta
+                        cantTarjetas={cantTarjetasEmisor + cantTarjetasReceptor}
+                        numerosTarjetas={numerosTarjetasEmisor.concat(numerosTarjetasReceptor)}
+                        setNumerosTarjetas={setNumerosTarjetasEmisor}
+                    /> */}
 
                     <p>Se requieren <b>{cantTarjetasReceptor}</b> tarjetas nuevas para el <b>Recepetor:</b> </p>
                     <div className='field col max-w-max p-0'>

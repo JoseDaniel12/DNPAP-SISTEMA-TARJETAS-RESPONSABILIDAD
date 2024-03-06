@@ -2,24 +2,8 @@ const adminOptions = [
     {
         label: 'Bienes',
         icon: 'pi pi-box',
-        items: [
-            {
-                label: 'Registrar Bienes',
-                icon: 'pi pi-arrow-up',
-                url: '/registar-bienes',
-            },
-            {
-                label: 'Editar Bienes Desasignados',
-                icon: 'pi pi-pencil',
-                url: '/editar-bien-desasignado',
-            }
-        ]
+        url: '/gestionar-bienes'
     },
-    // {
-    //     label: 'Agrupar Bienes',
-    //     icon: 'pi pi-box',
-    //     url: '/agrupar-bienes'
-    // },
     {
         label: 'Personal',
         icon: 'pi pi-users',

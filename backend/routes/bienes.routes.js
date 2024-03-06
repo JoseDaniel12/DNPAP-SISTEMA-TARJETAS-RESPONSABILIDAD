@@ -3,7 +3,52 @@ const HTTPResponseBody  = require('./HTTPResponseBody');
 const conn = require('../database/mysql/mysql_conn');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { format } = require('date-fns');
+const { crearModelo, encontrarModelo } = require('../utilities/bienes');
 const router = express.Router();
+
+
+
+router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { sicoin } = req.body;
+        let query = `SELECT * FROM bien WHERE sicoin = '${sicoin}'`;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.length > 0) {
+            respBody.setData(false);
+            respBody.setMessage('Ya existe un bien con el sicoin ingresado.');
+            return res.send(respBody.getLiteralObject());
+        }
+        respBody.setData(true);
+        return res.send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.post('/verificar-disponibilidad-noSerie', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { noSerie } = req.body;
+        let query = `SELECT * FROM bien WHERE no_serie = '${noSerie}'`;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.length > 0) {
+            respBody.setData(false);
+            respBody.setMessage('Ya existe un bien con el número de serie ingresado.');
+            return res.send(respBody.getLiteralObject());
+        }
+        respBody.setData(true);
+        return res.send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
 
 router.post('/registro-bienes-comunes', async (req, res) => {
     const respBody = new HTTPResponseBody();
@@ -80,19 +125,21 @@ router.post('/registro-bienes-comunes', async (req, res) => {
 });
 
 
-router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
+router.get('/bien/:id_bien', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    const { id_bien } = req.params;
     try {
-        const { sicoin } = req.body;
-        let query = `SELECT * FROM bien WHERE sicoin = '${sicoin}'`;
+        const query = `
+            SELECT *
+            FROM bien
+            INNER JOIN modelo USING (id_modelo)
+            WHERE id_bien = ${id_bien};
+        `;
         const outcome = await mysql_exec_query(query);
-        if (outcome.length > 0) {
-            respBody.setData({disponibilidad: false});
-            respBody.setError('Ya existe un bien con el sicoin ingresado.');
-            return res.send(respBody.getLiteralObject());
-        }
-        respBody.setData({disponibilidad: true});
-        return res.send(respBody.getLiteralObject());
+        if (!outcome.length ) return null
+        const [bien] = outcome;
+        respBody.setData(bien);
+        res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)
         respBody.setError(error.toString());
@@ -101,38 +148,125 @@ router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
 });
 
 
-router.post('/verificar-disponibilidad-noSerie', async (req, res) => {
+router.put('/editar-bien/:id_bien', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        const { noSerie } = req.body;
-        let query = `SELECT * FROM bien WHERE no_serie = '${noSerie}'`;
-        const outcome = await mysql_exec_query(query);
-        if (outcome.length > 0) {
-            respBody.setData({disponibilidad: false});
-            respBody.setError('Ya existe un bien con el número de serie ingresado.');
-            return res.send(respBody.getLiteralObject());
+        const id_bien = parseInt(req.params.id_bien);
+        const { 
+            descripcion, precio, marca, codigoModelo, sicoin, noSerie, noInventario,
+            editarModelo, id_modelo
+        } = req.body;
+
+        // Se actualizan los datos especificos del bien
+        let query = `
+            UPDATE bien
+            SET sicoin = '${sicoin}',
+                no_serie = '${noSerie}',
+                no_inventario = '${noInventario}'
+            WHERE id_bien = ${id_bien};
+        `;
+        await mysql_exec_query(query);
+        
+        // Se ve si ya existe un modelo con las nuevas caracteristicas ingresadas
+        const modeloExistente = await encontrarModelo(descripcion, precio, marca, codigoModelo);
+        if (modeloExistente) {
+            if (editarModelo) {
+                // Si ya exsite un modelo con las nuevas caracteristicas ingresadas y se desea
+                // cambiar a ese modelo todos los bienes pertencientes al modelo acutal del
+                // bien en edicion, entonces se pasan todos los bienes a ese modelo ya existente.
+                let query = `
+                    UPDATE bien
+                    SET id_modelo = ${modeloExistente.id_modelo}
+                    WHERE id_modelo = ${id_modelo};
+                `;
+                await mysql_exec_query(query);
+            } else {
+                // Si solo se quiere cambiar el bien en edición al modelo ya existente
+                let query = `
+                    UPDATE bien
+                    SET id_modelo = ${modeloExistente.id_modelo}
+                    WHERE id_bien = ${id_bien};
+                `;
+                await mysql_exec_query(query);
+            }
+        } else {
+            // Si no exsite un modelo con las nuevas caracteristicas ingresadas se crea uno nuevo
+            const nuevoModelo = await crearModelo(descripcion, precio, marca, codigoModelo);
+            if (editarModelo) {
+                // Si se desea pasar el bien en edición y a todos los demas bienes
+                // pertenecientes al modelo acutal del bien en deción hacia el nuevo
+                // modelo creado
+                query = `
+                    UPDATE bien
+                    SET id_modelo = ${nuevoModelo.id_modelo}
+                    WHERE id_modelo = ${id_modelo};
+                `;
+                await mysql_exec_query(query);
+            } else {
+                // Si solo se desea cambiar el bien en edición al nuevo modelo creado
+                query = `
+                    UPDATE bien
+                    SET id_modelo = ${nuevoModelo.id_modelo}
+                    WHERE id_bien = ${id_bien};
+                `;
+                await mysql_exec_query(query);
+            }
         }
-        respBody.setData({disponibilidad: true});
-        return res.send(respBody.getLiteralObject());
+
+        // Si el modelo que tenia el bien en edición ya no tiene bienes asociados, se elimina
+        query = `
+            SELECT * FROM bien WHERE id_modelo = ${id_modelo};
+        `;
+        const bienesModelo = await mysql_exec_query(query);
+        if (!bienesModelo.length) {
+            query = `
+                DELETE FROM modelo WHERE id_modelo = ${id_modelo};
+            `;
+            await mysql_exec_query(query);
+        }
+
+        respBody.setData('Bien actualizado correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
-    } 
+    }
 });
+
 
 
 router.get('/bienes-sin-asignar', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const query = `
-            SELECT * FROM bien
-            INNER JOIN modelo USING(id_modelo)
-            LEFT OUTER JOIN tarjeta_responsabilidad USING(id_tarjeta_responsabilidad)
-            WHERE bien.id_tarjeta_responsabilidad IS NULL;
+            SELECT *
+            FROM bien_inactivo
+            INNER JOIN bien USING (id_bien)
+            INNER JOIN modelo USING (id_modelo);
         `;
         const bienesSinAsignar = await mysql_exec_query(query);
-        respBody.setData({bienesSinAsignar});
+        respBody.setData(bienesSinAsignar);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    } 
+});
+
+
+router.get('/bienes-asignados', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const query = `
+            SELECT *
+            FROM bien_activo
+            INNER JOIN bien USING (id_bien)
+            INNER JOIN modelo USING (id_modelo);
+        `;
+        const bienes = await mysql_exec_query(query);
+        respBody.setData(bienes);
         res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)

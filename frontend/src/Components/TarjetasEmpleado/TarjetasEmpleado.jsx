@@ -1,55 +1,70 @@
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
-import { Dialog } from 'primereact/dialog';
-import { InputTextarea } from 'primereact/inputtextarea';
+import { ConfirmDialog } from 'primereact/confirmdialog';
+import { confirmDialog } from 'primereact/confirmdialog';
+import { useToast } from '../../hooks/useToast';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
 
-
 import tarjetasRequests from '../../Requests/tarjetasReuests';
+import empleadoRequests from '../../Requests/empleadoRequests';
   
 
 function TarjetasEmpleado() {
+    const toast = useToast('bottom-right');
     const navigate = useNavigate();
-    const location = useLocation();
-    const { empleado } = location.state;
 
+    let { id_empleado } = useParams();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const id_tarjeta_responsabilidad = searchParams.get('id_tarjeta_responsabilidad');
+
+    const [empleado, setEmpleado] = useState(null);
     const [tarjetas, setTarjetas] = useState({});
     const [tarjeta, setTarjeta] = useState(null);
     const [registros, setRegistros] = useState([]);
-    const [registrosSeleccionados, setRegistrosSeleccionados] = useState([]);
+
     const [visbilidadDialogComentario, setVisbilidadDialogComentario] = useState(false);
-    const [comentario, setComentario] = useState('');
 
-    // Apartir de esta fecha se colocara letra a color al momento de generar un pdf
-    const [fecha, setFecha] = useState(null);
+    const [nuevoNumeroTarjeta, setNuevoNumeroTarjeta] = useState('');
 
 
-    const handleSelectRegistro = (e) => {
-        const registroSeleccionado = e.data;
-        setFecha(registroSeleccionado.fecha);
-        const registrosSeleccionados = [
-            registroSeleccionado,
-            ...tarjeta.registros.filter(registro => registro.fecha > registroSeleccionado.fecha)
-        ];
-        setRegistrosSeleccionados(registrosSeleccionados);
-    };
-
-
-    const handleDeseleccionarRegistro = (e) => {
-        setFecha(null);
-        setRegistrosSeleccionados([]);
+    const cambiarNumeroTarjeta = async () => {
+        await tarjetasRequests.cambiarNumeroTarjeta(tarjeta.id_tarjeta_responsabilidad, nuevoNumeroTarjeta).then(res => {
+            if (res.error) {
+                return toast.current.show({severity:'error', summary: 'Cambio de No. de Tarjeta', detail: res.error, life: 2500});
+            }
+            toast.current.show({severity:'success', summary: 'Cambio de Nol Tarjeta', detail: res.message, life: 2500});
+            setTarjeta(prev => ({...prev, numero: nuevoNumeroTarjeta}));
+            setNuevoNumeroTarjeta('');
+        });
     }
 
 
+    const handleCambiarNumeroTarjeta = async () => {
+        if (nuevoNumeroTarjeta === '') return;
+        const disponibilidad = await tarjetasRequests.numeroDisponible(nuevoNumeroTarjeta).then(res => res.data);
+        if (!disponibilidad) {
+            return toast.current.show({severity:'error', summary: 'Cambio de No. de Tarjeta', detail: `El numero de tarjeta ${nuevoNumeroTarjeta} ya existe.`, life: 2500});        
+        };
+
+        confirmDialog({
+            header: 'Cambio de No. de Tarjeta',
+            message: '¿Está seguro que desea cambiar el número de tarjeta?',
+            icon: 'pi pi-exclamation-triangle',
+            defaultFocus: 'reject',
+            accept: cambiarNumeroTarjeta       
+        });
+    };
+
+
     const handleGenerarExcel = async () => {
-        const blob = await tarjetasRequests.generarExcel(tarjeta.id_tarjeta_responsabilidad, fecha);
+        const blob = await tarjetasRequests.generarExcel(tarjeta.id_tarjeta_responsabilidad);
         const url = window.URL.createObjectURL(blob);
         // Creación de un enlace temporal y simulación de un clic en él para iniciar la descarga
         const a = document.createElement('a');
@@ -71,21 +86,7 @@ function TarjetasEmpleado() {
             setTarjeta(tarjetaConNuevoRegistro);
         }
     };
-
-
-    const botonDescargarTemplate = (registro) => {
-        if (registro.haber) return;
-        return (
-            <Button 
-                type='button' 
-                icon='pi pi-trash'
-                className='p-button-danger p-button-outlined w-auto'
-                label='Descargar'
-                onClick={() => {}}
-            />
-        );
-    };
-
+    
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
         style: 'currency',
         currency: 'GTQ',
@@ -108,7 +109,7 @@ function TarjetasEmpleado() {
         return formatDate(fila.fecha);
     };
 
-    const rowClass  = (row) => {
+    const rowClass = (row) => {
         if (row.es_nota) return 'font-bold';
     }
 
@@ -121,11 +122,41 @@ function TarjetasEmpleado() {
 
 
     useEffect(() => {
-        tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
-            const tarjetas = response.data;
-            setTarjetas(tarjetas);
-            if (tarjetas.length) setTarjeta(tarjetas[0]);
+        empleadoRequests.getEmpleado(id_empleado).then((response) => {
+            const empleado = response.data.empleado;
+            setEmpleado(empleado);
+
+            tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
+                const tarjetas = response.data;
+                setTarjetas(tarjetas);
+
+                if (id_tarjeta_responsabilidad) {
+                    const tarjeta = tarjetas.find(tarjeta => tarjeta.id_tarjeta_responsabilidad === id_tarjeta_responsabilidad);
+                    if (tarjeta) {
+                        setTarjeta(tarjeta);
+                    }
+                }
+
+                if (!tarjeta && tarjetas.length > 0) {
+                    setTarjeta(tarjetas[0]);
+                }
+            });
         });
+        // tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
+        //     const tarjetas = response.data;
+        //     setTarjetas(tarjetas);
+
+        //     if (id_tarjeta_responsabilidad) {
+        //         const tarjeta = tarjetas.find(tarjeta => tarjeta.id_tarjeta_responsabilidad === id_tarjeta_responsabilidad);
+        //         if (tarjeta) {
+        //             setTarjeta(tarjeta);
+        //         }
+        //     }
+
+        //     if (!tarjeta && tarjetas.length > 0) {
+        //         setTarjeta(tarjetas[0]);
+        //     }
+        // });
     }, []);
 
 
@@ -140,9 +171,10 @@ function TarjetasEmpleado() {
 
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
+            <ConfirmDialog  dismissableMask={true}/>
 
             <div className='col-12 text-center text-center mt-0 pt-0'>
-                <h1 className='text-black-alpha-70'>Tarjetas de {empleado.nombres}</h1>
+                <h1 className='text-black-alpha-70'>Tarjetas de {empleado?.nombres}</h1>
             </div>
 
             <div className='col-12 grid m-0'>
@@ -168,7 +200,7 @@ function TarjetasEmpleado() {
                             visible={visbilidadDialogComentario}
                             setVisible={setVisbilidadDialogComentario}
                             onComentarTarjeta={hanldeComentarTarjeta}
-                            id_empleado={empleado.id_empleado}
+                            id_empleado={empleado?.id_empleado}
                         />
                     </div>
                     <div className='col-12 md:max-w-max'>
@@ -237,10 +269,17 @@ function TarjetasEmpleado() {
                                     <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
                                     <div className='flex flex-wrap gap-1 p-0'>
                                         <div className='col p-0'>
-                                            <InputText id='search' type='text' placeholder='Nuevo No. Tarjeta'/>
+                                            <InputText 
+                                                id='search' type='text' placeholder='Nuevo No. Tarjeta'
+                                                value={nuevoNumeroTarjeta}
+                                                onChange={e => setNuevoNumeroTarjeta(e.target.value)}
+                                            />
                                         </div>
                                         <div className='col-12 lg:max-w-max p-0'>
-                                            <Button severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'/>
+                                            <Button
+                                                severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'
+                                                onClick={handleCambiarNumeroTarjeta}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -261,10 +300,17 @@ function TarjetasEmpleado() {
                                         placeholder='Seleccionar Tarjeta'
                                         options={tarjetas} 
                                         style={{borderColor: '#878787b3'}}
-                                        onChange={e => setTarjeta(e.value)}
+                                        onChange={e => {
+                                            setTarjeta(e.value);
+                                            setSearchParams(prev => ({
+                                                ...prev,
+                                               id_tarjeta_responsabilidad: e.value.id_tarjeta_responsabilidad
+                                            }));
+                                        }}
                                     />
                                 </div>
                             </div>
+
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
@@ -276,17 +322,14 @@ function TarjetasEmpleado() {
                             </div>
                         </div>
                     }
-                    selectionMode='checkbox'
-                    selection={registrosSeleccionados}
-                    onRowSelect={handleSelectRegistro}
-                    onRowUnselect={handleDeseleccionarRegistro}
+
                     dataKey='id_registro'
                     rowClassName={rowClass}
                 >
                     <Column field='fecha' header='Fecha' dataType='date' body={dateBodyTemplate}/>
                     <Column field='cantidad' header='Cantidad'/>
                     <Column field='descripcion' header='Descripción' />
-                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe ,row)}/>
+                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe, row)}/>
                     <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)}/>
                     <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)}/>
                     <Column field='anverso' header='Lado'  body={sideTemplate}/>

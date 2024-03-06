@@ -236,32 +236,35 @@ HAVING MAX(tarjeta_responsabilidad.fecha);
 
 CREATE VIEW bien_inactivo AS
 # Bienes sin dueño asignado
-SELECT
-    bien.id_bien
-FROM empleado
-INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-INNER JOIN bien ON registro_bien.id_bien = bien.id_bien
-GROUP BY empleado.id_empleado, bien.id_bien
-HAVING (
-    SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
-    SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
-) = FALSE;
+SELECT bien.id_bien
+FROM bien_activo
+RIGHT JOIN bien ON bien_activo.id_bien = bien.id_bien
+WHERE bien_activo.id_bien IS NULL;
 
 
 CREATE VIEW unidad_jerarquizada AS
-WITH RECURSIVE nombre_jerarquico_unidad AS (
-    SELECT us.*, us.siglas AS siglas_jerarquicas
+WITH RECURSIVE unidad_jerarquizada AS (
+    SELECT
+        us.*,
+        us.id_unidad_servicio AS id_direccion,
+        us.siglas AS siglas_jerarquicas
     FROM unidad_servicio us
     WHERE id_unidad_superior IS NULL
     UNION
-    SELECT us.*, CONCAT_WS('/', us.siglas, nju.siglas_jerarquicas) AS siglas_jerarquicas
-    FROM nombre_jerarquico_unidad nju
-    INNER JOIN unidad_servicio us ON us.id_unidad_superior = nju.id_unidad_servicio
+    SELECT
+        us.id_unidad_servicio,
+        us.nombre_nuclear,
+        us.siglas,
+        us.id_unidad_superior,
+        us.id_tipo_unidad_servicio,
+        uj.id_municipio,
+        uj.id_direccion,
+        CONCAT_WS('/', us.siglas, uj.siglas_jerarquicas) AS siglas_jerarquicas
+    FROM unidad_jerarquizada uj
+    INNER JOIN unidad_servicio us ON us.id_unidad_superior = uj.id_unidad_servicio
 )
 SELECT
-    nju.*,
+    uj.*,
     tipo_unidad_servicio.nombre AS tipo_unidad_servicio
-FROM nombre_jerarquico_unidad nju
+FROM unidad_jerarquizada uj
 INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio);
