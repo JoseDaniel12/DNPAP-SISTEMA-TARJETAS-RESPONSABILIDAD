@@ -70,14 +70,16 @@ router.put('/registar-auxiliar', async (req, res) => {
                 apellidos,
                 correo,
                 contrasenia,
-                id_rol
+                id_rol,
+                id_unidad_servicio
             ) VALUES (
                 '${dpi}',
                 '${nombres}',
                 '${apellidos}',
                 '${correo}',
                 '${contraseniaEncriptada}',
-                ${id_rol}
+                ${id_rol},
+                ${idDireccion}
             );
         `;
         const { insertId: id_empleado } = await mysql_exec_query(query);

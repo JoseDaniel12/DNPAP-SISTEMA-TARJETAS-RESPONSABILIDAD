@@ -1,4 +1,5 @@
 const express = require('express');
+const mysql_conn = require('../database/mysql/mysql_conn');
 const _ = require('lodash');
 const HTTPResponseBody  = require('./HTTPResponseBody');
 const { obtenerEmepleado } = require('../utilities/empleado');
@@ -36,7 +37,7 @@ router.get('/lista-empleados', async (req, res) => {
 router.get('/empleado/:id_empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
-        const { id_empleado } = req.params;
+        const id_empleado = parseInt(req.params.id_empleado);
         const empleado = await obtenerEmepleado(id_empleado);
         respBody.setData({empleado});
         res.status(200).json(respBody.getLiteralObject());
@@ -87,6 +88,25 @@ router.put('/editar-auxiliar/:idAuxiliar', async (req, res) => {
         respBody.setData({auxiliar});
         res.status(200).json(respBody.getLiteralObject());
     } catch(error) {
+        return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.delete('/dar-de-baja/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_empleado = parseInt(req.params.id_empleado);
+        let query = `
+            DELETE FROM empleado
+            WHERE id_empleado = ${id_empleado};
+        `;
+        await mysql_exec_query(query);
+        respBody.setData({id_empleado});
+        respBody.setMessage('Empleado eliminado correctamente');
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
         return res.status(500).json({error: error.toString()});
     }
 });
@@ -270,14 +290,17 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
 
 router.post('/asignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    mysql_conn.beginTransaction();
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: 'Asignación' }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
         ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
+        mysql_conn.commit();
         respBody.setMessage('Bienes asignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
+        mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
     }
@@ -286,6 +309,7 @@ router.post('/asignar-bienes', async (req, res) => {
 
 router.post('/traspasar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    mysql_conn.beginTransaction();
     try {
         const { 
             idEmpleadoEmisor,
@@ -307,12 +331,12 @@ router.post('/traspasar-bienes', async (req, res) => {
         }));
 
 
-        const biensPorTarjeta = _.groupBy(bienesConTarjeta, 'id_tarjeta_responsabilidad');
-        for (let tarjeta in biensPorTarjeta) {
+        const biensPorIdTarjeta = _.groupBy(bienesConTarjeta, 'id_tarjeta_responsabilidad');
+        for (let idTarjeta in biensPorIdTarjeta) {
             const actionTraspasoEmisor = {
                 type: 'Traspaso',
                 payload: {
-                    id_tarjeta_emisora: tarjeta,
+                    id_tarjeta_emisora: parseInt(idTarjeta),
                     esRecepcion: false
                 }
             };
@@ -320,11 +344,11 @@ router.post('/traspasar-bienes', async (req, res) => {
             const actionTraspasoRecepetor = {
                 type: 'Traspaso',
                 payload: {
-                    id_tarjeta_emisora: tarjeta,
+                    id_tarjeta_emisora: parseInt(idTarjeta),
                     esRecepcion: true
                 }
             };
-            const idsBienes = biensPorTarjeta[tarjeta].map(bien => bien.id_bien);
+            const idsBienes = biensPorIdTarjeta[idTarjeta].map(bien => bien.id_bien);
             const registrosEmisor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoEmisor);
             const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor);
     
@@ -340,10 +364,12 @@ router.post('/traspasar-bienes', async (req, res) => {
             await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
         }
 
+        mysql_conn.commit();
         respBody.setMessage('Bienes traspasados correctamente.');
         res.status(200).send(respBody.getLiteralObject());
     } catch(error) {
         console.log(error)
+        mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
     }
@@ -352,14 +378,17 @@ router.post('/traspasar-bienes', async (req, res) => {
 
 router.post('/desasignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    mysql_conn.beginTransaction();
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: 'Desasignación' }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
         ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
+        mysql_conn.commit();
         respBody.setMessage('Bienes desasignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
+        mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
     }

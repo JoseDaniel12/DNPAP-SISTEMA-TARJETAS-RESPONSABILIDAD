@@ -154,7 +154,7 @@ router.put('/editar-bien/:id_bien', async (req, res) => {
         const id_bien = parseInt(req.params.id_bien);
         const { 
             descripcion, precio, marca, codigoModelo, sicoin, noSerie, noInventario,
-            editarModelo, id_modelo
+            id_modelo
         } = req.body;
 
         // Se actualizan los datos especificos del bien
@@ -170,47 +170,23 @@ router.put('/editar-bien/:id_bien', async (req, res) => {
         // Se ve si ya existe un modelo con las nuevas caracteristicas ingresadas
         const modeloExistente = await encontrarModelo(descripcion, precio, marca, codigoModelo);
         if (modeloExistente) {
-            if (editarModelo) {
-                // Si ya exsite un modelo con las nuevas caracteristicas ingresadas y se desea
-                // cambiar a ese modelo todos los bienes pertencientes al modelo acutal del
-                // bien en edicion, entonces se pasan todos los bienes a ese modelo ya existente.
-                let query = `
-                    UPDATE bien
-                    SET id_modelo = ${modeloExistente.id_modelo}
-                    WHERE id_modelo = ${id_modelo};
-                `;
-                await mysql_exec_query(query);
-            } else {
-                // Si solo se quiere cambiar el bien en edición al modelo ya existente
-                let query = `
-                    UPDATE bien
-                    SET id_modelo = ${modeloExistente.id_modelo}
-                    WHERE id_bien = ${id_bien};
-                `;
-                await mysql_exec_query(query);
-            }
+            // Si ya existia, se cambia el bien en edición al modelo existente
+            let query = `
+                UPDATE bien
+                SET id_modelo = ${modeloExistente.id_modelo}
+                WHERE id_bien = ${id_bien};
+            `;
+            await mysql_exec_query(query);
         } else {
             // Si no exsite un modelo con las nuevas caracteristicas ingresadas se crea uno nuevo
             const nuevoModelo = await crearModelo(descripcion, precio, marca, codigoModelo);
-            if (editarModelo) {
-                // Si se desea pasar el bien en edición y a todos los demas bienes
-                // pertenecientes al modelo acutal del bien en deción hacia el nuevo
-                // modelo creado
-                query = `
-                    UPDATE bien
-                    SET id_modelo = ${nuevoModelo.id_modelo}
-                    WHERE id_modelo = ${id_modelo};
-                `;
-                await mysql_exec_query(query);
-            } else {
-                // Si solo se desea cambiar el bien en edición al nuevo modelo creado
-                query = `
-                    UPDATE bien
-                    SET id_modelo = ${nuevoModelo.id_modelo}
-                    WHERE id_bien = ${id_bien};
-                `;
-                await mysql_exec_query(query);
-            }
+            // Se cambia el bien al nuevo modelo creado
+            query = `
+                UPDATE bien
+                SET id_modelo = ${nuevoModelo.id_modelo}
+                WHERE id_bien = ${id_bien};
+            `;
+            await mysql_exec_query(query);
         }
 
         // Si el modelo que tenia el bien en edición ya no tiene bienes asociados, se elimina
@@ -226,6 +202,22 @@ router.put('/editar-bien/:id_bien', async (req, res) => {
         }
 
         respBody.setData('Bien actualizado correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.delete('/eliminar-bien/:id_bien', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_bien = parseInt(req.params.id_bien);
+        let query = `DELETE FROM bien WHERE id_bien = ${id_bien}`;
+        await mysql_exec_query(query);
+        respBody.setMessage('Bien Eliminado correctamente.');
         res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)

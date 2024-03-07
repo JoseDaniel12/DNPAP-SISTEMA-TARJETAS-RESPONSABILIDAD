@@ -8,7 +8,6 @@ const {
     formatearDescripcionBien, getDescripcionRegistro
 } = require('../utilities/tarjetas');
 const HTTPResponseBody  = require('./HTTPResponseBody');
-const { parse } = require('querystring');
 
 const router = express.Router();
 

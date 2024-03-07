@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
@@ -8,7 +8,6 @@ import { InputTextarea } from 'primereact/inputtextarea';
 import { InputNumber } from 'primereact/inputnumber';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { InputSwitch } from "primereact/inputswitch";
 import { Divider } from 'primereact/divider';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
@@ -30,14 +29,10 @@ function EdicionBien() {
         sicoin: yup.string(),
         noSerie: yup.string(),
         noInventario: yup.string(),
-        editarModelo: yup.boolean(),
         id_modelo: yup.number()
     });
 
     const bienForm = useForm({
-        defaultValues: {
-            editarModelo: false
-        },
         resolver: yupResolver(bienFormSchema),
         mode: 'onSubmit'
     });
@@ -171,16 +166,6 @@ function EdicionBien() {
                     { ...register('codigoModelo') }
                 />
                 { errors.modelo && <Message severity='error' text={errors.modelo?.message} className='mt-1 p-1'/> }
-            </div>
-
-            <div className='field col-12 mb-0 mt-2'>
-                <label htmlFor='precio' className='font-bold block text-gray-700'>Editar los datos del modelo para todos los bienes pertenecientes a el: </label>
-                <InputSwitch
-                    id='editarModelo'
-                    name='editarModelo'
-                    checked={bienForm.watch('editarModelo')}
-                    { ...register('editarModelo') }
-                />
             </div>
 
             <Divider className='mb-0'/>

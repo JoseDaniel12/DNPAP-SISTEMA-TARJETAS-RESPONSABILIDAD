@@ -8,6 +8,7 @@ import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Column } from 'primereact/column';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
+import { quetzalesTemplate } from '../../TableColumnTemplates';
 
 
 import empleadoRequests from '../../../Requests/empleadoRequests';
@@ -91,21 +92,6 @@ function GestionEmpleados() {
 
         initFilters();
     }, []);
-
-
-    const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: 'GTQ',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-
-    const columnaMontoTemplate = (empleado) => {
-        return (
-            <span>{formatoMonedaGTQ.format(empleado.saldo)}</span>
-        );
-    };
 
 
     return (
@@ -192,11 +178,7 @@ function GestionEmpleados() {
                     <Column field='nombres' header='Nombres' />
                     <Column field='apellidos' header='Apellidos' />
                     <Column field='cargo' header='Cargo' />
-                    <Column 
-                        field='saldo'
-                        header='Saldo' 
-                        body={columnaMontoTemplate}
-                    />
+                    <Column field='saldo' header='Saldo' body={row => quetzalesTemplate(row.saldo)}/>
                 </DataTable>
             </div>
         </div>

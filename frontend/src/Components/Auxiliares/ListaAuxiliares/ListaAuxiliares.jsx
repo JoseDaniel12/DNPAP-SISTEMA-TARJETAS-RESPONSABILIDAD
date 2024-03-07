@@ -52,6 +52,30 @@ function ListaAuxiliares({ auxiliares, onSelectAuxiliar, onSelectModoEdicion, on
     }, []);
 
 
+    const accionesTemplate = (row) => {
+        return (
+            <div className='flex justify-content-center gap-2'>
+                <Button
+                    tooltip='Editar'
+                    tooltipOptions={{ position: 'bottom' }}
+                    icon='pi pi-pencil'
+                    severity='warning'
+                    className='p-button-rounded p-button-outlined'
+                    onClick={() => navigate(`/editar-bien/${bien.id_bien}`)}
+                />
+                <Button
+                    tooltip='Eliminar'
+                    tooltipOptions={{ position: 'bottom' }}
+                    icon='pi pi-times'
+                    severity='danger'
+                    className='p-button-rounded p-button-outlined'
+                    onClick={() => handleEliminarBien(bien.id_bien)}
+                />
+            </div>
+        );
+    };
+
+
     const tableHeaderTemplate = () => {
         return (
             <div className='grid'>
@@ -117,6 +141,7 @@ function ListaAuxiliares({ auxiliares, onSelectAuxiliar, onSelectModoEdicion, on
                 <Column field='nombres' header='Nombres' />
                 <Column field='apellidos' header='Apellidos' />
                 <Column field='correo' header='Correo' />
+                {/* <Column header='Acciones' body={accionesTemplate}/> */}
             </DataTable>
         </div>
     );

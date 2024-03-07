@@ -5,12 +5,16 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 
+import { useAuth } from '../../../Auth/Auth';
 import { userRoles } from '../../../types/userRoles';
 import authRequests from '../../../Requests/authRequests';
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
+
 function RegistroAuxiliar({ onAuxiliarRegistrado }) {
+    const { loginData } = useAuth();
+
     const auxiliarFormSchema = yup.object({
         dpi: yup.string().required('DPI requerido'),
         nombres: yup.string().required('Nombres requeridos'),
@@ -18,6 +22,7 @@ function RegistroAuxiliar({ onAuxiliarRegistrado }) {
         correo: yup.string().email('Correo inválido').required('Correo requerido'),
         contrasenia: yup.string().required('Contraseña requerida'),
         confirmContrasenia: yup.string().required('Confirmación requerida'),
+        idDireccion: yup.number()
     });
 
     const auxiliarForm = useForm({
@@ -27,7 +32,8 @@ function RegistroAuxiliar({ onAuxiliarRegistrado }) {
             apellidos: '',
             correo: '',
             contrasenia: '',
-            confirmContrasenia: ''
+            confirmContrasenia: '',
+            idDireccion: loginData.usuario.idDireccion
         },
         resolver: yupResolver(auxiliarFormSchema),
         mode: 'onSubmit'

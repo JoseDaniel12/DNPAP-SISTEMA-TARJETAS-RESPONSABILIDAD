@@ -18,24 +18,19 @@ SELECT * FROM bien_activo;
 
 select * from bien_inactivo;
 
-
-
-SELECT
-    bien.id_bien,
-    empleado.id_empleado,
-    (
-        SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
-        SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
-    ) as prueba
-FROM empleado
-INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-INNER JOIN bien ON registro_bien.id_bien = bien.id_bien
-GROUP BY empleado.id_empleado, bien.id_bien
-HAVING (
-    SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
-    SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
-) = 1;
-
-drop view if exists bien_inactivo
+select * from empleado where id_empleado = 6;
+        SELECT
+            empleado.*,
+            rol.nombre AS rol,
+            unidad_jerarquizada.nombre_nuclear AS unidad_servicio,
+            unidad_jerarquizada.siglas_jerarquicas,
+            unidad_jerarquizada.tipo_unidad_servicio,
+            municipio.nombre AS municipio,
+            departamento_guate.nombre AS departamento_guate
+        FROM empleado
+        INNER JOIN rol ON empleado.id_rol = rol.id_rol
+        INNER JOIN unidad_jerarquizada ON empleado.id_unidad_servicio = unidad_jerarquizada.id_unidad_servicio
+        INNER JOIN municipio ON unidad_jerarquizada.id_municipio = municipio.id_municipio
+        INNER JOIN departamento_guate ON municipio.id_departamento_guate = departamento_guate.id_departamento_guate
+        WHERE id_empleado = 6
+        LIMIT 1;

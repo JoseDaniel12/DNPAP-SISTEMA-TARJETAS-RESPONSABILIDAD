@@ -608,6 +608,7 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
 			} else {
 				// Si no cabe en el lado reverso, se crea una nueva tarjeta para colocar el bien
                 const numeroTarjeta = numerosTarjetas.shift();
+                if (!numeroTarjeta) throw new Error('Registro excede el espacio de las tarjetas.');
                 ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta, ultimaTarjeta);
 			}
         }

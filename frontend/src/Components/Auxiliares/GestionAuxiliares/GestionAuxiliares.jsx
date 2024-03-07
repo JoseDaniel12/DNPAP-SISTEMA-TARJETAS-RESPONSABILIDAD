@@ -47,7 +47,6 @@ function GestionAuxiliares() {
 
 
     const onCancelEdicion = () => {
-        setIdAuxiliarSeleccionado(null);
         setEnEdicion(false);
     }
 
@@ -99,7 +98,7 @@ function GestionAuxiliares() {
                 }
             </div>  
             <div className='col-12 md:col-7'>
-                <ListaAuxiliares 
+                <ListaAuxiliares
                     auxiliares={auxiliares}
                     onSelectAuxiliar={onSelectAuxiliar}
                     onSelectModoEdicion={onSelectModoEdicion}

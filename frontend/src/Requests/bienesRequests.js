@@ -59,6 +59,14 @@ const bienesRequests = {
             method: 'PUT',
             body: JSON.stringify(requestBody)
         }).then(response => response.json());
+    },
+
+    eliminarBien: async (id_bien) => {
+        let url = `http://localhost:5000/bienes/eliminar-bien/${id_bien}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'DELETE'
+        }).then(response => response.json());
     }
 }
 

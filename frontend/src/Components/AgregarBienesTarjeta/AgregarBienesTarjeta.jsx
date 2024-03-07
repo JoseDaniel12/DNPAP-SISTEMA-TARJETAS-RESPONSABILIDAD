@@ -25,7 +25,6 @@ function AgregarBienesTarjeta() {
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
 
     const [cantTarjetasNesecarias, setCantTarjetasNecesarias] = useState(0);
-    const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
 
 
@@ -56,8 +55,7 @@ function AgregarBienesTarjeta() {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {
             setBienesPorAsignar([]);
-            const milisegundos = 2500;
-            toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: milisegundos});
+            toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: 2500});
             navigate(-1);
         }
     }

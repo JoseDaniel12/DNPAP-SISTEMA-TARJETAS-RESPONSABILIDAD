@@ -108,6 +108,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
     
     useEffect(() => {
         empleadoRequests.getEmpleado(idAuxiliarSeleccionado).then(response => {
+            console.log(response)
             if (!response.error) {
                 const auxiliar = response.data.empleado;
                 auxiliarForm.reset({

@@ -35,6 +35,8 @@ function TraspasoBienes() {
 
     const [cantTarjetasEmisor, setCantTarjetasEmisor] = useState(0);
     const [cantTarjetasReceptor, setCantTarjetasReceptor] = useState(0);
+    const cantTarjetasNesecarias = cantTarjetasEmisor + cantTarjetasReceptor;
+    const [tarjetas, setTarjetas] = useState([]);
 
     const [numeroTarjetaEmisor, setNumeroTarjetEmisor] = useState('');
     const [numerosTarjetasEmisor, setNumerosTarjetasEmisor] = useState([]);
@@ -101,14 +103,26 @@ function TraspasoBienes() {
 
 
     const handleTraspasarBienes = async () => {
-        await empleadoRequests.trapasarBienes({
+        if (!bienesPorTraspasar.length) return;
+        if (tarjetas.length !== cantTarjetasNesecarias) {
+            const error = 'Debes ingresar la cantidad de tarjetas indicada.'
+            return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
+        }
+
+        const response = await empleadoRequests.trapasarBienes({
             idEmpleadoEmisor: id_empleado_emisor,
             idEmpleadoReceptor: empleadoReceptor.id_empleado,
             idsBienes: bienesPorTraspasar.map(bien => bien.id_bien),
-            numerosTarjetaEmisor: numerosTarjetasEmisor,
-            numerosTarjetaReceptor: numerosTarjetasReceptor,
+            numerosTarjetaEmisor: tarjetas.slice(0, cantTarjetasEmisor),
+            numerosTarjetaReceptor: tarjetas.slice(cantTarjetasEmisor, cantTarjetasNesecarias)
         });
-        navigate(-1);
+        if (response.error) {
+            toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
+        } else  {
+            setBienesPorTraspasar([]);
+            toast.current.show({severity:'success', summary: 'Éxito', detail: response.message, life: 2500});
+            navigate(-1);
+        }
     }
 
 
@@ -152,7 +166,6 @@ function TraspasoBienes() {
     
     useEffect(() => {
         empleadoRequests.getEmpleados().then(response => {
-            console.log(response.data);
             const empleados = response.data.empleados.filter(empleado => empleado.id_empleado !== id_empleado_emisor);
             setEmpleados(empleados);
         });
@@ -309,7 +322,7 @@ function TraspasoBienes() {
             </div>
 
             <div className='col-12 grid'>        
-                <div className='col-12 md:col'>
+                {/* <div className='col-12 md:col'>
                     <p>Se requieren <b>{cantTarjetasEmisor}</b> tarjetas nuevas para el <b>Emisor:</b> </p>
                     <div className='field col max-w-max p-0'>
                         <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
@@ -340,20 +353,20 @@ function TraspasoBienes() {
                             ))
                         }
                     </div>
-                </div>
+                </div> */}
+{/* 
+                <Divider layout='vertical hidden md:inline'/> */}
 
-                <Divider layout='vertical hidden md:inline'/>
-
-                <div className='col-12 md:col-6'>
+                <div className='col-12'>
                     { errorEmpleadoReceptor && <Message severity='error' text='Se debe seleccionar al empleado receptor.' className='mt-1 p-1'/> }
 
-                    {/* <AgregacionNumerosTarjeta
-                        cantTarjetas={cantTarjetasEmisor + cantTarjetasReceptor}
-                        numerosTarjetas={numerosTarjetasEmisor.concat(numerosTarjetasReceptor)}
-                        setNumerosTarjetas={setNumerosTarjetasEmisor}
-                    /> */}
+                    <AgregacionNumerosTarjeta
+                        cantTarjetas={cantTarjetasNesecarias}
+                        numerosTarjetas={tarjetas}
+                        setNumerosTarjetas={setTarjetas}
+                    />
 
-                    <p>Se requieren <b>{cantTarjetasReceptor}</b> tarjetas nuevas para el <b>Recepetor:</b> </p>
+                    {/* <p>Se requieren <b>{cantTarjetasReceptor}</b> tarjetas nuevas para el <b>Recepetor:</b> </p>
                     <div className='field col max-w-max p-0'>
                         <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
                         <div className='flex flex-wrap gap-1'>
@@ -382,7 +395,7 @@ function TraspasoBienes() {
                                 />
                             ))
                         }
-                    </div>
+                    </div> */}
                 </div>
             </div>
 

@@ -1,4 +1,3 @@
-import { format, set } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { InputText } from 'primereact/inputtext';
@@ -11,6 +10,7 @@ import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { useToast } from '../../hooks/useToast';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
+import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
 import tarjetasRequests from '../../Requests/tarjetasReuests';
 import empleadoRequests from '../../Requests/empleadoRequests';
@@ -87,26 +87,9 @@ function TarjetasEmpleado() {
         }
     };
     
-    const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: 'GTQ',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
     const precioTemplate = (precio, row) => {
         if (row.es_nota || isNaN(precio)) return;
-        return (
-            <span>{formatoMonedaGTQ.format(precio)}</span>
-        );
-    };
-
-    const formatDate = (date) => {
-        return format(date, 'dd/MM/yyyy');
-    };
-
-    const dateBodyTemplate = (fila) => {
-        return formatDate(fila.fecha);
+        return quetzalesTemplate(precio);
     };
 
     const rowClass = (row) => {
@@ -142,21 +125,6 @@ function TarjetasEmpleado() {
                 }
             });
         });
-        // tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
-        //     const tarjetas = response.data;
-        //     setTarjetas(tarjetas);
-
-        //     if (id_tarjeta_responsabilidad) {
-        //         const tarjeta = tarjetas.find(tarjeta => tarjeta.id_tarjeta_responsabilidad === id_tarjeta_responsabilidad);
-        //         if (tarjeta) {
-        //             setTarjeta(tarjeta);
-        //         }
-        //     }
-
-        //     if (!tarjeta && tarjetas.length > 0) {
-        //         setTarjeta(tarjetas[0]);
-        //     }
-        // });
     }, []);
 
 
@@ -326,7 +294,7 @@ function TarjetasEmpleado() {
                     dataKey='id_registro'
                     rowClassName={rowClass}
                 >
-                    <Column field='fecha' header='Fecha' dataType='date' body={dateBodyTemplate}/>
+                    <Column field='fecha' header='Fecha' dataType='date' body={row => fechaTemplate(row.fecha)}/>
                     <Column field='cantidad' header='Cantidad'/>
                     <Column field='descripcion' header='Descripción' />
                     <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe, row)}/>
