@@ -1,8 +1,10 @@
 import requestSettings from './requestSettings';
 
+const tarjetasURL = 'http://localhost:5000/tarjetas';
+
 const tarjetasRequests = {
     getTarjetaConBienes: async (id_tarjeta_responsabilidad) => {
-        let url = `http://localhost:5000/tarjetas/bienes-activos-tarjeta/${id_tarjeta_responsabilidad}`;
+        const url = `${tarjetasURL}/bienes-activos-tarjeta/${id_tarjeta_responsabilidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -10,7 +12,7 @@ const tarjetasRequests = {
     },
 
     getRegistrosTarjeta: async (id_tarjeta_responsabilidad) => {
-        let url = `http://localhost:5000/tarjetas/registros-tarjeta/${id_tarjeta_responsabilidad}`;
+        const url = `${tarjetasURL}/registros-tarjeta/${id_tarjeta_responsabilidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -18,7 +20,7 @@ const tarjetasRequests = {
     },
 
     getNumeroTarjetasNecesarias: async (body) => {
-        let url = 'http://localhost:5000/tarjetas/calcular-numero-tarjetas-necesarias';
+        const url = `${tarjetasURL}/calcular-numero-tarjetas-necesarias`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -26,16 +28,8 @@ const tarjetasRequests = {
         }).then(response => response.json());
     },
 
-    getTarjetasEmpleado: async (id_empleado) => {
-        let url = `http://localhost:5000/empleados/obtener-tarjetas/${id_empleado}`;
-        return await fetch(url, {
-            ...requestSettings,
-            method: 'GET',
-        }).then(response => response.json());
-    },
-
     generarExcel: async (id_tarjeta_responsabilidad) => {
-        let url = `http://localhost:5000/tarjetas/generar-excel-tarjeta/${id_tarjeta_responsabilidad}`;
+        const url = `${tarjetasURL}/generar-excel-tarjeta/${id_tarjeta_responsabilidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -43,7 +37,7 @@ const tarjetasRequests = {
     },
     
     numeroDisponible: async (id_tarjeta_responsabilidad) => {
-        let url = `http://localhost:5000/tarjetas/numero-disponible`;
+        const url = `${tarjetasURL}/numero-disponible`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -52,7 +46,7 @@ const tarjetasRequests = {
     },
 
     cambiarNumeroTarjeta: async (id_tarjeta_responsabilidad, nuevoNumero) => {
-        let url = `http://localhost:5000/tarjetas/cambiar-numero/${id_tarjeta_responsabilidad}`;
+        const url = `${tarjetasURL}/cambiar-numero/${id_tarjeta_responsabilidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',

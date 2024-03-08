@@ -22,7 +22,7 @@ app.use(fileUpload({
 
 // ROUTES
 app.get('/', async (_, res) => {
-    return res.status(200).json({ msg: 'Proyecto Final de IPC2.' });
+    return res.status(200).json({ msg: 'Backend de DNPAP.' });
 });
 
 app.use('/auth', require('./routes/auth.routes.js'));
@@ -30,7 +30,6 @@ app.use('/programas', require('./routes/programas.routes.js'));
 app.use('/departamentos', require('./routes/departamentos.routes.js'));
 app.use('/unidadesServicio', require('./routes/unidadesServicio.routes.js'));
 app.use('/empleados', require('./routes/empleados.routes.js'));
-app.use('/auxiliares', require('./routes/auxiliares.routes.js'));
 app.use('/bienes', require('./routes/bienes.routes.js'));
 app.use('/tarjetas', require('./routes/tarjetas.routes.js'));
 

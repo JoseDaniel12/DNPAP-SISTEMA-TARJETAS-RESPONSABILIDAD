@@ -6,6 +6,7 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { useToast } from '../../hooks/useToast';
 import  AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
+import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import bienesRequests from '../../Requests/bienesRequests';
 import tarjetasRequests from '../../Requests/tarjetasReuests';
@@ -70,20 +71,6 @@ function AgregarBienesTarjeta() {
     };
 
 
-    const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: 'GTQ',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-    const preciosTemplate = (precio) => {
-        return (
-            <span>{formatoMonedaGTQ.format(precio)}</span>
-        );
-    };
-
-
     useEffect(() => {
         const idsBienes = bienesPorAsignar.map(b => b.id_bien);
         tarjetasRequests
@@ -97,6 +84,23 @@ function AgregarBienesTarjeta() {
     useEffect(() => {
         bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data));
     }, []);
+
+
+    const tableHeaderTemplate = (
+        <div>
+            <div className='col-12 pb-0'>
+                <p>Bienes sin vincular:</p>
+            </div>
+            <div className='col-12  flex justify-content-end'>
+                <span className='p-input-icon-left flex align-items-center'>
+                    <i className='pi pi-search' />
+                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
+                        placeholder='Buscar por valor clave'
+                    />
+                </span>
+            </div>
+        </div>
+    );
 
 
     return (
@@ -118,32 +122,20 @@ function AgregarBienesTarjeta() {
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
                     currentPageReportTemplate='Bien {first} a {last} de  {totalRecords}'
                     className='mb-2'
-                    header = {
-                        <div>
-                            <div className='col-12 pb-0'>
-                                <p>Bienes sin vincular:</p>
-                            </div>
-                            <div className='col-12  flex justify-content-end'>
-                                <span className='p-input-icon-left flex align-items-center'>
-                                    <i className='pi pi-search' />
-                                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
-                                        placeholder='Buscar por valor clave'
-                                    />
-                                </span>
-                            </div>
-                        </div>
-                    }
+                    header={tableHeaderTemplate}
                 >
                     <Column field='sicoin' header='SICOIN'/>
                     <Column field='no_serie' header='No. Serie'/>
                     <Column field='no_inventario' header='Inventario'/>
                     <Column field='descripcion' header='Descripcion'/>
-                    <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
+                    <Column field='marca' header='Marca'/>
+                    <Column field='codigo' header='Modelo'/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column 
                         header='Agregar'
                         body = {
                             bien =>  (
-                                <Button 
+                                <Button
                                     type='button' 
                                     icon='pi pi-plus'
                                     className='p-button-success p-button-outlined w-auto'
@@ -185,7 +177,9 @@ function AgregarBienesTarjeta() {
                     <Column field='no_serie' header='No. Serie'/>
                     <Column field='no_inventario' header='Inventario'/>
                     <Column field='descripcion' header='Descripcion'/>
-                    <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
+                    <Column field='marca' header='Marca'/>
+                    <Column field='codigo' header='Modelo'/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column 
                         header='Eliminar'
                         body = {

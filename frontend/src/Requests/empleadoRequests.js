@@ -1,8 +1,11 @@
 import requestSettings from './requestSettings';
 
+
+const empleadosURL = 'http://localhost:5000/empleados';
+
 const empleadoRequests = {
     getEmpleados: async () => {
-        const url = 'http://localhost:5000/empleados/lista-empleados';
+        const url = `${empleadosURL}/lista-empleados`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -10,7 +13,7 @@ const empleadoRequests = {
     },
 
     getEmpleadosDeBaja: async () => {
-        const url = 'http://localhost:5000/empleados/empleados-de-baja';
+        const url = `${empleadosURL}/empleados-de-baja`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -19,7 +22,7 @@ const empleadoRequests = {
 
 
     activarEmpleado: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/activar-empleado/${id_empleado}`;
+        const url = `${empleadosURL}/activar-empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -27,7 +30,7 @@ const empleadoRequests = {
     },
 
     getEmpleado: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/empleado/${id_empleado}`;
+        const url = `${empleadosURL}/empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -35,7 +38,7 @@ const empleadoRequests = {
     },
 
     getListaAuxiliares: async () => {
-        const url = 'http://localhost:5000/auxiliares/lista-auxiliares';
+        const url = `${empleadosURL}/lista-auxiliares`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -43,7 +46,7 @@ const empleadoRequests = {
     },
 
     verificarDisponibilidadCorreo: async (correo) => {
-        const url = `http://localhost:5000/auxiliares/verificar-disponibilidad-correo/${correo}`;
+        const url = `${empleadosURL}/verificar-disponibilidad-correo/${correo}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -51,7 +54,7 @@ const empleadoRequests = {
     },
 
     registrarAuxiliar: async (body) => {
-        const url = 'http://localhost:5000/auxiliares/registar-auxiliar';
+        const url = `${empleadosURL}/registar-auxiliar`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -60,7 +63,7 @@ const empleadoRequests = {
     },
 
     editarAuxiliar: async (idAuxiliar, body) => {
-        const url = `http://localhost:5000/empleados/editar-auxiliar/${idAuxiliar}`;
+        const url = `${empleadosURL}/editar-auxiliar/${idAuxiliar}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -69,7 +72,7 @@ const empleadoRequests = {
     },
 
     registrarEmpleado: async (body) => {
-        const url = 'http://localhost:5000/empleados/registar-empleado';
+        const url = `${empleadosURL}/registar-empleado`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -78,7 +81,7 @@ const empleadoRequests = {
     },
 
     editarEmpleado: async (id_empleado, body) => {
-        const url = `http://localhost:5000/empleados/editar-empleado/${id_empleado}`;
+        const url = `${empleadosURL}/editar-empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -87,7 +90,7 @@ const empleadoRequests = {
     },
 
     darBajaEmpleado: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/dar-baja-empleado/${id_empleado}`;
+        const url = `${empleadosURL}/dar-baja-empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -95,15 +98,23 @@ const empleadoRequests = {
     },
 
     eliminarEmpleado: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/eliminar-empleado/${id_empleado}`;
+        const url = `${empleadosURL}/eliminar-empleado/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'DELETE',
         }).then(response => response.json());
     },
 
+    getTarjetas: async (id_empleado) => {
+        const url = `${empleadosURL}/obtener-tarjetas/${id_empleado}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET',
+        }).then(response => response.json());
+    },
+
     getBienes: async (id_empleado) => {
-        const url = `http://localhost:5000/empleados/obtener-bienes/${id_empleado}`;
+        const url = `${empleadosURL}/obtener-bienes/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -111,7 +122,7 @@ const empleadoRequests = {
     },
 
     asignarBienes: async (body) => {
-        const url = 'http://localhost:5000/empleados/asignar-bienes';
+        const url = `${empleadosURL}/asignar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -120,7 +131,7 @@ const empleadoRequests = {
     },
 
     trapasarBienes: async (body) => {
-        const url = 'http://localhost:5000/empleados/traspasar-bienes';
+        const url = `${empleadosURL}/traspasar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -129,7 +140,7 @@ const empleadoRequests = {
     },
 
     desasignarBienes: async (body) => {
-        const url = 'http://localhost:5000/empleados/desasignar-bienes';
+        const url = `${empleadosURL}/desasignar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -138,7 +149,7 @@ const empleadoRequests = {
     },
 
     comentarTarjetas: async (id_empleado, body) => {
-        const url = `http://localhost:5000/empleados/comentar-tarjeta/${id_empleado}`;
+        const url = `${empleadosURL}/comentar-tarjeta/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',

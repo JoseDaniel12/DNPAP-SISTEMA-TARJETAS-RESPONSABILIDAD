@@ -3,8 +3,8 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Steps } from 'primereact/steps';
 import { useToast } from '../../hooks/useToast';
-import { useMultistepForm } from '../../hooks/useMultiStepForm';
-import ComentarioStep from './comentarioStep';
+import { useMultistepForm } from '../../hooks/useMultistepForm';
+import ComentarioStep from './ComentarioStep';
 import NumerosTarjetasStep from './NumerosTarjetasStep';
 
 import empleadoRequests from '../../Requests/empleadoRequests';

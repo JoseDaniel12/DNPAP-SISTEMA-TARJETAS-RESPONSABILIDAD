@@ -4,11 +4,10 @@ import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { Chip } from 'primereact/chip';
-import { Divider } from 'primereact/divider';
 import { Message } from 'primereact/message';
 import { useToast } from '../../hooks/useToast';
 import AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
+import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
@@ -68,38 +67,6 @@ function TraspasoBienes() {
         setBienes(prevBienes => prevBienes.filter(bien => bien.id_bien !== id_bien));
     };
 
-    const validarNumTarjeta = async numeroTarjeta => {
-        if (
-            numerosTarjetasEmisor.includes(numeroTarjeta) ||
-            numerosTarjetasReceptor.includes(numeroTarjeta)
-        ) return false;
-        return await tarjetasRequests.numeroDisponible(numeroTarjeta).then(res => res.data);
-    };
-
-    const handleAgregarTarjetaEmisor = async () => {
-        if (numeroTarjetaEmisor === '') return;
-        const numDisponible = await validarNumTarjeta(numeroTarjetaEmisor);
-        if (!numDisponible) {
-            const error = `El numero de tarjeta ${numeroTarjetaEmisor} ya existe.`;
-            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
-        } else {
-            setNumerosTarjetasEmisor(prevNumeros => [...prevNumeros, numeroTarjetaEmisor]);
-        }
-        setNumeroTarjetEmisor('');
-    };
-
-    const handleAgregarTarjetaReceptor = async () => {
-        if (numeroTarjetaReceptor === '') return;
-        const numDisponible = await validarNumTarjeta(numeroTarjetaReceptor);
-        if (!numDisponible) {
-            const error = `El numero de tarjeta ${numeroTarjetaReceptor} ya existe.`;
-            toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
-        } else {
-            setNumerosTarjetasReceptor(prevNumeros => [...prevNumeros, numeroTarjetaReceptor]);
-        }
-        setNumeroTarjetaReceptor('');
-    };
-
 
     const handleTraspasarBienes = async () => {
         if (!bienesPorTraspasar.length) return;
@@ -130,21 +97,6 @@ function TraspasoBienes() {
         setBienes(prevBienes => [...prevBienes, bienSeleccionado]);
         setBienesPorTraspasar(prevBienes => prevBienes.filter(bien => bien.id_bien !== id_bien));
     }
-
-
-    const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: 'GTQ',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-
-    const preciosTemplate = (precio) => {
-        return (
-            <span>{formatoMonedaGTQ.format(precio)}</span>
-        );
-    };
 
 
     useEffect(() => {
@@ -207,10 +159,11 @@ function TraspasoBienes() {
                     }
                 >
                     <Column field="dpi" header="DPI"/>
+                    <Column field="nit" header="NIT"/>
                     <Column field="nombres" header="Nombres"/>
                     <Column field="apellidos" header="Apellidos"/>
                     <Column field="cargo" header="Cargo" />
-                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                    <Column field="saldo" header="Saldo" body={empleado => quetzalesTemplate(empleado.saldo)}/>
                     <Column header="Seleccionar" body = {
                         (empleado) => (
                             <Button 
@@ -235,10 +188,11 @@ function TraspasoBienes() {
                     }
                 >
                     <Column field="dpi" header="DPI"/>
+                    <Column field="nit" header="NIT"/>
                     <Column field="nombres" header="Nombres"/>
                     <Column field="apellidos" header="Apellidos"/>
                     <Column field="cargo" header="Cargo" />
-                    <Column field="saldo" header="Saldo" body={empleado => preciosTemplate(empleado.saldo)}/>
+                    <Column field="saldo" header="Saldo" body={empleado => quetzalesTemplate(empleado.saldo)}/>
                 </DataTable>
 
                 <DataTable
@@ -255,7 +209,7 @@ function TraspasoBienes() {
                     className='mb-2'
                     header = {
                         <div className='p-0'>
-                            <p>Bienes de tarjeta No. 1245849:</p>
+                            <p>Bienes de Empleado Emisor:</p>
                             <span className="p-input-icon-left flex align-items-center">
                                 <i className="pi pi-search" />
                                 <InputText  
@@ -265,10 +219,13 @@ function TraspasoBienes() {
                         </div>
                     }
                 >
-                    <Column field="fecha_registro" header="Fecha"/>
-                    <Column field="sicoin" header="Sicoin"/>
-                    <Column field="no_serie" header="No. Serie"/>
-                    <Column field="no_inventario" header="No. Inventario" />
+                    <Column field='sicoin' header='SICOIN'/>
+                    <Column field='no_serie' header='No. Serie'/>
+                    <Column field='no_inventario' header='Inventario'/>
+                    <Column field='descripcion' header='Descripcion'/>
+                    <Column field='marca' header='Marca'/>
+                    <Column field='codigo' header='Modelo'/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column header="Agregar" body = {
                         (bien) => (
                             <Button 
@@ -294,7 +251,7 @@ function TraspasoBienes() {
                     className='mb-2'
                     header = {
                         <div className='p-0'>
-                            <p>Bienes por Traspasar a Tarjeta No. 12583853:</p>
+                            <p>Bienes por Traspasar:</p>
                             <span className="p-input-icon-left flex align-items-center">
                                 <i className="pi pi-search" />
                                 <InputText  
@@ -304,10 +261,13 @@ function TraspasoBienes() {
                         </div>
                     }
                 >
-                    <Column field="fecha_registro" header="Fecha"/>
-                    <Column field="sicoin" header="Sicoin"/>
-                    <Column field="no_serie" header="No. Serie"/>
-                    <Column field="no_inventario" header="No. Inventario" />
+                    <Column field='sicoin' header='SICOIN'/>
+                    <Column field='no_serie' header='No. Serie'/>
+                    <Column field='no_inventario' header='Inventario'/>
+                    <Column field='descripcion' header='Descripcion'/>
+                    <Column field='marca' header='Marca'/>
+                    <Column field='codigo' header='Modelo'/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column header="Eliminar" body = {
                         (bien) => (
                             <Button 
@@ -320,42 +280,7 @@ function TraspasoBienes() {
                 </DataTable>
             </div>
 
-            <div className='col-12 grid'>        
-                {/* <div className='col-12 md:col'>
-                    <p>Se requieren <b>{cantTarjetasEmisor}</b> tarjetas nuevas para el <b>Emisor:</b> </p>
-                    <div className='field col max-w-max p-0'>
-                        <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
-                        <div className='flex flex-wrap gap-1'>
-                            <div className='col p-0'>
-                                <InputText 
-                                    id='search' type='text' placeholder='No. Tarjeta'
-                                    value={numeroTarjetaEmisor}
-                                    onChange={e => setNumeroTarjetEmisor(e.target.value)}
-                                />
-                            </div>
-                            <div className='col-12 lg:max-w-max p-0'>
-                                <Button 
-                                    severity='success' label='Agregar' icon='pi pi-plus'
-                                    onClick={handleAgregarTarjetaEmisor}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card flex flex-wrap gap-2 mb-4">
-                        {
-                            numerosTarjetasEmisor.map(numero => (
-                                <Chip
-                                    key={numero}
-                                    label={numero} className="p-mr-2 p-mb-2" removable
-                                    onRemove={() => {}}
-                                />
-                            ))
-                        }
-                    </div>
-                </div> */}
-{/* 
-                <Divider layout='vertical hidden md:inline'/> */}
-
+            <div className='col-12 grid'>
                 <div className='col-12'>
                     { errorEmpleadoReceptor && <Message severity='error' text='Se debe seleccionar al empleado receptor.' className='mt-1 p-1'/> }
 
@@ -364,37 +289,6 @@ function TraspasoBienes() {
                         numerosTarjetas={tarjetas}
                         setNumerosTarjetas={setTarjetas}
                     />
-
-                    {/* <p>Se requieren <b>{cantTarjetasReceptor}</b> tarjetas nuevas para el <b>Recepetor:</b> </p>
-                    <div className='field col max-w-max p-0'>
-                        <label className='font-bold text-black-alpha-80 block'>Agregar Tarjeta:</label>
-                        <div className='flex flex-wrap gap-1'>
-                            <div className='col p-0'>
-                                <InputText 
-                                    id='search' type='text' placeholder='No. Tarjeta'
-                                    value={numeroTarjetaReceptor}
-                                    onChange={e => setNumeroTarjetaReceptor(e.target.value)}
-                                />
-                            </div>
-                            <div className='col-12 lg:max-w-max p-0'>
-                                <Button 
-                                    severity='success' label='Agregar' icon='pi pi-plus'
-                                    onClick={handleAgregarTarjetaReceptor}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="card flex flex-wrap gap-2 mb-4">
-                        {
-                            numerosTarjetasReceptor.map(numero => (
-                                <Chip
-                                    key={numero}
-                                    label={numero} className="p-mr-2 p-mb-2" removable
-                                    onRemove={() => {}}
-                                />
-                            ))
-                        }
-                    </div> */}
                 </div>
             </div>
 

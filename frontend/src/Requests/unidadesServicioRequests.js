@@ -1,8 +1,10 @@
 import requestSettings from './requestSettings';
 
+const unidadesServicioURL = 'http://localhost:5000/unidadesServicio';
+
 const unidadesServicioRequests = {
     getUnidadesServicio: async (tipoUnidades) => {
-        const url = `http://localhost:5000/unidadesServicio/${tipoUnidades}`;
+        const url = `${unidadesServicioURL}/${tipoUnidades}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -10,7 +12,7 @@ const unidadesServicioRequests = {
     },
 
     getUnidadServicio: async (id_unidad_servicio) => {
-        const url = `http://localhost:5000/unidadesServicio/unidad-serivicio/${id_unidad_servicio}`;
+        const url = `${unidadesServicioURL}/unidad-serivicio/${id_unidad_servicio}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -18,7 +20,7 @@ const unidadesServicioRequests = {
     },
 
     verificarDisponibilidadNombre: async (nombre) => {
-        const url = `http://localhost:5000/unidadesServicio/disponibilidad-nombre/${nombre}`;
+        const url = `${unidadesServicioURL}/disponibilidad-nombre/${nombre}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -26,7 +28,7 @@ const unidadesServicioRequests = {
     },
 
     verificarDisponibilidadSiglas: async (siglas) => {
-        const url = `http://localhost:5000/unidadesServicio/disponibilidad-siglas/${siglas}`;
+        const url = `${unidadesServicioURL}/disponibilidad-siglas/${siglas}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'GET',
@@ -34,7 +36,7 @@ const unidadesServicioRequests = {
     },
 
     registrarDepartamento: async (body) => {
-        const url = `http://localhost:5000/unidadesServicio/registrar-departamento`;
+        const url = `${unidadesServicioURL}/registrar-departamento`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -43,7 +45,7 @@ const unidadesServicioRequests = {
     },
 
     editarDepartamento: async (idDepartamento, body) => {
-        const url = `http://localhost:5000/unidadesServicio/editar-departamento/${idDepartamento}`;
+        const url = `${unidadesServicioURL}/editar-departamento/${idDepartamento}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -52,7 +54,7 @@ const unidadesServicioRequests = {
     },
 
     registrarPrograma: async (body) => {
-        const url = `http://localhost:5000/unidadesServicio/registrar-programa`;
+        const url = `${unidadesServicioURL}/registrar-programa`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
@@ -61,7 +63,7 @@ const unidadesServicioRequests = {
     },
 
     editarPrograma: async (idPrograma, body) => {
-        const url = `http://localhost:5000/unidadesServicio/editar-programa/${idPrograma}`;
+        const url = `${unidadesServicioURL}/editar-programa/${idPrograma}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'PUT',
@@ -70,7 +72,7 @@ const unidadesServicioRequests = {
     },
 
     eliminarUnidadServicio: async (idUnidad) => {
-        const url = `http://localhost:5000/unidadesServicio/eliminar-unidadesServicio/${idUnidad}`;
+        const url = `${unidadesServicioURL}/eliminar-unidadesServicio/${idUnidad}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'DELETE',

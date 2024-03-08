@@ -109,7 +109,7 @@ function TarjetasEmpleado() {
             const empleado = response.data.empleado;
             setEmpleado(empleado);
 
-            tarjetasRequests.getTarjetasEmpleado(empleado.id_empleado).then((response) => {
+            empleadoRequests.getTarjetas(empleado.id_empleado).then((response) => {
                 const tarjetas = response.data;
                 setTarjetas(tarjetas);
 
