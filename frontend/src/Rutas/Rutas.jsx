@@ -32,7 +32,7 @@ function Rutas() {
           <Route path="registar-bienes" element={<RegistroBien />} />
           <Route path="editar-bien/:id_bien" element={<EdicionBien />} />
           <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
-          <Route path="traspasar-bienes/:id_empleado_emisor/:id_tarjeta_responsabilidad" element={<TraspasoBienes />} />
+          <Route path="traspasar-bienes/:id_empleado_emisor" element={<TraspasoBienes />} />
           <Route path="desasignar-bienes/:id_empleado" element={<DesasignacionBienes />} />
           <Route path="gestionar-auxiliares" element={<GestionAuxiliares />} />
           <Route path="gestionar-empleados" element={<GestionEmpleados />} />

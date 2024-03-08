@@ -186,6 +186,7 @@ function GestionBienes() {
                     value={bienes}
                     filters={filters}
                     paginator
+                    paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
                     currentPageReportTemplate='Bien {first} a {last} de  {totalRecords}'
                     rows={20}

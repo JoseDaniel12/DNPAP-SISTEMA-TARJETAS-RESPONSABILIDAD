@@ -187,7 +187,7 @@ function TarjetasEmpleado() {
                             severity='warning'
                             icon='pi pi-arrow-right-arrow-left'
                             className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}/${tarjeta.id_tarjeta_responsabilidad}`)}
+                            onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}`)}
                         />
                     </div>
                     <div className='col-12 md:max-w-max'>
@@ -208,6 +208,7 @@ function TarjetasEmpleado() {
                     className='mb-6'
                     value={registros}
                     paginator
+                    paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
                     currentPageReportTemplate='Registro {first} a {last} de  {totalRecords}'
                     rows={20}

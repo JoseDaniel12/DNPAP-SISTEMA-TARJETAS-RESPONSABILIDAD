@@ -19,7 +19,6 @@ function TraspasoBienes() {
     const toast = useToast('bottom-right');
     const params = useParams();
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
-    const id_tarjeta_responsabilidad = parseInt(params.id_tarjeta_responsabilidad);
     const navigate = useNavigate();
 
     // Filtros de la tabla de empleados

@@ -23,13 +23,53 @@ router.get('/lista-empleados', async (req, res) => {
                 empleado.*
             FROM empleado
             INNER JOIN rol USING (id_rol)
-            WHERE rol.nombre = '${userRoles.ORDINARIO}';
+            WHERE rol.nombre = '${userRoles.ORDINARIO}' AND empleado.activo = TRUE;
         `;
         const empleados = await mysql_exec_query(query);
         respBody.setData({empleados});
         res.status(200).json(respBody.getLiteralObject());
     } catch(error) {
         return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.get('/empleados-de-baja', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let query = `
+            SELECT
+                empleado.*
+            FROM empleado
+            INNER JOIN rol USING (id_rol)
+            WHERE rol.nombre = '${userRoles.ORDINARIO}' AND empleado.activo = False;
+        `;
+        const empleados = await mysql_exec_query(query);
+        respBody.setData({empleados});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        return res.status(500).json({error: error.toString()});
+    }
+});
+
+
+router.put('/activar-empleado/:id_empleado', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_empleado = parseInt(req.params.id_empleado);
+        let query = `
+            UPDATE empleado
+            SET activo = TRUE
+            WHERE id_empleado = ${id_empleado};
+        `;
+        await mysql_exec_query(query);
+        respBody.setMessage('Empleado activado correctamente.');
+        respBody.setData({id_empleado});
+        res.status(200).json(respBody.getLiteralObject());
+    } catch(error) {
+        console.log(error);
+        respBody.setError(error.toString());
+        res.status(400).json(respBody.getLiteralObject());
     }
 });
 
@@ -93,21 +133,37 @@ router.put('/editar-auxiliar/:idAuxiliar', async (req, res) => {
 });
 
 
-router.delete('/dar-de-baja/:id_empleado', async (req, res) => {
+router.put('/dar-baja-empleado/:id_empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const id_empleado = parseInt(req.params.id_empleado);
+
+        // Se verifica que no tenga bienes asignados
         let query = `
-            DELETE FROM empleado
+            SELECT COUNT(*) AS cant_bienes
+            FROM bien_activo
+            WHERE id_empleado = ${id_empleado}
+        `;
+        let outcome = await mysql_exec_query(query);
+        const { cant_bienes } = outcome[0];
+        if (cant_bienes > 0) {
+            throw new Error('No se puede dar de baja a un empleado con bienes asignados.');
+        }
+        
+        // Si no tiene bienes asignados se da baja
+        query = `
+            UPDATE empleado
+            SET activo = 0
             WHERE id_empleado = ${id_empleado};
         `;
         await mysql_exec_query(query);
         respBody.setData({id_empleado});
-        respBody.setMessage('Empleado eliminado correctamente');
+        respBody.setMessage('Empleado dado de baja correctamente.');
         res.status(200).json(respBody.getLiteralObject());
     } catch(error) {
         console.log(error);
-        return res.status(500).json({error: error.toString()});
+        respBody.setError(error.toString());
+        return res.status(400).json(respBody.getLiteralObject());
     }
 });
 
@@ -116,7 +172,20 @@ router.delete('/eliminar-empleado/:id_empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const id_empleado = parseInt(req.params.id_empleado);
+
+        // Se verifica que el empleado este de baja 
         let query = `
+            SELECT activo
+            FROM empleado
+            WHERE id_empleado = ${id_empleado};
+        `;
+        let outcome = await mysql_exec_query(query);
+        const { activo } = outcome[0];
+        if (activo) {
+            throw new Error('No se puede eliminar a un empleado activo.');
+        }
+
+        query = `
             DELETE FROM empleado
             WHERE id_empleado = ${id_empleado};
         `;

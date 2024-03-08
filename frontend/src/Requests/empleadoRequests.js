@@ -9,6 +9,23 @@ const empleadoRequests = {
         }).then(response => response.json());
     },
 
+    getEmpleadosDeBaja: async () => {
+        const url = 'http://localhost:5000/empleados/empleados-de-baja';
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET',
+        }).then(response => response.json());
+    },
+
+
+    activarEmpleado: async (id_empleado) => {
+        const url = `http://localhost:5000/empleados/activar-empleado/${id_empleado}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+        }).then(response => response.json());
+    },
+
     getEmpleado: async (id_empleado) => {
         const url = `http://localhost:5000/empleados/empleado/${id_empleado}`;
         return await fetch(url, {
@@ -69,6 +86,13 @@ const empleadoRequests = {
         }).then(response => response.json());
     },
 
+    darBajaEmpleado: async (id_empleado) => {
+        const url = `http://localhost:5000/empleados/dar-baja-empleado/${id_empleado}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'PUT',
+        }).then(response => response.json());
+    },
 
     eliminarEmpleado: async (id_empleado) => {
         const url = `http://localhost:5000/empleados/eliminar-empleado/${id_empleado}`;

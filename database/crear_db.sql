@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS empleado (
     nit VARCHAR(250),
     cargo VARCHAR(250),
     saldo DECIMAL(13, 3) UNSIGNED DEFAULT 0,
+    activo TINYINT(1) DEFAULT 1,
 
     id_rol INT,
     id_unidad_servicio INT,
@@ -97,10 +98,12 @@ CREATE TABLE IF NOT EXISTS registro (
     ingreso TINYINT(1),
     anverso TINYINT(1),
     es_nota TINYINT(1) DEFAULT 0,
+
     id_tarjeta_emisora INT,
     id_tarjeta_receptora INT,
-
     id_tarjeta_responsabilidad INT,
+    FOREIGN KEY (id_tarjeta_emisora) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE SET NULL,
+    FOREIGN KEY (id_tarjeta_receptora) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE SET NULL,
     FOREIGN KEY (id_tarjeta_responsabilidad) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE CASCADE
 );
 
