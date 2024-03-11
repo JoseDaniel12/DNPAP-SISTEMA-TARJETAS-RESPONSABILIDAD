@@ -6,217 +6,28 @@
 version: '3'
 
 networks:
-  sa-g12:
-    name: sa-g12
+  dnpap:
+    name: dnpap
     driver: bridge
 
 services:
-  autenticacion:
-    container_name: autenticacion
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/autenticacion
-    ports:
-      - 5000:5000
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  rutas:
-    container_name: rutas
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/rutas
-    ports:
-      - 5010:5010
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-
-  compras:
-    container_name: compras
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/compras
-    ports:
-      - 5020:5020
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  contabilidad:
-    container_name: contabilidad
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/contabilidad
-    ports:
-      - 5030:5030
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  inventario:
-    container_name: inventario
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/inventario
-    ports:
-      - 5050:5050
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  segundoinventario:
-    container_name: segundoinventario
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/inventario
-    ports:
-      - 5100:5050
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  pagos:
-    container_name: pagos
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/pagos
-    ports:
-      - 5055:5055
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  rrhh:
-    container_name: rrhh
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/rrhh
-    ports:
-      - 5006:5006
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
-  ventas:
-    container_name: ventas
-    build:
-      dockerfile: Dockerfile
-      context: ./backend/ventas
-    ports:
-      - 5070:5070
-    networks:
-      - sa-g12
-    deploy:
-      resources:
-        limits:
-          cpus: "0.15"
-          memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-        reservations:
-          cpus: "0.1"
-          memory: 128M
-    env_file:
-      - .env
   frontend:
     container_name: frontend
     build:
       dockerfile: Dockerfile
       context: ./frontend
     ports:
-      - 80:3000
+      - 8080:8080
     environment:
       - REACT_APP_AUTH_URL=http://34.125.176.205:5000/
-      - REACT_APP_PRODUCT_URL=http://34.125.176.205:5100/
-      - REACT_APP_COMPRA_URL=http://34.125.176.205:5020/
-      - REACT_APP_RUTA_URL=http://34.125.176.205:5010/
-      - REACT_APP_RECURSOS_URL=http://34.125.176.205:5006/
-      - REACT_APP_PAGOS_URL=http://34.125.176.205:5055/
-      - REACT_APP_CONTA_URL=http://34.125.176.205:5030/
-      - REACT_APP_VENTA_URL=http://34.125.176.205:5070/
-      - REACT_APP_BUCKET_URL=https://sa-g12.s3.amazonaws.com/
     networks:
-      - sa-g12
+      - dnpap
     deploy:
       resources:
         limits:
           cpus: "0.15"
           memory: 250M
-        #recusos dedicados, mantiene los recursos disponibles del host para el contenedor
+        # Recusos dedicados, mantiene los recursos disponibles del host para el contenedor
         reservations:
           cpus: "0.1"
           memory: 128M

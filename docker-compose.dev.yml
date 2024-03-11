@@ -1,0 +1,54 @@
+# Comando para levantar contenedor sin cache de imagenes:
+# docker compose -f docker-compose.yml build --no-cache
+# docker compose up -d
+# docker compose -f <nombreArchivo>.yml up -d
+
+version: '3'
+
+networks:
+  dnpap:
+    name: dnpap
+    driver: bridge
+
+services:
+  backend:
+    image: backend-dev-i
+    container_name: backend-dev-c
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    networks:
+      - dnpap
+    ports:
+      - 5000:5000
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    env_file:
+      - ./backend/.env
+  # frontend:
+  #   image: frontend-dev-i
+  #   container_name: frontend-dev-c
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile.dev
+  #   networks:
+  #     - dnpap
+  #   ports:
+  #     - 8080:8080
+  #   environment:
+  #     - REACT_APP_AUTH_URL=http://34.125.176.205:5000/
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   # deploy:
+  #   #   resources:
+  #   #     limits:
+  #   #       cpus: "0.15"
+  #   #       memory: 250M
+  #   #     # Recusos dedicados, mantiene los recursos disponibles del host para el contenedor
+  #   #     reservations:
+  #   #       cpus: "0.1"
+  #   #       memory: 128M
+  #   env_file:
+  #     - .env
