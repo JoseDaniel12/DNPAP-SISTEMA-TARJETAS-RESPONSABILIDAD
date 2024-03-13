@@ -236,7 +236,7 @@ function GestionEmpleados() {
                                     onClick={handleActivacionEmpleado}                    
                                 />
                             </div>
-                            <div className='col-12 md:max-w-max'>
+                            {/* <div className='col-12 md:max-w-max'>
                                 <Button
                                     type='button'
                                     label='Eliminar Empleado'
@@ -245,7 +245,7 @@ function GestionEmpleados() {
                                     className='md:w-auto p-button-outlined'
                                     onClick={handleEliminarEmpleado}
                                 />
-                            </div>
+                            </div> */}
                         </>
                     )
                 }

@@ -26,29 +26,30 @@ services:
       - /app/node_modules
     env_file:
       - ./backend/.env
-  # frontend:
-  #   image: frontend-dev-i
-  #   container_name: frontend-dev-c
-  #   build:
-  #     context: ./frontend
-  #     dockerfile: Dockerfile.dev
-  #   networks:
-  #     - dnpap
-  #   ports:
-  #     - 8080:8080
-  #   environment:
-  #     - REACT_APP_AUTH_URL=http://34.125.176.205:5000/
-  #   volumes:
-  #     - ./frontend:/app
-  #     - /app/node_modules
-  #   # deploy:
-  #   #   resources:
-  #   #     limits:
-  #   #       cpus: "0.15"
-  #   #       memory: 250M
-  #   #     # Recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-  #   #     reservations:
-  #   #       cpus: "0.1"
-  #   #       memory: 128M
-  #   env_file:
-  #     - .env
+
+  frontend:
+    image: frontend-dev-i
+    container_name: frontend-dev-c
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+      args:
+        - VITE_BACKEND_URL='http://backend:5000'
+    hostname: frontend
+    networks:
+      - dnpap
+    ports:
+      - 8080:8080
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: "0.15"
+    #       memory: 250M
+    #     # Recusos dedicados, mantiene los recursos disponibles del host para el contenedor
+    #     reservations:
+    #       cpus: "0.1"
+    #       memory: 128M

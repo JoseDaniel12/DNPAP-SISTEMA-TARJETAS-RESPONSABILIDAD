@@ -227,10 +227,10 @@ function TarjetasEmpleado() {
                                 <div className='col-12 md:col max-w-max'>
                                     <label className='font-bold text-black-alpha-70 block mb-1 md:mb-2'>Saldo de Tarjeta:</label>
                                     <label className='font-bold text-black-alpha-70 block '>
-                                        Entrante: <span className='font-normal'>{tarjeta?.saldo_que_viene}</span>
+                                        Entrante: <span className='font-normal'>Q {tarjeta?.saldo_que_viene.toFixed(2)}</span>
                                     </label>
                                     <label className='font-bold text-black-alpha-70 block'>
-                                        Saliente: <span className='font-normal'>{tarjeta?.saldo}</span>
+                                        Saliente: <span className='font-normal'>Q {tarjeta?.saldo.toFixed(2)}</span>
                                     </label>
                                 </div>
 

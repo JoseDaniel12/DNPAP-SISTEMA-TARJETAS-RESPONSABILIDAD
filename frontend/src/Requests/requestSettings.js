@@ -12,4 +12,7 @@ const requestSettings = {
     referrerPolicy: "no-referrer", // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
 };
 
+export const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 export default requestSettings;
+

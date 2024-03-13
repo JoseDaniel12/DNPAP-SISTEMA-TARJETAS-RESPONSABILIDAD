@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
     id_empleado INT,
     FOREIGN KEY (id_tarjeta_anterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad),
     FOREIGN KEY (id_tarjeta_posterior) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad),
-    FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado) ON DELETE CASCADE
+    FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado)
 );
 
 

@@ -78,6 +78,10 @@ function GestionBienes() {
         });
     };
 
+    
+    useEffect(() => {
+        initFilters();
+    }, []);
 
     useEffect(() => {
         if (asignados) {
@@ -97,7 +101,7 @@ function GestionBienes() {
             <span className='p-input-icon-left flex align-items-center'>
                 <i className='pi pi-search' />
                 <InputText
-                    id='busquedaEmpleado'
+                    id='busquedaBien'
                     value={globalFilterValue}
                     placeholder='Buscar por valor clave'
                     onChange={onGlobalFilterChange} 
@@ -158,7 +162,7 @@ function GestionBienes() {
             <ConfirmDialog dismissableMask={true} />
 
             <div className='col-12 text-center'>
-                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestion de Bienes - {import.meta.env.VITE_BACKEND_URL}</h1>
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestion de Bienes</h1>
             </div>
 
             <div className='col-12 grid'>

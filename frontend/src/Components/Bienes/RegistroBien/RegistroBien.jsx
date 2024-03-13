@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import  { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import { v4 as uuidv4 } from 'uuid';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
 import { InputNumber } from 'primereact/inputnumber';
@@ -89,6 +90,7 @@ function RegistroBien() {
 
     // _______________________ Formulario de datos Especificos _______________________
     const validateDisponibilidadSicoin = async (sicoin) => {
+        if (sicoin === '') return true;
         for (const bien of bienes) {
             if (bien.sicoin === sicoin) {
                return  false;
@@ -99,6 +101,7 @@ function RegistroBien() {
     }
 
     const validateDisponibilidadnoSerie = async (noSerie) => {
+        if (noSerie === '') return true;
         for (const bien of bienes) {
             if (bien.noSerie === noSerie) {
                return  false;
@@ -150,6 +153,7 @@ function RegistroBien() {
             message: 'No. Serie ya registrado.'
         });
 
+        datosEspecificos.id = uuidv4();
         setBienes(prevBienes => [...prevBienes, datosEspecificos]);
         formDatosEspecificos.reset();
     }
@@ -159,12 +163,7 @@ function RegistroBien() {
         formDatosEspecificos.setValue('sicoin', bien.sicoin);
         formDatosEspecificos.setValue('noSerie', bien.noSerie);
         formDatosEspecificos.setValue('noInventario', bien.noInventario);
-        setBienes(prevBienes => prevBienes.filter(b  => {
-            if (
-                bien.sicoin !== b.sicoin && 
-                bien.noSerie !== b.noSerie
-            ) return true;
-        }));
+        setBienes(prevBienes => prevBienes.filter(b  => b.id !== bien.id));
     }
 
 

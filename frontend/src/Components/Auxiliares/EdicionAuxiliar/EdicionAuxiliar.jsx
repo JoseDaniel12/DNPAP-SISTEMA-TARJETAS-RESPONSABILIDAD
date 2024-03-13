@@ -7,7 +7,8 @@ import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import { InputSwitch } from "primereact/inputswitch";
 import { confirmDialog } from 'primereact/confirmdialog';
-        
+    
+import { useAuth } from '../../../Auth/Auth';
 import { useToast } from '../../../hooks/useToast';
 import { userRoles } from '../../../types/userRoles';
 import authRequests from '../../../Requests/authRequests';
@@ -15,6 +16,8 @@ import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
 function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEditado }) {
+    const { loginData: { usuario } } = useAuth();
+
     const toast = useToast('bottom-right');
 
     const auxiliarFormSchema = yup.object({
@@ -108,7 +111,6 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
     
     useEffect(() => {
         empleadoRequests.getEmpleado(idAuxiliarSeleccionado).then(response => {
-            console.log(response)
             if (!response.error) {
                 const auxiliar = response.data.empleado;
                 auxiliarForm.reset({
@@ -183,10 +185,16 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
                 { errors.correo && <Message severity='error' text={errors.correo?.message} className='mt-1 p-1'/> }
             </div>
 
-            <div className='col-12 field m-0 '>
-                <label className='font-bold text-black-alpha-70 block'> Actualizar Contraseña: </label>
-                <InputSwitch  checked={acutalizarContrasenia} onChange={e => auxiliarForm.setValue('acutalizarContrasenia', e.value)}/>
-            </div>
+
+            {
+                usuario.rol === userRoles.COORDINADOR && (
+                    <div className='col-12 field m-0 '>
+                        <label className='font-bold text-black-alpha-70 block'> Actualizar Contraseña: </label>
+                        <InputSwitch  checked={acutalizarContrasenia} onChange={e => auxiliarForm.setValue('acutalizarContrasenia', e.value)}/>
+                    </div>
+                )
+            }
+
 
             {
                 acutalizarContrasenia && (

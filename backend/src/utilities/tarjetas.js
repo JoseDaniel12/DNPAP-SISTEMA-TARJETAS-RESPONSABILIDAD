@@ -57,40 +57,41 @@ function formatearDescripcionBien(descripcion) {
 function getDescripcionRegistro(bienes) {
     if (!bienes.length) return '';
 
+
+    let trozosDescripcionRegistro = [];
+
+    const bienBase = bienes[0];
+    trozosDescripcionRegistro.push(bienBase.descripcion);
+    if (bienBase.marca) trozosDescripcionRegistro.push(`Marca: ${bienBase.marca}`);
+    if (bienBase.codigo) trozosDescripcionRegistro.push(`Codigo de Modelo: ${bienBase.codigo}`);
+    
+
     if (bienes.length === 1) {
-        const bien = bienes[0];
-        let descripcion = bien.descripcion;
-        if (descripcion.trim().charAt(descripcion.length - 1) !== '.') descripcion += '.';
-        descripcion += ` Precio: ${bien.precio}. `;
-        if (bien.sicoin) descripcion += `No. de SICOIN: ${bien.sicoin}. `;
-        if (bien.no_serie) descripcion += `No. de Serie: ${bien.no_serie}. `;
-        if (bien.no_inventario) descripcion += `No. de Inventario: ${bien.no_inventario}.`;
-        return descripcion;
+        trozosDescripcionRegistro.push(`Precio: Q ${bienBase.precio.toFixed(2)}`);
+        if (bienBase.sicoin) trozosDescripcionRegistro.push(`No. de SICOIN: ${bienBase.sicoin}`);
+        if (bienBase.no_serie) trozosDescripcionRegistro.push(`No. de Serie: ${bienBase.no_serie}`);
+        if (bienBase.no_inventario) trozosDescripcionRegistro.push(`No. de Inventario: ${bienBase.no_inventario}`);
+        return trozosDescripcionRegistro.join('. ') + '.';
     }
 
-    let descripcionGrupo = bienes[0].descripcion;
-    if (descripcionGrupo.trim().charAt(descripcionGrupo.length - 1) !== '.') descripcionGrupo += '.';
-    descripcionGrupo += ` Precio unitario: ${bienes[0].precio}. `;
+    trozosDescripcionRegistro.push(`Precio unitario: Q ${bienBase.precio.toFixed(2)}`);
 
-    const numerosSICOIN = bienes.map(bien => bien.sicoin);
+    const numerosSICOIN = bienes.map(bien => ['', undefined, null].includes(bien.sicoin) ? '-' : bien.sicoin);
     if (numerosSICOIN.length) {
-        descripcionGrupo += 'Nos. de SCOIN: ';
-        descripcionGrupo += numerosSICOIN.join(', ') + '. ';    
+        trozosDescripcionRegistro.push(`Nos. de SCOIN: ${numerosSICOIN.join(', ')}`);
     }
 
-    const numerosSerie = bienes.map(bien => bien.no_serie);
+    const numerosSerie = bienes.map(bien => ['', undefined, null].includes(bien.no_serie) ? '-' : bien.no_serie);
     if (numerosSerie.length) {
-        descripcionGrupo += 'Nos. de Serie: ';
-        descripcionGrupo += numerosSerie.join(', ') + '. ';
+        trozosDescripcionRegistro.push(`Nos. de Serie: ${numerosSerie.join(', ')}`);
     }
 
-    const numerosInventario = bienes.map(bien => bien.no_inventario);
+    const numerosInventario = bienes.map(bien => ['', undefined, null].includes(bien.no_inventario) ? '-' : bien.no_inventario);
     if (numerosInventario.length) {
-        descripcionGrupo += 'Nos. de Inventarios: ';
-        descripcionGrupo += numerosInventario.join(', ') + '.';
+        trozosDescripcionRegistro.push(`Nos. de Inventario: ${numerosInventario.join(', ')}`);
     }
 
-    return descripcionGrupo.trim();
+    return trozosDescripcionRegistro.join('. ') + '.';
 }
 
 
