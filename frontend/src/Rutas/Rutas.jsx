@@ -2,6 +2,7 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import { useAuth } from '../Auth/Auth';
 import Login from '../Components/Login/Login';
 import Dashboard from "../Components/Dashboard/Dashboard";
+import UnsignedUserLayout from '../Components/UnsignedUserLayout/UnsignedUserLayout';
 import GestionBienes from '../Components/Bienes/GestionBienes/GestionBienes';
 import RegistroBien from '../Components/Bienes/RegistroBien/RegistroBien';
 import EdicionBien from '../Components/Bienes/EdicionBien/EdicionBien';
@@ -56,6 +57,10 @@ function Rutas() {
             !usuario? (
               <>
                 <Route index element={<Login/>} />
+                <Route path='/' element={<UnsignedUserLayout />}>
+                  <Route path="empleados" element={<GestionEmpleados />}/>
+                  <Route path="tarjetas-empleado/:id_empleado" element={<TarjetasEmpleado />} />
+                </Route>
                 <Route path="/*" element={<Login/>}/>
               </>
             ) : (

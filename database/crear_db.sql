@@ -168,17 +168,19 @@ CREATE TRIGGER update_saldos_tarjeta
 AFTER INSERT ON registro
 FOR EACH ROW
 BEGIN
-    -- Si el saldo va en el lado anverso se acutaliza el saldo anverso
-    IF NEW.anverso THEN
+    IF NOT NEW.es_nota THEN
+        -- Si el saldo va en el lado anverso se acutaliza el saldo anverso
+        IF NEW.anverso THEN
+            UPDATE tarjeta_responsabilidad
+            SET saldo_anverso = IF (NEW.ingreso = TRUE, saldo_anverso + NEW.precio, saldo_anverso - NEW.precio)
+            WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
+        END IF;
+
+        -- Se acutaliza el saldo general de la tarjeta (anverso/reverso)
         UPDATE tarjeta_responsabilidad
-        SET saldo_anverso = IF (NEW.ingreso = TRUE, saldo_anverso + NEW.precio, saldo_anverso - NEW.precio)
+        SET saldo = IF (NEW.ingreso = TRUE, saldo + NEW.precio, saldo - NEW.precio)
         WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
     END IF;
-
-    -- Se acutaliza el saldo general de la tarjeta (anverso/reverso)
-    UPDATE tarjeta_responsabilidad
-    SET saldo = IF (NEW.ingreso = TRUE, saldo + NEW.precio, saldo - NEW.precio)
-    WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
 END;
 //
 DELIMITER ;

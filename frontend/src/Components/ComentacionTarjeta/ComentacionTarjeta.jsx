@@ -14,12 +14,14 @@ function ComentacionTarjeta({visible, setVisible, id_empleado, onComentarTarjeta
     const toast = useToast('bottom-right');
 
     const initialData = {
-        id_empleado: id_empleado,
+        id_empleado,
         comentario: '',
         numerosTarjetas: []
     };
 
     const [data, setData] = useState(initialData);
+
+
     const updateFields = fields => setData(prev => { 
         return { ...prev, ...fields }
     });

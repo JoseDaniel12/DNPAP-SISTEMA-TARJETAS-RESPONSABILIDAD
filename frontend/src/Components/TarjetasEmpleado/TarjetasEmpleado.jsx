@@ -9,6 +9,7 @@ import { Tag } from 'primereact/tag';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
 import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
@@ -17,6 +18,9 @@ import empleadoRequests from '../../Requests/empleadoRequests';
   
 
 function TarjetasEmpleado() {
+    const { loginData } = useAuth();
+    const usuario = loginData?.usuario;
+
     const toast = useToast('bottom-right');
     const navigate = useNavigate();
 
@@ -155,51 +159,56 @@ function TarjetasEmpleado() {
                     />
                 </div>
 
-                <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Comentar en Tarjetas'
-                            severity='help'
-                            icon='pi pi-file-edit'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => setVisbilidadDialogComentario(true)}
-                        />
-                        <ComentacionTarjeta
-                            visible={visbilidadDialogComentario}
-                            setVisible={setVisbilidadDialogComentario}
-                            onComentarTarjeta={hanldeComentarTarjeta}
-                            id_empleado={empleado?.id_empleado}
-                        />
+                {
+                    usuario && (
+                    <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Comentar en Tarjetas'
+                                severity='help'
+                                icon='pi pi-file-edit'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => setVisbilidadDialogComentario(true)}
+                            />
+                            <ComentacionTarjeta
+                                visible={visbilidadDialogComentario}
+                                setVisible={setVisbilidadDialogComentario}
+                                onComentarTarjeta={hanldeComentarTarjeta}
+                                id_empleado={id_empleado}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Asignar Bienes'
+                                severity='success'
+                                icon='pi pi-plus'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button
+                                type='button'
+                                label='Traspasar Bienes'
+                                severity='warning'
+                                icon='pi pi-arrow-right-arrow-left'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Desasignar Bienes'
+                                severity='danger'
+                                icon='pi pi-trash'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/desasignar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
                     </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Asignar Bienes'
-                            severity='success'
-                            icon='pi pi-plus'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button
-                            type='button'
-                            label='Traspasar Bienes'
-                            severity='warning'
-                            icon='pi pi-arrow-right-arrow-left'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Desasignar Bienes'
-                            severity='danger'
-                            icon='pi pi-trash'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/desasignar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                </div>
+                    )
+                }
+
             </div>
 
 
@@ -234,24 +243,30 @@ function TarjetasEmpleado() {
                                     </label>
                                 </div>
 
-                                <div className='field col max-w-max'>
-                                    <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
-                                    <div className='flex flex-wrap gap-1 p-0'>
-                                        <div className='col p-0'>
-                                            <InputText 
-                                                id='search' type='text' placeholder='Nuevo No. Tarjeta'
-                                                value={nuevoNumeroTarjeta}
-                                                onChange={e => setNuevoNumeroTarjeta(e.target.value)}
-                                            />
+                                {
+                                    usuario && (
+                                        <div className='field col max-w-max'>
+                                            <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
+                                            <div className='flex flex-wrap gap-1 p-0'>
+                                                <div className='col p-0'>
+                                                    <InputText 
+                                                        id='search' type='text' placeholder='Nuevo No. Tarjeta'
+                                                        value={nuevoNumeroTarjeta}
+                                                        onChange={e => setNuevoNumeroTarjeta(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className='col-12 lg:max-w-max p-0'>
+                                                    <Button
+                                                        severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'
+                                                        onClick={handleCambiarNumeroTarjeta}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className='col-12 lg:max-w-max p-0'>
-                                            <Button
-                                                severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'
-                                                onClick={handleCambiarNumeroTarjeta}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                    )
+                                }
+
+
 
                                 <div className='field col max-w-max lg:align-self-end'>
                                     <Button 
