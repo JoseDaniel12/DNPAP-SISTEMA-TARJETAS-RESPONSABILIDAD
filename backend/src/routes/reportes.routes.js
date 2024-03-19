@@ -1,12 +1,32 @@
 const express = require('express');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { jsPDF } = require('jspdf');
-require('jspdf-autotable')
+require('jspdf-autotable');
+
+const HTTPResponseBody  = require('./HTTPResponseBody');
 
 
 const router = express.Router();
 
-router.get('/resumen-tarjetas', async (req, res) => {
+router.get('/resumen-bienes-asignados', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let query = `
+            SELECT * FROM reporte_bienes_activos;
+        `;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.error) throw outcome.error;
+        respBody.setData(outcome);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.get('/pdf-resumen-tarjetas', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const doc = new jsPDF();
@@ -18,7 +38,7 @@ router.get('/resumen-tarjetas', async (req, res) => {
         ];
 
         let query = `
-
+            
         `;	
 
         doc.autoTable({
@@ -49,5 +69,7 @@ router.get('/resumen-tarjetas', async (req, res) => {
     }
     
 });
+
+
 
 module.exports = router;

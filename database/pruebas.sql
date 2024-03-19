@@ -14,33 +14,28 @@ select * from kit;
 select * from registro_bien;
 select * from tipo_unidad_servicio;
 
+drop view reporte_bienes_activos;
+
+
 
 SELECT
-    tarjeta_responsabilidad.numero AS no_tarjeta,
-    CONCAT(empleado.nombres, ' ', empleado.apellidos) AS responsable,
+    ROW_NUMBER() OVER(PARTITION BY id_empleado ORDER BY id_empleado) AS no_correlativo,
+    reporte_bienes_activos.*
+FROM reporte_bienes_activos
+INNER JOIN (
+    WITH di
+    SELECT
+        COUNT(DISTINCT id_empleado)
+    FROM reporte_bienes_activos
+) AS f1;
+
+SELECT
     (
-        SELECT tr.numero
-        FROM tarjeta_responsabilidad tr
-        WHERE tr.id_tarjeta_responsabilidad = registro.id_tarjeta_receptora
-    ) AS no_tarjeta_receptora,
-    (
-        SELECT CONCAT(e.nombres, ' ', e.apellidos) AS nuevo_responsable
-        FROM tarjeta_responsabilidad tr
-        INNER JOIN empleado e ON tr.id_empleado = e.id_empleado
-        WHERE tr.id_tarjeta_responsabilidad = registro.id_tarjeta_receptora
-    ) AS nuevo_responsable,
-    registro.cantidad,
-    modelo.descripcion,
-    bien.no_inventario,
-    unidad_jerarquizada.nombre_nuclear AS unidad,
-    bien.sicoin,
-    modelo.precio,
-    tarjeta_responsabilidad.saldo AS monto_tarjeta
-FROM unidad_jerarquizada
-INNER JOIN empleado ON unidad_jerarquizada.id_unidad_servicio = empleado.id_unidad_servicio
-INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-INNER JOIN bien ON registro_bien.id_bien = bien.id_bien
-INNER JOIN modelo ON bien.id_modelo = modelo.id_modelo
-ORDER BY registro.fecha
+        SELECT COUNT(DISTINCT id_empleado) AS no_correlativo,
+        rba.id_empleado
+        FROM reporte_bienes_activos
+    ) AS no_correlativo,
+    rba.*
+FROM
+    reporte_bienes_activos rba
+GROUP BY

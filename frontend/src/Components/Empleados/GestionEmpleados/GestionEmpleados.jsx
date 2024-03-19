@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
@@ -23,13 +23,18 @@ function GestionEmpleados() {
     const toast = useToast('bottom-right');
     const navigate = useNavigate();
 
+    const [searchParams, setSearchParams] = useSearchParams();
+    let mostrarEmpleadosActivos = true;
+    if (searchParams.get('mostrarEmpleadosActivos') === 'false') {
+        mostrarEmpleadosActivos = false;
+    }
+
     const tiposEmpleados = [
         {  value: 'Activos' },
         {  value: 'De Baja' }
     ];
 
     const [empleados, setEmpleados] = useState([]);
-    const [mostrarEmpleadosActivos, setMostrarEmpleadosActivos] = useState(true);
     const [filaSelccionada, setFilaSelccionada] = useState(null);
 
     // ______________________________  Filtros ______________________________
@@ -60,6 +65,16 @@ function GestionEmpleados() {
         setGlobalFilterValue(value);
     };
     // ______________________________________________________________________
+
+    
+    const handleCambioTipoEmpleados = (e) => {
+        const valor = e.value === 'Activos';
+        setSearchParams(prev => ({
+            ...prev,
+            mostrarEmpleadosActivos: valor
+        }));
+    };
+
 
 
     const handleGestionarBienesTarjetas = () => {
@@ -168,7 +183,7 @@ function GestionEmpleados() {
                 <SelectButton
                     options={tiposEmpleados} optionLabel='value'
                     value={mostrarEmpleadosActivos ? 'Activos' : 'De Baja'}
-                    onChange={e => setMostrarEmpleadosActivos(e.value === 'Activos')}
+                    onChange={handleCambioTipoEmpleados}
                 />
             </div>
         </div>

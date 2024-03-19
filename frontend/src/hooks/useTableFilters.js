@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 
 const useTableFilters = (filterConf) => {
-    const [filters, setFilters] = useState(null);
+    const [filters, setFilters] = useState(filterConf);
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [filtrosAplicados, setFiltrosAplicados] = useState(false);
   

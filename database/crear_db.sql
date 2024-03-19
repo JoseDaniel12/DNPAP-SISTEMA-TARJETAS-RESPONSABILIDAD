@@ -273,3 +273,32 @@ SELECT
     tipo_unidad_servicio.nombre AS tipo_unidad_servicio
 FROM unidad_jerarquizada uj
 INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio);
+
+
+CREATE VIEW reporte_bienes_activos AS
+SELECT
+    empleado.id_empleado,
+    MIN(unidad_jerarquizada.nombre_nuclear) AS unidad,
+    MIN(CONCAT(empleado.nombres, ' ', empleado.apellidos)) AS responsable,
+    MIN(tarjeta_responsabilidad.numero) AS no_tarjeta,
+    COUNT(*) AS cant_bien,
+    MIN(modelo.descripcion) AS descripcion,
+    MIN(modelo.marca) AS marca,
+    MIN(modelo.codigo) AS modelo,
+    GROUP_CONCAT(bien.no_serie SEPARATOR ', ') AS no_serie,
+    GROUP_CONCAT(DISTINCT bien.no_inventario SEPARATOR ', ') AS no_inventario,
+    GROUP_CONCAT(bien.sicoin SEPARATOR ', ') AS sicoin,
+    MIN(modelo.precio) AS precio_unitario,
+    (COUNT(*) * modelo.precio) AS monto,
+    tarjeta_responsabilidad.saldo AS saldo_tarjeta
+FROM unidad_jerarquizada
+INNER JOIN empleado ON unidad_jerarquizada.id_unidad_servicio = empleado.id_unidad_servicio
+INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
+INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
+INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
+INNER JOIN bien_activo ON registro_bien.id_bien = bien_activo.id_bien
+INNER JOIN bien ON bien_activo.id_bien = bien.id_bien
+INNER JOIN modelo ON bien.id_modelo = modelo.id_modelo
+WHERE bien_activo.id_tarjeta_responsabilidad = tarjeta_responsabilidad.id_tarjeta_responsabilidad
+GROUP BY empleado.id_empleado, tarjeta_responsabilidad.id_tarjeta_responsabilidad, modelo.id_modelo
+ORDER BY empleado.id_empleado;

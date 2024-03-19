@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SelectButton } from 'primereact/selectbutton';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
@@ -17,7 +17,12 @@ function GestionBienes() {
     const toast = useToast('bottom-right');
     const navigate = useNavigate();
 
-    const [asignados, setAsiganos] = useState(true);
+    const [searchParams, setSearchParams] = useSearchParams();
+    let asignados = true;
+    if (searchParams.get('asignados') === 'false') {
+        asignados = false;
+    }
+
     const tiposBienes = [
         {  value: 'Asignados' },
         {  value: 'Desasignados' }
@@ -54,6 +59,15 @@ function GestionBienes() {
         setGlobalFilterValue(value);
     };
     // ______________________________________________________________________
+
+
+    const handleCambioTipoBienes = (e) => {
+        const valor = e.value === 'Asignados';
+        setSearchParams(prev => ({
+            ...prev,
+           asignados: valor
+        }));
+    };
 
 
     const eliminarBien = (id_bien) => {
@@ -170,7 +184,7 @@ function GestionBienes() {
                     <SelectButton  
                         options={tiposBienes} optionLabel='value'
                         value={asignados ? 'Asignados' : 'Desasignados'}
-                        onChange={e => setAsiganos(e.value === 'Asignados')}
+                        onChange={handleCambioTipoBienes}
                     />
                 </div>
 
