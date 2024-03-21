@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
+import './BienesAsignados.css';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import useTableFilters from '../../../hooks/useTableFilters';
-
-import { quetzalesTemplate } from '../../TableColumnTemplates'
+import { quetzalesTemplate } from '../../TableColumnTemplates';
 
 import reportesRequests from '../../../Requests/reportesRequests';
 
 
 function BienesAsignados() {
     const [filas, setFilas] = useState([]);
+    const [filasFiltradas, setFilasFiltradas] = useState([]);
 
     // ______________________________  Filtros ______________________________
     const filtrosBienes = useTableFilters({
@@ -31,12 +32,26 @@ function BienesAsignados() {
         monto: { value: null, matchMode: FilterMatchMode.EQUALS },
         saldo_tarjeta: { value: null, matchMode: FilterMatchMode.EQUALS },
     });
+
     // ______________________________________________________________________
+    const handleGenerarExcel = async () => {
+        const blob = await reportesRequests.excelResumenBienesAsignados(filasFiltradas);
+        const url = window.URL.createObjectURL(blob);
+        // Creación de un enlace temporal y simulación de un clic en él para iniciar la descarga
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
 
 
     useEffect(() => {
         reportesRequests.resumenBienesAsignados().then(response => {
             setFilas(response.data);
+            setFilasFiltradas(response.data);
         });
     }, []);
 
@@ -71,10 +86,10 @@ function BienesAsignados() {
                     label='Generar Excel'
                     style={{color: '#217346'}}
                     outlined
-                    onClick={() => {}}
+                    onClick={handleGenerarExcel}
                 />
             </div>
-            <div className='col-12 md:max-w-max'>
+            {/* <div className='col-12 md:max-w-max'>
                 <Button
                     type='button'
                     icon='pi pi-file-pdf'
@@ -83,7 +98,7 @@ function BienesAsignados() {
                     outlined
                     onClick={() => {}}
                 />
-            </div>
+            </div> */}
         </div>
     );
 
@@ -91,17 +106,20 @@ function BienesAsignados() {
     return (
         <div className='grid col-11 md:col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
-                <h1 className='text-black-alpha-70 m-0 mb-2'>Reporte Bienes Asignados</h1>
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Reporte de Bienes Asignados</h1>
             </div>
 
             <div className='col-12'>
                 <DataTable 
                     value={filas}
                     filters={filtrosBienes.filters}
+                    onValueChange={filteredData => setFilasFiltradas(filteredData)}
                     paginator
                     rows={10}
                     rowsPerPageOptions={[10, 25, 50, 100]}
                     paginatorPosition='top'
+                    paginatorTemplate='CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink JumpToPageInput RowsPerPageDropdown w-auto'
+                    currentPageReportTemplate='({currentPage} de  {totalRecords})'
                     scrollable
                     scrollHeight='800px'
                     showGridlines

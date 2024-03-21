@@ -42,8 +42,8 @@ const adminOptions = [
                 url: '/bienes-asignados',
             },
             {
-                label: 'Historial Modificaciones',
-                url: '/historial-modificaciones',
+                label: 'Bitacora de Actividades',
+                url: '/bitacora',
             }
         ]
     }

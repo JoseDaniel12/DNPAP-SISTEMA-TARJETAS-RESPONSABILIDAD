@@ -6,9 +6,7 @@ import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { TriStateCheckbox } from 'primereact/tristatecheckbox';
 
-import { modificaciones } from './mockData.js';
-
-function HistorialModificaciones() {
+function Bitacora() {
     // Filtros de la tabla
     const [globalFilterValue, setGlobalFilterValue] = useState('');
     const [filters, setFilters] = useState(null);
@@ -73,15 +71,13 @@ function HistorialModificaciones() {
 
     return (
         <div className='grid col-11 md:col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
-            <div className='col-12 text-center mb-2'>
-                <h1 className=' mb-0 text-black-alpha-70'>
-                    Historial de Modificaciones
-                </h1>
+            <div className='col-12 text-center'>
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Bitacora de Actividades</h1>
             </div>
 
             <div className='col-12'>
                 <DataTable
-                    value={modificaciones}
+                    value={[]}
                     filters={filters}
                     paginator
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
@@ -105,8 +101,9 @@ function HistorialModificaciones() {
                         </div>
                     }
                 >
-                    <Column field='descripcion' header='Descripción' filter filterPlaceholder='descripcion'/>
                     <Column field='fecha' header='Fecha' body={dateBodyTemplate} filterField="fecha" dataType="date" filter filterPlaceholder='fecha' filterElement={dateFilterTemplate}/>
+                    <Column field='hora' header='Hora' />
+                    <Column field='actividad' header='Actividad' />
                     <Column field='autor' header='Autor' filter filterPlaceholder='autor'/>
                     <Column field='dpi' header='DPI' filter filterPlaceholder='dpi'/>
                 </DataTable>    
@@ -115,4 +112,4 @@ function HistorialModificaciones() {
     );
 }
 
-export default HistorialModificaciones;
+export default Bitacora;

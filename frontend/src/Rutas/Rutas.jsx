@@ -17,9 +17,7 @@ import GestionProgramas from '../Components/Programas/GestionProgramas/GestionPr
 import RegistroEmpleado from '../Components/Empleados/RegistroEmpleado/RegistroEmpleado';
 import EdicionEmpleado from '../Components/Empleados/EdicionEmpleado/EdicionEmpleado';
 import BienesAsignados from '../Components/Reportes/BienesAsignados/BienesAsignados';
-import HistorialPropiedad from '../Components/Reportes/HistorialPropiedad/HistorialPropiedad';
-import HistorialModificaciones from '../Components/Reportes/HistorialModificaciones/HistorialModificaciones';
-import AgrupacionBienes from '../Components/AgrupacionBienes/AgrupacionBienes';
+import Bitacora from '../Components/Reportes/Bitacora/Bitacora';
 import NotFound from '../Components/NotFound/NotFound';
 import { userRoles } from '../types/userRoles';
 
@@ -44,8 +42,7 @@ function Rutas() {
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
           <Route path="gestionar-programas" element={<GestionProgramas />} />
           <Route path="bienes-asignados" element={<BienesAsignados />} />
-          <Route path="historial-propiedad" element={<HistorialPropiedad />} />
-          <Route path="historial-modificaciones" element={<HistorialModificaciones/>} />
+          <Route path="bitacora" element={<Bitacora/>} />
         </>
     );
 

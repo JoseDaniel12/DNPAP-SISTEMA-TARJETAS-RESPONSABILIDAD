@@ -21,6 +21,7 @@ async function obtenerEmepleado(id_empleado) {
         LIMIT 1;
     `;
     const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw Error(`No se pudo obtener al empleado con id = ${id_empleado}.`);
     if (!outcome.length) return null;
     const [empleado] = outcome;
     return empleado;
@@ -47,6 +48,7 @@ async function obtenerUltimaTarjeta(id_empleado) {
         LIMIT 1;
     `;
     const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw Error('No se pudo obtener la ultima tarjeta del empleado.');
     if (outcome.length) {
         const [ultimaTarjeta] = outcome;
         return ultimaTarjeta;
