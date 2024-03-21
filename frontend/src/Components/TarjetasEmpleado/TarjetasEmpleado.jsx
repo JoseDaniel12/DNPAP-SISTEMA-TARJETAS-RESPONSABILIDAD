@@ -13,7 +13,7 @@ import { useAuth } from '../../Auth/Auth';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
 import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
   
 

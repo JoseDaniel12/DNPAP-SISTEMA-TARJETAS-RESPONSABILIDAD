@@ -9,7 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjetas from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 
 

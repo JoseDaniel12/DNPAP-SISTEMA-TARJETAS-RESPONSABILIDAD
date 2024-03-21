@@ -3,7 +3,7 @@ import AgregacionNumerosTarjetas from "../AgregacionNumerosTarjetas/AgregacionNu
 import { useToast } from '../../hooks/useToast';
 
 import { accionesTarjeta } from '../../types/accionesTarjeta';
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 
 function NumerosTarjetasStep({ id_empleado, comentario, numerosTarjetas, updateFields }) {
     const toast = useToast('bottom-right');

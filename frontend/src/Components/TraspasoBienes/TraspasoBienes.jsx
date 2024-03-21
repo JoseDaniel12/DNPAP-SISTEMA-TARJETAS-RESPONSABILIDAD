@@ -13,7 +13,7 @@ import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 
 
 function TraspasoBienes() {

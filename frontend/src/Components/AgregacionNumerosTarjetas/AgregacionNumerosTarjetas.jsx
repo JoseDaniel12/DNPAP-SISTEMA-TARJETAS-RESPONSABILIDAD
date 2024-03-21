@@ -4,7 +4,7 @@ import { Button } from 'primereact/button';
 import { Chip } from 'primereact/chip';
 import { useToast } from '../../hooks/useToast';
 
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 
 
 function AgregacionNumerosTarjetas({cantTarjetas, numerosTarjetas, setNumerosTarjetas}) {

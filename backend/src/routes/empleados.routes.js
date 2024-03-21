@@ -1,10 +1,10 @@
 const express = require('express');
 const mysql_conn = require('../database/mysql/mysql_conn');
+const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const _ = require('lodash');
+const { encriptar } = require('../helpers/encryption');
 const HTTPResponseBody  = require('./HTTPResponseBody');
 const { obtenerEmepleado } = require('../utilities/empleado');
-const { encriptar } = require('../helpers/encryption');
-const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { 
     getNoLineas,
     formatearDescripcionBien,
@@ -12,6 +12,7 @@ const {
 } = require('../utilities/tarjetas');
 const { ejecutarAccionTarjeta } = require('../utilities/tarjetas');
 const userRoles = require('../types/userRoles');
+const accionesTarjeta = require('../types/accionesTarjeta');
 const router = express.Router();
 
 
@@ -451,7 +452,7 @@ router.post('/asignar-bienes', async (req, res) => {
     mysql_conn.beginTransaction();
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
-        const action = { type: 'Asignación' }
+        const action = { type: accionesTarjeta.ASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
         ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
@@ -492,7 +493,7 @@ router.post('/traspasar-bienes', async (req, res) => {
         const biensPorIdTarjeta = _.groupBy(bienesConTarjeta, 'id_tarjeta_responsabilidad');
         for (let idTarjeta in biensPorIdTarjeta) {
             const actionTraspasoEmisor = {
-                type: 'Traspaso',
+                type: accionesTarjeta.TRASPASO,
                 payload: {
                     id_tarjeta_emisora: parseInt(idTarjeta),
                     esRecepcion: false
@@ -500,7 +501,7 @@ router.post('/traspasar-bienes', async (req, res) => {
             };
     
             const actionTraspasoRecepetor = {
-                type: 'Traspaso',
+                type: accionesTarjeta.TRASPASO,
                 payload: {
                     id_tarjeta_emisora: parseInt(idTarjeta),
                     esRecepcion: true
@@ -539,7 +540,7 @@ router.post('/desasignar-bienes', async (req, res) => {
     mysql_conn.beginTransaction();
     try {
         const { id_empleado, idsBienes, numerosTarjetas } = req.body;
-        const action = { type: 'Desasignación' }
+        const action = { type: accionesTarjeta.DESASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
         ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
@@ -568,7 +569,7 @@ router.post('/comentar-tarjeta/:id_empleado', async (req, res) => {
             es_nota: true  
         };
         
-        const tarjetasConNuevosRegistros = await ejecutarAccionTarjeta(id_empleado, [registro], numerosTarjetas, { type: 'Comentario' });
+        const tarjetasConNuevosRegistros = await ejecutarAccionTarjeta(id_empleado, [registro], numerosTarjetas, { type: accionesTarjeta.COMENTACION });
         const tarjetaConNuevoRegistro = Object.values(tarjetasConNuevosRegistros)[0];
         respBody.setData(tarjetaConNuevoRegistro);
         respBody.setMessage('Comentario agregado correctamente.');

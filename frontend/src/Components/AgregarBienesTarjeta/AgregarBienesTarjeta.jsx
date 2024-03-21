@@ -11,7 +11,7 @@ import  AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNu
 import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import bienesRequests from '../../Requests/bienesRequests';
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 
 

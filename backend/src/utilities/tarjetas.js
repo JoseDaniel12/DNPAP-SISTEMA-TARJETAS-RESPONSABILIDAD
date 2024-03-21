@@ -630,7 +630,7 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
             tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad].registros.push(registro);
         } else {
             ultimaTarjeta.registros = [registro];
-            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = ultimaTarjeta;
+            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = _.cloneDeep(ultimaTarjeta);
         }
 
         return tarjetasPorIdConNuevosRegistros;
