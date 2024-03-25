@@ -3,6 +3,7 @@ import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Steps } from 'primereact/steps';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import { useMultistepForm } from '../../hooks/useMultistepForm';
 import ComentarioStep from './ComentarioStep';
 import NumerosTarjetasStep from './NumerosTarjetasStep';
@@ -12,8 +13,10 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 
 function ComentacionTarjeta({visible, setVisible, id_empleado, onComentarTarjeta}) {
     const toast = useToast('bottom-right');
+    const { loginData: { usuario } } = useAuth();
 
     const initialData = {
+        id_autor: usuario.id_empleado,
         id_empleado,
         comentario: '',
         numerosTarjetas: []

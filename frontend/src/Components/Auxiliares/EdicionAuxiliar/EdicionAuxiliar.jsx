@@ -187,7 +187,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
 
 
             {
-                usuario.rol === userRoles.COORDINADOR && (
+                (usuario.rol === userRoles.COORDINADOR || usuario.id_empleado === idAuxiliarSeleccionado) && (
                     <div className='col-12 field m-0 '>
                         <label className='font-bold text-black-alpha-70 block'> Actualizar Contraseña: </label>
                         <InputSwitch  checked={acutalizarContrasenia} onChange={e => auxiliarForm.setValue('acutalizarContrasenia', e.value)}/>

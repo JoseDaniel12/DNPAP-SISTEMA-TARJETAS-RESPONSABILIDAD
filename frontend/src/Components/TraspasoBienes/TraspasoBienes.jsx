@@ -7,6 +7,7 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 import { quetzalesTemplate } from '../TableColumnTemplates';
@@ -18,6 +19,8 @@ import tarjetasRequests from '../../Requests/tarjetasRequests';
 
 function TraspasoBienes() {
     const toast = useToast('bottom-right');
+    const { loginData: { usuario } } = useAuth();
+
     const params = useParams();
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
     const navigate = useNavigate();
@@ -72,6 +75,7 @@ function TraspasoBienes() {
         }
 
         const response = await empleadoRequests.trapasarBienes({
+            id_autor: usuario.id_empleado,
             idEmpleadoEmisor: id_empleado_emisor,
             idEmpleadoReceptor: empleadoReceptor.id_empleado,
             idsBienes: bienesPorTraspasar.map(bien => bien.id_bien),

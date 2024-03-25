@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import './BienesAsignados.css';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
@@ -32,8 +31,9 @@ function BienesAsignados() {
         monto: { value: null, matchMode: FilterMatchMode.EQUALS },
         saldo_tarjeta: { value: null, matchMode: FilterMatchMode.EQUALS },
     });
-
     // ______________________________________________________________________
+
+    
     const handleGenerarExcel = async () => {
         const blob = await reportesRequests.excelResumenBienesAsignados(filasFiltradas);
         const url = window.URL.createObjectURL(blob);

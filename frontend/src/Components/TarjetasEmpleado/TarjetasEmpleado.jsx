@@ -219,7 +219,7 @@ function TarjetasEmpleado() {
                     paginator
                     paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
-                    currentPageReportTemplate='Registro {first} a {last} de  {totalRecords}'
+                    currentPageReportTemplate='Registro {first} a {last} de {totalRecords}'
                     rows={20}
                     scrollable
                     scrollHeight='800px'
@@ -310,6 +310,7 @@ function TarjetasEmpleado() {
                     dataKey='id_registro'
                     rowClassName={rowClass}
                 >
+                    <Column field='no_registro' header='No. Registro'/>
                     <Column field='fecha' header='Fecha' dataType='date' body={row => fechaTemplate(row.fecha)}/>
                     <Column field='cantidad' header='Cantidad'/>
                     <Column field='descripcion' header='Descripción' />

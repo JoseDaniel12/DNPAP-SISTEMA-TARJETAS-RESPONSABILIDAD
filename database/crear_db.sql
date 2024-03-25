@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
 
 CREATE TABLE IF NOT EXISTS registro (
 	id_registro INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    fecha DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    fecha DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
     cantidad INT UNSIGNED,
     descripcion LONGTEXT,
     precio DECIMAL(10, 2),
@@ -108,15 +108,21 @@ CREATE TABLE IF NOT EXISTS registro (
 );
 
 
-CREATE TABLE IF NOT EXISTS log (
-	id_log INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    descripcion VARCHAR(250),
-    fecha DATETIME,
+CREATE TABLE IF NOT EXISTS log_actividad (
+	id_log_actividad INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    fecha DATETIME(3),
+    dpi VARCHAR(250),
+    nit VARCHAR(250),
+    nombres VARCHAR(250),
+    apellidos VARCHAR(250),
+    tipo_accion VARCHAR(250),
+    no_tarjeta VARCHAR(250),
+    no_registro INT,
 
     id_registro INT,
-    id_empleado INT,
-    FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE CASCADE,
-    FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado) ON DELETE CASCADE
+    id_autor INT,
+    FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE SET NULL,
+    FOREIGN KEY (id_autor) REFERENCES empleado(id_empleado) ON DELETE CASCADE
 );
 
 
@@ -294,9 +300,7 @@ SELECT
 FROM unidad_jerarquizada
 INNER JOIN empleado ON unidad_jerarquizada.id_unidad_servicio = empleado.id_unidad_servicio
 INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-INNER JOIN bien_activo ON registro_bien.id_bien = bien_activo.id_bien
+INNER JOIN bien_activo ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = bien_activo.id_tarjeta_responsabilidad
 INNER JOIN bien ON bien_activo.id_bien = bien.id_bien
 INNER JOIN modelo ON bien.id_modelo = modelo.id_modelo
 WHERE bien_activo.id_tarjeta_responsabilidad = tarjeta_responsabilidad.id_tarjeta_responsabilidad

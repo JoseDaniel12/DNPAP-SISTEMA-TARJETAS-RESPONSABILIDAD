@@ -451,14 +451,15 @@ router.post('/asignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
     mysql_conn.beginTransaction();
     try {
-        const { id_empleado, idsBienes, numerosTarjetas } = req.body;
+        const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: accionesTarjeta.ASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
-        ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
+        ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
         respBody.setMessage('Bienes asignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
+        console.log(true)
         mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
@@ -470,7 +471,8 @@ router.post('/traspasar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
     mysql_conn.beginTransaction();
     try {
-        const { 
+        const {
+            id_autor,
             idEmpleadoEmisor,
             idEmpleadoReceptor,
             idsBienes,
@@ -512,7 +514,7 @@ router.post('/traspasar-bienes', async (req, res) => {
             const registrosReceptor = await generarRegistrosDesvinculados(idsBienes, actionTraspasoRecepetor);
     
             // Se cargan los bienes al receptor, aqui se establece la tarjeta receptora de los registros
-            await ejecutarAccionTarjeta(idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
+            await ejecutarAccionTarjeta(id_autor, idEmpleadoReceptor, registrosReceptor, numerosTarjetaReceptor, actionTraspasoRecepetor);
             // Se descargan los bienes del emisor
             for (let i = 0; i < registrosEmisor.length; i++) {
                 let regEmisor = registrosEmisor[i];
@@ -520,7 +522,7 @@ router.post('/traspasar-bienes', async (req, res) => {
                 regEmisor.id_tarjeta_emisora = regReceptor.id_tarjeta_emisora;
                 regEmisor.id_tarjeta_receptora = regReceptor.id_tarjeta_receptora;
             }
-            await ejecutarAccionTarjeta(idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
+            await ejecutarAccionTarjeta(id_autor, idEmpleadoEmisor, registrosEmisor, numerosTarjetaEmisor, actionTraspasoEmisor);
         }
 
         mysql_conn.commit();
@@ -539,14 +541,15 @@ router.post('/desasignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
     mysql_conn.beginTransaction();
     try {
-        const { id_empleado, idsBienes, numerosTarjetas } = req.body;
+        const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: accionesTarjeta.DESASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
-        ejecutarAccionTarjeta(id_empleado, registros, numerosTarjetas, action);
+        ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
         respBody.setMessage('Bienes desasignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
+        console.log(true)
         mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());
@@ -558,7 +561,7 @@ router.post('/comentar-tarjeta/:id_empleado', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const id_empleado = parseInt(req.params.id_empleado);
-        const { numerosTarjetas, comentario } = req.body;
+        const { id_autor, numerosTarjetas, comentario } = req.body;
 
         // Se formatea el comentario que ira en la descripción del registro
         const descripcionFormateada = formatearDescripcionBien(comentario);
@@ -569,7 +572,7 @@ router.post('/comentar-tarjeta/:id_empleado', async (req, res) => {
             es_nota: true  
         };
         
-        const tarjetasConNuevosRegistros = await ejecutarAccionTarjeta(id_empleado, [registro], numerosTarjetas, { type: accionesTarjeta.COMENTACION });
+        const tarjetasConNuevosRegistros = await ejecutarAccionTarjeta(id_autor, id_empleado, [registro], numerosTarjetas, { type: accionesTarjeta.COMENTACION });
         const tarjetaConNuevoRegistro = Object.values(tarjetasConNuevosRegistros)[0];
         respBody.setData(tarjetaConNuevoRegistro);
         respBody.setMessage('Comentario agregado correctamente.');

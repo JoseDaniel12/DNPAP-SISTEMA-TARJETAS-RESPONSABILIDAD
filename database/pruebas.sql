@@ -14,28 +14,35 @@ select * from kit;
 select * from registro_bien;
 select * from tipo_unidad_servicio;
 
-drop view reporte_bienes_activos;
-
-
+select * from registro
 
 SELECT
-    ROW_NUMBER() OVER(PARTITION BY id_empleado ORDER BY id_empleado) AS no_correlativo,
-    reporte_bienes_activos.*
-FROM reporte_bienes_activos
-INNER JOIN (
-    WITH di
-    SELECT
-        COUNT(DISTINCT id_empleado)
-    FROM reporte_bienes_activos
-) AS f1;
+    ROW_NUMBER() OVER (ORDER BY fecha) AS no_registro,
+    registro.*
+FROM registro
+INNER JOIN tarjeta_responsabilidad USING(id_tarjeta_responsabilidad)
+WHERE id_registro = ${id_registro};
+
+
+
+WITH reg AS (
+    SELECT *
+    FROM registro
+    WHERE id_registro = ${id_registro}
+)
 
 SELECT
-    (
-        SELECT COUNT(DISTINCT id_empleado) AS no_correlativo,
-        rba.id_empleado
-        FROM reporte_bienes_activos
-    ) AS no_correlativo,
-    rba.*
-FROM
-    reporte_bienes_activos rba
-GROUP BY
+    ROW_NUMBER() OVER (ORDER BY fecha) AS no_registro,
+    registro.*
+FROM tarjeta_responsabilidad
+INNER JOIN registro USING(id_tarjeta_responsabilidad)
+
+
+
+
+select * from log_actividad
+select * from registro
+
+select *
+from registro
+inner join log_actividad USING(fecha)

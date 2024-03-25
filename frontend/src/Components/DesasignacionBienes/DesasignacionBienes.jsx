@@ -6,6 +6,7 @@ import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjetas from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 
@@ -15,6 +16,9 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 
 function DesasignacionBienes() {
     const toast = useToast('bottom-right');
+    const { loginData } = useAuth();
+    const usuario = loginData?.usuario;
+
     const { id_empleado } = useParams();
     const navigate = useNavigate();
     const [bienesEmpleado, setBienesEmpleado] = useState([]);
@@ -56,7 +60,7 @@ function DesasignacionBienes() {
         }
         
         const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
-        const response = await empleadoRequests.desasignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.desasignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {

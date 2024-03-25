@@ -67,14 +67,14 @@ function getDescripcionRegistro(bienes) {
     
 
     if (bienes.length === 1) {
-        trozosDescripcionRegistro.push(`Precio: Q ${bienBase.precio.toFixed(2)}`);
+        trozosDescripcionRegistro.push(`Precio: Q${bienBase.precio.toFixed(2)}`);
         if (bienBase.sicoin) trozosDescripcionRegistro.push(`No. de SICOIN: ${bienBase.sicoin}`);
         if (bienBase.no_serie) trozosDescripcionRegistro.push(`No. de Serie: ${bienBase.no_serie}`);
         if (bienBase.no_inventario) trozosDescripcionRegistro.push(`No. de Inventario: ${bienBase.no_inventario}`);
         return trozosDescripcionRegistro.join('. ') + '.';
     }
 
-    trozosDescripcionRegistro.push(`Precio unitario: Q ${bienBase.precio.toFixed(2)}`);
+    trozosDescripcionRegistro.push(`Precio unitario: Q${bienBase.precio.toFixed(2)}`);
 
     const numerosSICOIN = bienes.map(bien => ['', undefined, null].includes(bien.sicoin) ? '-' : bien.sicoin);
     if (numerosSICOIN.length) {
@@ -165,7 +165,41 @@ async function determinarTarjetasRequeridas(id_empleado, registros) {
 }
 
 
-async function colocarRegistro(tarjeta, registro, action) {
+async function crearLogActividad(tipo_actividad, id_autor, id_registro) {
+    const autor = await obtenerEmepleado(id_autor);
+    const registro = await obtenerRegistro(id_registro);
+    const tarjeta = await obtenerTarjeta(registro.id_tarjeta_responsabilidad);
+    let query = `
+        INSERT INTO log_actividad (
+            fecha,
+            dpi,
+            nit,
+            nombres,
+            apellidos,
+            tipo_accion,
+            no_tarjeta,
+            no_registro,
+            id_registro,
+            id_autor
+        ) VALUES (
+            '${format(new Date(registro.fecha), 'yyyy-MM-dd HH:mm:ss.SSS')}',
+            '${autor.dpi}',
+            '${autor.nit}',
+            '${autor.nombres}',
+            '${autor.apellidos}',
+            '${tipo_actividad}',
+            '${tarjeta.numero}',
+            ${registro.no_registro},
+            ${id_registro},
+            ${id_autor}
+        );
+    `;
+    const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Falla al crear log de actividad.');
+}
+
+
+async function colocarRegistro(id_autor, tarjeta, registro, action) {
     // Dada la acción bajo la que se coloca el registro se determina si es un ingreso o egreso
     // y se establece la tarjeta emisora y receptora
     switch (action.type) {
@@ -276,15 +310,12 @@ async function colocarRegistro(tarjeta, registro, action) {
     }
 
     // Se obtiene el registro insertado en la db
-    query = `
-        SELECT * FROM registro
-        WHERE id_registro = ${id_registro};
-    `;
-    outcome = await mysql_exec_query(query);
-    if (outcome.error) throw new Error('Falla al obtener registro insertado.');
-    const [registroInsertado] = outcome;
+    const registroInsertado = await obtenerRegistro(id_registro);
 
-    // Esperar un milisgundo para que el siguiente registro que se cree tenga una fecha distinta
+    // Se crea un log del registro creado
+    crearLogActividad(action.type, id_autor, id_registro)
+
+    // Se espera un milisegudno para que el siguiente registro no tenga la misma fecha distinta
     await new Promise(resolve => setTimeout(resolve, 1));
 
     return registroInsertado;
@@ -382,11 +413,12 @@ async function obtenerTarjeta(id_tarjeta, conRegistros = false) {
     const [tarjeta] = await mysql_exec_query(query);
     if (conRegistros) {
         let query = `
-            SELECT *
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY fecha) AS no_registro,
+                registro.*
             FROM tarjeta_responsabilidad
             INNER JOIN registro USING(id_tarjeta_responsabilidad)
             WHERE id_tarjeta_responsabilidad = ${id_tarjeta}
-            ORDER BY registro.fecha;
         `
         let registros = await mysql_exec_query(query);
         tarjeta.registros = registros;
@@ -537,6 +569,29 @@ async function generarExcel(tarjeta) {
 }
 
 
+async function obtenerRegistro(id_registro) {
+    let query = `
+        SELECT
+        (
+            SELECT COUNT(*) + 1
+            FROM registro r2
+            WHERE (
+                r2.fecha < r.fecha AND
+                r2.id_tarjeta_responsabilidad = r.id_tarjeta_responsabilidad
+            )
+        ) AS no_registro,
+        r.*
+        FROM registro r
+        WHERE r.id_registro = ${id_registro}
+        LIMIT 1;
+    `;
+    const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Fallo al obtener registro.');
+    if (!outcome.length) throw new Error('Registro no encontrado.');
+    const [registro] = outcome;
+    return registro;
+}
+
 
 async function generarRegistrosDesvinculados(idsBienes, action) {
     // Obtener la información de los bienes de los cuales se crearan registros
@@ -558,7 +613,7 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
     for (const modelo in biensPorModelo) {
         const bienes = biensPorModelo[modelo];
         let descripcionRegistro = getDescripcionRegistro(bienes);
-        if (action.type === 'Traspaso') {            
+        if (action.type === accionesTarjeta.TRASPASO) {            
             let nota = '';
             const plantillaNumeroTarjeta = '╦'.repeat(8);
             const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
@@ -591,7 +646,7 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
 }
 
 
-const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, action) => {
+const ejecutarAccionTarjeta = async (id_autor, id_empleado, registros, numerosTarjetas, action) => {
     // Obtener el empleado al cual se le cargaran los registros
     const empleado = await obtenerEmepleado(id_empleado);
     if (!empleado) throw new Error('Empleado receptor no encontrado.');
@@ -624,7 +679,7 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
         }
 
         // Una vez determina el destino del registro se coloca en la tarjeta correspondiente
-        registro = await colocarRegistro(ultimaTarjeta, registro, action);
+        registro = await colocarRegistro(id_autor, ultimaTarjeta, registro, action);
 
         if (tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad]) {
             tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad].registros.push(registro);
@@ -632,12 +687,10 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
             ultimaTarjeta.registros = [registro];
             tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = _.cloneDeep(ultimaTarjeta);
         }
-
-        return tarjetasPorIdConNuevosRegistros;
 	}
 
     // Se las tarjetas donde se insertaron registros y los registros insertados
-    return { tarjetas, registros };
+    return tarjetasPorIdConNuevosRegistros;
 }
 
 

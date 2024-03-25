@@ -19,7 +19,15 @@ const reportesRequests = {
             method: 'POST',
             body: JSON.stringify(data)
         }).then(response => response.blob());
-    }
+    },
+
+    getLogsBitacoraActividades: async () => {
+        const url = `${reportesURL}/logs-bitacora-actividades`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.json());
+    },
 }
 
 export default reportesRequests;

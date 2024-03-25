@@ -167,4 +167,24 @@ router.get('/pdf-resumen-tarjetas', async (req, res) => {
 
 
 
+router.get('/logs-bitacora-actividades', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let query = `
+            SELECT * FROM log_actividad
+            ORDER BY fecha DESC;
+        `;
+        const outcome = await mysql_exec_query(query);
+        respBody.setData(outcome);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+    
+});
+
+
+
 module.exports = router;

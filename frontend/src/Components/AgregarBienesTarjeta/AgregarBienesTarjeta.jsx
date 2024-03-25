@@ -6,6 +6,7 @@ import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import useTableFilters from '../../hooks/useTableFilters';
 import  AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 import { quetzalesTemplate } from '../TableColumnTemplates';
@@ -17,6 +18,8 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 
 function AgregarBienesTarjeta() {
     const toast = useToast('bottom-right');
+    const { loginData: { usuario } } = useAuth();
+
     const { id_empleado } = useParams();
     const navigate = useNavigate();
     const [bienesSinAsignar, setBienesSinAsignar] = useState([]);
@@ -65,7 +68,7 @@ function AgregarBienesTarjeta() {
         }
         
         const idsBienes = bienesPorAsignar.map(b => b.id_bien);
-        const response = await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.asignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {
