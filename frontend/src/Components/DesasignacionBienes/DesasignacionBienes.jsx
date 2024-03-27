@@ -25,7 +25,6 @@ function DesasignacionBienes() {
     const [bienesPorDesasignar, setBienesPorDesasignar] = useState([]);
 
     const [cantTarjetasNesecarias, setCantTarjetasNecesarias] = useState(0);
-    const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
 
     // ______________________________  Filtros ______________________________
@@ -219,7 +218,7 @@ function DesasignacionBienes() {
                 <AgregacionNumerosTarjetas
                     cantTarjetas={cantTarjetasNesecarias}
                     numerosTarjetas={numerosTarjetas}
-                    setNumeroTarjeta={setNumeroTarjeta}
+                    setNumerosTarjetas={setNumerosTarjetas}
                 />
             </div>
 

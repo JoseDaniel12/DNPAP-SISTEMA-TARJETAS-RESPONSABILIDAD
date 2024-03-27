@@ -454,7 +454,7 @@ router.post('/asignar-bienes', async (req, res) => {
         const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: accionesTarjeta.ASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
-        ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
+        await ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
         respBody.setMessage('Bienes asignados correctamente');
         res.send(respBody.getLiteralObject());
@@ -544,12 +544,11 @@ router.post('/desasignar-bienes', async (req, res) => {
         const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
         const action = { type: accionesTarjeta.DESASIGNACION }
         const registros = await generarRegistrosDesvinculados(idsBienes, action);
-        ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
+        await ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
         mysql_conn.commit();
         respBody.setMessage('Bienes desasignados correctamente');
         res.send(respBody.getLiteralObject());
     } catch(error) {
-        console.log(true)
         mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());

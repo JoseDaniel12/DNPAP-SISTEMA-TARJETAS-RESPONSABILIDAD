@@ -213,6 +213,14 @@ router.put('/cambiar-numero/:id_tarjeta_responsabilidad', async (req, res) => {
         `;
         await mysql_exec_query(query);
 
+        // De igual forma se actualizan todos los logs de la bitacora de actividades con referencia al numero de tarjeta
+        query = `
+            UPDATE log_actividad
+            SET no_tarjeta = REPLACE(no_tarjeta, '${tarjeta.numero}', '${nuevoNumero}')
+            WHERE no_tarjeta = '${tarjeta.numero}';
+        `;
+        await mysql_exec_query(query);
+
         respBody.setMessage('Numero de tarjeta actualizado correctamente.');
         return res.status(200).send(respBody.getLiteralObject());
     } catch (error) {

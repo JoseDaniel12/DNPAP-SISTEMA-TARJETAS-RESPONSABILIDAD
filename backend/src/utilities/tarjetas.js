@@ -313,7 +313,7 @@ async function colocarRegistro(id_autor, tarjeta, registro, action) {
     const registroInsertado = await obtenerRegistro(id_registro);
 
     // Se crea un log del registro creado
-    crearLogActividad(action.type, id_autor, id_registro)
+    await crearLogActividad(action.type, id_autor, id_registro)
 
     // Se espera un milisegudno para que el siguiente registro no tenga la misma fecha distinta
     await new Promise(resolve => setTimeout(resolve, 1));
@@ -618,9 +618,9 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
             const plantillaNumeroTarjeta = '╦'.repeat(8);
             const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
             if (!action.payload.esRecepcion) {
-                nota = `Se descarga el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
+                nota = `Se descarga el contenido descrito en el presente registro, de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
             } else {
-                nota = `Se recibe el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero}: `;
+                nota = `Se recibe el contenido descrito en el presente registro, de la tarjeta No. ${tarjetaEmisora.numero}: `;
             }
             descripcionRegistro = nota + descripcionRegistro;
         }

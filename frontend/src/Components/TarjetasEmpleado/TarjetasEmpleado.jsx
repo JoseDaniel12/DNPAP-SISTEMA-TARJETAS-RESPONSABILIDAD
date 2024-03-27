@@ -15,6 +15,7 @@ import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
 import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
+import { set } from 'date-fns';
   
 
 function TarjetasEmpleado() {
@@ -43,9 +44,10 @@ function TarjetasEmpleado() {
             if (res.error) {
                 return toast.current.show({severity:'error', summary: 'Cambio de No. de Tarjeta', detail: res.error, life: 2500});
             }
-            toast.current.show({severity:'success', summary: 'Cambio de Nol Tarjeta', detail: res.message, life: 2500});
             setTarjeta(prev => ({...prev, numero: nuevoNumeroTarjeta}));
+            setTarjetas(prev => prev.map(t => t.id_tarjeta_responsabilidad === tarjeta.id_tarjeta_responsabilidad ? {...t, numero: nuevoNumeroTarjeta} : t));
             setNuevoNumeroTarjeta('');
+            toast.current.show({severity:'success', summary: 'Cambio de Nol Tarjeta', detail: res.message, life: 2500});
         });
     }
 
@@ -84,11 +86,11 @@ function TarjetasEmpleado() {
     const hanldeComentarTarjeta = async (tarjetaConNuevoRegistro) => {
         if (tarjeta?.id_tarjeta_responsabilidad === tarjetaConNuevoRegistro.id_tarjeta_responsabilidad) {
             setRegistros(prev => [...prev, tarjetaConNuevoRegistro.registros[0]]);
-        } else {
+        } else if (!tarjetas.find(t => t.id_tarjeta_responsabilidad === tarjetaConNuevoRegistro.id_tarjeta_responsabilidad)) {
             delete tarjetaConNuevoRegistro.registros;
             setTarjetas(prev => [tarjetaConNuevoRegistro , ...prev]);
-            setTarjeta(tarjetaConNuevoRegistro);
         }
+        setTarjeta(tarjetaConNuevoRegistro);
     };
     
     const precioTemplate = (precio, row) => {
@@ -160,7 +162,7 @@ function TarjetasEmpleado() {
                 </div>
 
                 {
-                    usuario && (
+                    (usuario && empleado?.activo === 1) && (
                     <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
                         <div className='col-12 md:max-w-max'>
                             <Button 
@@ -244,7 +246,7 @@ function TarjetasEmpleado() {
                                 </div>
 
                                 {
-                                    usuario && (
+                                    (usuario && empleado?.activo === 1) && (
                                         <div className='field col max-w-max'>
                                             <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
                                             <div className='flex flex-wrap gap-1 p-0'>

@@ -102,7 +102,7 @@ function Bitacora() {
                     <Column field='apellidos' header='Apellidos' filter filterPlaceholder='Buscar por apellidos'/>
                     <Column field='tipo_accion' header='Tipo de Actividad' filter filterPlaceholder='Buscar por actividad'/>
                     <Column field='no_tarjeta' header='No. Tarjeta'  filter filterPlaceholder='Buscar por No. Tarjeta'/>
-                    <Column field='no_registro' header='No. Registro' filter filterPlaceholder='Buscar por No. Registro'/>
+                    <Column field='no_registro' header='No. Registro' dataType='numeric' filter filterPlaceholder='Buscar por No. Registro'/>
                 </DataTable>
             </div>
         </div>
