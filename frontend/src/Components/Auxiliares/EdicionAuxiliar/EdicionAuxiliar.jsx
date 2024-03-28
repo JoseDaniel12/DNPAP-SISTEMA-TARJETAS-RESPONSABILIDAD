@@ -71,7 +71,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
     const editarAuxiliar = async () => {
         empleadoRequests.editarAuxiliar(idAuxiliarSeleccionado, auxiliarForm.getValues()).then(response => {
             if (response.error) {
-                alert("error")
+                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Error al editar el auxiliar.' });
             } else {
                 onAuxiliarEditado(response.data.auxiliar);
                 toast.current.show({ severity: 'success', summary: 'Exito', detail: 'Auxiliar editado correctamente.' });
