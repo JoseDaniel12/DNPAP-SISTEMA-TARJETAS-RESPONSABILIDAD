@@ -9,6 +9,7 @@ function ComentarioStep({ comentario, updateFields }) {
     }
 
     const onChangeComentario = e => {
+        // Elimina los saltos de linea
         updateFields({comentario: e.target.value.replace(/[\r\n]+/gm, '')});
     };
 

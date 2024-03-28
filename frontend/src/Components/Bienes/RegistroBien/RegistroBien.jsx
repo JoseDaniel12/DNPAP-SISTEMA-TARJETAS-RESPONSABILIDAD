@@ -14,6 +14,7 @@ import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { Message } from 'primereact/message';
 import { Toast } from 'primereact/toast';
+import useTableFilters from '../../../hooks/useTableFilters';
 
 import bienesRequest from '../../../Requests/bienesRequests';
 
@@ -23,7 +24,6 @@ function RegistroBien() {
 
     // Listado de bienes (cada bien solo tiene los datos especificos)
     const [bienes, setBienes] = useState([]);
-
 
     // _______________________ Formulario de datos Generales _______________________
     const datosGeneralesSchema = yup.object({
@@ -37,7 +37,7 @@ function RegistroBien() {
     const formDatosGenerales = useForm({
         defaultValues: {
             descripcion: '',
-            precio: 0,
+            precio: null,
             marca: '',
             codigoModelo: '',
             fecha: new Date(),
@@ -71,8 +71,8 @@ function RegistroBien() {
         const bienesData = {
             descripcion,
             precio: precio === null ? 0 : precio,
-            marca: marca === ''? null : marca,
-            codigoModelo: codigoModelo === ''? null : codigoModelo,
+            marca: marca,
+            codigoModelo: codigoModelo,
             fecha_registro: fecha,
             datos_espeficos_bienes: bienes
         };
@@ -80,37 +80,16 @@ function RegistroBien() {
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else {
-            toast.current.show({severity:'success', summary: 'Exito', detail: response.message, life: 3000});
+            setBienes([]);
             formDatosGenerales.reset();
             formDatosEspecificos.reset();
-            setBienes([]);
+            toast.current.show({severity:'success', summary: 'Exito', detail: response.message, life: 3000});
         }
     }
+    // _____________________________________________________________________________
 
 
-    // _______________________ Formulario de datos Especificos _______________________
-    const validateDisponibilidadSicoin = async (sicoin) => {
-        if (sicoin === '') return true;
-        for (const bien of bienes) {
-            if (bien.sicoin === sicoin) {
-               return  false;
-            }
-        }
-        const response = await bienesRequest.validarDisponibilidadSicoin(sicoin);
-        return response.data;
-    }
-
-    const validateDisponibilidadnoSerie = async (noSerie) => {
-        if (noSerie === '') return true;
-        for (const bien of bienes) {
-            if (bien.noSerie === noSerie) {
-               return  false;
-            }
-        }
-        const response = await bienesRequest.validarDisponibilidadNoSerie(noSerie);
-        return response.data;
-    }
-
+    // ______________________ Formulario de datos Especificos _______________________
     const datosEspecificosSchema = yup.object({
         sicoin: yup.string(),
         noSeries: yup.string(),
@@ -135,23 +114,47 @@ function RegistroBien() {
         },
         setError: setErrorDatosEspecificos,
     } = formDatosEspecificos;
+    
 
+    const validateDisponibilidadSicoin = async (sicoin) => {
+        if (sicoin === '') return true;
+        for (const bien of bienes) {
+            if (bien.sicoin === sicoin) {
+               return  false;
+            }
+        }
+        const response = await bienesRequest.validarDisponibilidadSicoin(sicoin);
+        return response.data;
+    }
+
+    const validateDisponibilidadnoSerie = async (noSerie) => {
+        if (noSerie === '') return true;
+        for (const bien of bienes) {
+            if (bien.noSerie === noSerie) {
+               return  false;
+            }
+        }
+        const response = await bienesRequest.validarDisponibilidadNoSerie(noSerie);
+        return response.data;
+    }
 
     const onAgregarBien = async (datosEspecificos) => {
         const { sicoin, noSerie, noInventario } = datosEspecificos;
         if ([sicoin, noSerie, noInventario].every(valor => valor === '')) return;
 
         const sicoinDisponible = await validateDisponibilidadSicoin(sicoin);
-        if (!sicoinDisponible) return setErrorDatosEspecificos('sicoin', {
+        if (!sicoinDisponible) setErrorDatosEspecificos('sicoin', {
             type: 'manual',
             message: 'SICOIN ya registrado.'
         });
 
         const noSerieDisponible = await validateDisponibilidadnoSerie(noSerie);
-        if (!noSerieDisponible) return setErrorDatosEspecificos('noSerie', {
+        if (!noSerieDisponible) setErrorDatosEspecificos('noSerie', {
             type: 'manual',
             message: 'No. Serie ya registrado.'
         });
+
+        if (Object.keys(formDatosEspecificos.formState.errors).length > 0) return;
 
         datosEspecificos.id = uuidv4();
         setBienes(prevBienes => [...prevBienes, datosEspecificos]);
@@ -165,30 +168,14 @@ function RegistroBien() {
         formDatosEspecificos.setValue('noInventario', bien.noInventario);
         setBienes(prevBienes => prevBienes.filter(b  => b.id !== bien.id));
     }
+    // _____________________________________________________________________________
 
 
     // ______________________________  Filtros ______________________________
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [filters, setFilters] = useState(null);
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
-    const initFilters = () => {
-        setFilters({
-            global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            sicoin: { value: null, matchMode: FilterMatchMode.EQUALS },
-            noSerie: { value: null, matchMode: FilterMatchMode.EQUALS },
-            noInventario: { value: null, matchMode: FilterMatchMode.EQUALS },
-        });
-        setGlobalFilterValue('');
-    };
-
-    const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
+    const filtrosDatosEspecificos = useTableFilters({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    });
+    // ______________________________________________________________________
 
 
     // Funcion para evitar que se haga un salto de linea al presionar enter en la descripción
@@ -200,7 +187,7 @@ function RegistroBien() {
 
 
     useEffect(() => {
-        initFilters();
+        filtrosDatosEspecificos.initFilters();
     }, []);
 
     
@@ -223,6 +210,7 @@ function RegistroBien() {
                     style={{resize: 'none'}}
                     onKeyDown={handleKeyDowDescripcion}
                     { ...registerDatosGenerales('descripcion') }
+                    onChange={e => formDatosGenerales.setValue('descripcion', e.target.value.replace(/[\r\n]+/gm, ''))}
                 />
                 { errorsDatosGenerales.descripcion && <Message severity='error' text={errorsDatosGenerales.descripcion?.message} className='mt-1 p-1'/> }
             </div>
@@ -234,10 +222,11 @@ function RegistroBien() {
                     name='precio'
                     placeholder='Q 0.00'
                     minFractionDigits={2}
-                    maxFractionDigits={5}
+                    maxFractionDigits={2}
                     mode='currency' currency='GTQ' locale='es-GT'
                     min={0}
                     { ...registerDatosGenerales('precio') }
+                    value={formDatosGenerales.watch('precio')}
                     onChange={e => formDatosGenerales.setValue('precio', e.value)}
                 />
                 { errorsDatosGenerales.precio && <Message severity='error' text={errorsDatosGenerales.precio?.message} className='mt-1 p-1'/> }
@@ -326,13 +315,10 @@ function RegistroBien() {
 
             <div className='col-12 md:col-8'>
                 <DataTable 
-                    onFilter={(event) => {
-                        event.filters && setFilters(event.filters);
-                        setFiltrosAplicados(event.filters && Object.values(event.filters).some(filtro => filtro && filtro.value !== null));
-                    }}
                     value={bienes} 
-                    filters={filters}
+                    filters={filtrosDatosEspecificos.filters}
                     paginator
+                    paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
                     currentPageReportTemplate='Bien {first} a {last} de  {totalRecords}'
                     rows={10}
@@ -342,15 +328,17 @@ function RegistroBien() {
                     stripedRows
                     header={
                         <div className='flex flex-wrap md:flex-row-reverse'>
-                            <div className='col-12 md:col-4'>
+                            {/* <div className='col-12 md:col-4'>
                                 <Button 
                                     severity='warning' icon='pi pi-upload' label='Carga (XLSX)' 
                                 />
-                            </div>
-                            <div className='col-12 md:col-8 flex justify-content-end'>
+                            </div> */}
+                            <div className='col flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
-                                    <InputText id='busquedaBien' value={globalFilterValue} onChange={onGlobalFilterChange} 
+                                    <InputText id='busquedaBien'
+                                        value={filtrosDatosEspecificos.globalFilterValue}
+                                        onChange={filtrosDatosEspecificos.onGlobalFilterChange} 
                                         placeholder='Buscar por valor clave'
                                     />
                                 </span>
@@ -375,19 +363,11 @@ function RegistroBien() {
                     <Column 
                         header='Eliminar'
                         body = {
-                            bien => (
+                            row => (
                                 <Button 
                                     type='button' 
                                     icon='pi pi-trash'
-                                    onClick={() => {
-                                        setBienes(prevBienes => prevBienes.filter(b  => {
-                                            if (
-                                                bien.sicoin !== b.sicoin && 
-                                                bien.noSerie !== b.noSerie && 
-                                                bien.noInventario !== b.noInventario
-                                            ) return true;
-                                        }));
-                                    }}
+                                    onClick={() => setBienes(prevBienes => prevBienes.filter(b => b.id !== row.id))}
                                     className='p-button-danger p-button-rounded p-button-text'
                                 />
                             )
