@@ -13,28 +13,30 @@ networks:
 services:
   mysql:
     image: mysql:latest
+    container_name: mysql-prod-c
+    hostname: mysql
     restart: always
     environment:
       # Password for root access
       MYSQL_ROOT_PASSWORD: '12345'
       allowPublicKeyRetrieval: True
       TZ: 'America/Guatemala'
+    networks:
+      - dnpap
     ports:
       - '3306:3306'
-    expose:
-      - '3306'
     volumes:
-      - dnpap-db:/var/lib/mysql
+      - dnpap-mysql-db-prod:/var/lib/mysql
     command: ['mysqld', '--default-time-zone=America/Guatemala']
 
   backend:
     image: backend-prod-i
     container_name: backend-prod-c
+    hostname: backend
+    restart: always
     build:
       context: ./backend
       dockerfile: Dockerfile.prod
-    restart: always
-    hostname: backend
     networks:
       - dnpap
     ports:
@@ -47,12 +49,14 @@ services:
   frontend:
     image: frontend-prod-i
     container_name: frontend-prod-c
+    hostname: frontend
+    restart: always
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        - VITE_BACKEND_URL='http://backend:5000'
-    hostname: frontend
+        # La ip debe ser la del servidor donde se encuentra el backend (no localhost)
+        - VITE_BACKEND_URL=http://127.0.0.1:5000
     networks:
       - dnpap
     ports:
@@ -73,4 +77,4 @@ services:
 
 
 volumes:
-  dnpap-db:
+  dnpap-mysql-db-prod:

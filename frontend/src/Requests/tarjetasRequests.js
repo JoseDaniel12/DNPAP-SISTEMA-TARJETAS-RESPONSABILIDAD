@@ -1,6 +1,6 @@
 import requestSettings from './requestSettings';
 
-const tarjetasURL = 'http://localhost:5000/tarjetas';
+const tarjetasURL = `${import.meta.env.VITE_BACKEND_URL}/tarjetas`;
 
 const tarjetasRequests = {
     getTarjetaConBienes: async (id_tarjeta_responsabilidad) => {

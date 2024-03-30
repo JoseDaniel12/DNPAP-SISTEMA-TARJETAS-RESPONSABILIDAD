@@ -14,6 +14,7 @@ services:
   backend:
     image: backend-dev-i
     container_name: backend-dev-c
+    hostname: backend
     build:
       context: ./backend
       dockerfile: Dockerfile.dev
@@ -25,23 +26,26 @@ services:
       - ./backend:/app
       - /app/node_modules
     env_file:
-      - ./backend/.env
+      - .env.dev
 
   frontend:
     image: frontend-dev-i
     container_name: frontend-dev-c
+    hostname: frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
       args:
-        - VITE_BACKEND_URL='http://backend:5000'
-    hostname: frontend
+        - VITE_BACKEND_URL=http://localhost:5000
     networks:
       - dnpap
     ports:
       - 8080:8080
     stdin_open: true
     tty: true
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     depends_on:
       - backend
     # deploy:

@@ -1,7 +1,7 @@
 import requestSettings from './requestSettings';
 
 
-const reportesURL = 'http://localhost:5000/reportes';
+const reportesURL = `${import.meta.env.VITE_BACKEND_URL}/reportes`;
 
 const reportesRequests = {
     resumenBienesAsignados: async () => {
