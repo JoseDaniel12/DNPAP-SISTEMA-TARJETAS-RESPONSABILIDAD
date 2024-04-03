@@ -2,6 +2,7 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import { useAuth } from '../Auth/Auth';
 import Login from '../Components/Login/Login';
 import Dashboard from "../Components/Dashboard/Dashboard";
+import UnsignedUserLayout from '../Components/UnsignedUserLayout/UnsignedUserLayout';
 import GestionBienes from '../Components/Bienes/GestionBienes/GestionBienes';
 import RegistroBien from '../Components/Bienes/RegistroBien/RegistroBien';
 import EdicionBien from '../Components/Bienes/EdicionBien/EdicionBien';
@@ -15,9 +16,8 @@ import GestionDepartamentos from '../Components/Departamentos/GestionDepartament
 import GestionProgramas from '../Components/Programas/GestionProgramas/GestionProgramas';
 import RegistroEmpleado from '../Components/Empleados/RegistroEmpleado/RegistroEmpleado';
 import EdicionEmpleado from '../Components/Empleados/EdicionEmpleado/EdicionEmpleado';
-import HistorialPropiedad from '../Components/Reportes/HistorialPropiedad/HistorialPropiedad';
-import HistorialModificaciones from '../Components/Reportes/HistorialModificaciones/HistorialModificaciones';
-import AgrupacionBienes from '../Components/AgrupacionBienes/AgrupacionBienes';
+import BienesAsignados from '../Components/Reportes/BienesAsignados/BienesAsignados';
+import Bitacora from '../Components/Reportes/Bitacora/Bitacora';
 import NotFound from '../Components/NotFound/NotFound';
 import { userRoles } from '../types/userRoles';
 
@@ -41,8 +41,8 @@ function Rutas() {
           <Route path="tarjetas-empleado/:id_empleado" element={<TarjetasEmpleado />} />
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
           <Route path="gestionar-programas" element={<GestionProgramas />} />
-          <Route path="historial-propiedad" element={<HistorialPropiedad />} />
-          <Route path="historial-modificaciones" element={<HistorialModificaciones/>} />
+          <Route path="bienes-asignados" element={<BienesAsignados />} />
+          <Route path="bitacora" element={<Bitacora/>} />
         </>
     );
 
@@ -56,6 +56,10 @@ function Rutas() {
             !usuario? (
               <>
                 <Route index element={<Login/>} />
+                <Route path='/' element={<UnsignedUserLayout />}>
+                  <Route path="empleados" element={<GestionEmpleados />}/>
+                  <Route path="tarjetas-empleado/:id_empleado" element={<TarjetasEmpleado />} />
+                </Route>
                 <Route path="/*" element={<Login/>}/>
               </>
             ) : (

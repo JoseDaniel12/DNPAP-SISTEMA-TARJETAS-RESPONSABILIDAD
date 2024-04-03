@@ -1,6 +1,6 @@
 import requestSettings from './requestSettings';
 
-const unidadesServicioURL = 'http://localhost:5000/unidadesServicio';
+const unidadesServicioURL = `${import.meta.env.VITE_BACKEND_URL}/unidadesServicio`;
 
 const unidadesServicioRequests = {
     getUnidadesServicio: async (tipoUnidades) => {

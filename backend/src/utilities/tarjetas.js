@@ -67,14 +67,14 @@ function getDescripcionRegistro(bienes) {
     
 
     if (bienes.length === 1) {
-        trozosDescripcionRegistro.push(`Precio: Q ${bienBase.precio.toFixed(2)}`);
+        trozosDescripcionRegistro.push(`Precio: Q${bienBase.precio.toFixed(2)}`);
         if (bienBase.sicoin) trozosDescripcionRegistro.push(`No. de SICOIN: ${bienBase.sicoin}`);
         if (bienBase.no_serie) trozosDescripcionRegistro.push(`No. de Serie: ${bienBase.no_serie}`);
         if (bienBase.no_inventario) trozosDescripcionRegistro.push(`No. de Inventario: ${bienBase.no_inventario}`);
         return trozosDescripcionRegistro.join('. ') + '.';
     }
 
-    trozosDescripcionRegistro.push(`Precio unitario: Q ${bienBase.precio.toFixed(2)}`);
+    trozosDescripcionRegistro.push(`Precio unitario: Q${bienBase.precio.toFixed(2)}`);
 
     const numerosSICOIN = bienes.map(bien => ['', undefined, null].includes(bien.sicoin) ? '-' : bien.sicoin);
     if (numerosSICOIN.length) {
@@ -165,7 +165,41 @@ async function determinarTarjetasRequeridas(id_empleado, registros) {
 }
 
 
-async function colocarRegistro(tarjeta, registro, action) {
+async function crearLogActividad(tipo_actividad, id_autor, id_registro) {
+    const autor = await obtenerEmepleado(id_autor);
+    const registro = await obtenerRegistro(id_registro);
+    const tarjeta = await obtenerTarjeta(registro.id_tarjeta_responsabilidad);
+    let query = `
+        INSERT INTO log_actividad (
+            fecha,
+            dpi,
+            nit,
+            nombres,
+            apellidos,
+            tipo_accion,
+            no_tarjeta,
+            no_registro,
+            id_registro,
+            id_autor
+        ) VALUES (
+            '${format(new Date(registro.fecha), 'yyyy-MM-dd HH:mm:ss.SSS')}',
+            '${autor.dpi}',
+            '${autor.nit}',
+            '${autor.nombres}',
+            '${autor.apellidos}',
+            '${tipo_actividad}',
+            '${tarjeta.numero}',
+            ${registro.no_registro},
+            ${id_registro},
+            ${id_autor}
+        );
+    `;
+    const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Falla al crear log de actividad.');
+}
+
+
+async function colocarRegistro(id_autor, tarjeta, registro, action) {
     // Dada la acción bajo la que se coloca el registro se determina si es un ingreso o egreso
     // y se establece la tarjeta emisora y receptora
     switch (action.type) {
@@ -230,7 +264,9 @@ async function colocarRegistro(tarjeta, registro, action) {
     }
 
     // Se inserta el registro en la db
-    const  { insertId: id_registro } = await mysql_exec_query(query);
+    let outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Falla al insertar el registro de tarjeta.');
+    const  { insertId: id_registro } = outcome;
 
     // Se actualiza el espacio restante en la tarjeta donde se inserto el registro
     if (registro.anverso) {
@@ -246,7 +282,8 @@ async function colocarRegistro(tarjeta, registro, action) {
             lineas_restantes_reverso = ${tarjeta.lineas_restantes_reverso}
         WHERE id_tarjeta_responsabilidad = ${tarjeta.id_tarjeta_responsabilidad};
     `
-    await mysql_exec_query(query);
+    outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Falla al actualizar el espacio restante de la tarjeta.');
 
 
     if (!registro.es_nota) {
@@ -256,7 +293,8 @@ async function colocarRegistro(tarjeta, registro, action) {
                 INSERT INTO registro_bien (id_registro, id_bien) 
                 VALUES (${id_registro}, ${bien.id_bien});
             `;
-            await mysql_exec_query(query);
+            outcome = await mysql_exec_query(query);
+            if (outcome.error) throw new Error('Falla al vincular registro con sus bienes.');
         }
 
         // Se establecen los bienes como activos dentro de la tarjeta correspondiente
@@ -266,18 +304,18 @@ async function colocarRegistro(tarjeta, registro, action) {
                 SET id_tarjeta_responsabilidad = ${registro.id_tarjeta_receptora}
                 WHERE id_bien = ${bien.id_bien};
             `;
-            await mysql_exec_query(query);
+            outcome = await mysql_exec_query(query);
+            if (outcome.error) throw new Error('Falla al actualizar el estado de los bienes.');
         }
     }
 
     // Se obtiene el registro insertado en la db
-    query = `
-        SELECT * FROM registro
-        WHERE id_registro = ${id_registro};
-    `;
-    const [registroInsertado] = await mysql_exec_query(query);
+    const registroInsertado = await obtenerRegistro(id_registro);
 
-    // Esperar un milisgundo para que el siguiente registro que se cree tenga una fecha distinta
+    // Se crea un log del registro creado
+    await crearLogActividad(action.type, id_autor, id_registro)
+
+    // Se espera un milisegudno para que el siguiente registro no tenga la misma fecha distinta
     await new Promise(resolve => setTimeout(resolve, 1));
 
     return registroInsertado;
@@ -299,7 +337,8 @@ async function crearTarjeta(empleado, numeroTarjeta, tarjetaAnterior = null) {
             SET lineas_restantes_reverso = 0
             WHERE id_tarjeta_responsabilidad = ${tarjetaAnterior.id_tarjeta_responsabilidad};
         `;
-        await mysql_exec_query(query);
+        let outcome = await mysql_exec_query(query);
+        if (outcome.error) throw new Error('No se pudo deshabilitar tarjeta anterior, mientras se creaba una nueva.');
     }
 
     const nombreJerarquicoUnidad = await obtenerNombreJerarquico(empleado.id_unidad_servicio);
@@ -338,12 +377,18 @@ async function crearTarjeta(empleado, numeroTarjeta, tarjetaAnterior = null) {
             ${empleado.id_empleado}
         );
     `;
-    const { insertId } = await mysql_exec_query(query);
+    let outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('No se pudo crear nueva tarjeta.');
+    const { insertId } = outcome;
+
+    // Se obtiene los datos de la tarjeta insertada
     query = `
         SELECT * FROM tarjeta_responsabilidad
         WHERE id_tarjeta_responsabilidad = ${insertId}
     `;
-    const [tarjeta] = await mysql_exec_query(query);
+    outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('No se pudo obtener la nueva tarjeta.');
+    const [tarjeta] = outcome;
 
     if (tarjetaAnterior) {
         // Se actualiza la tarjeta anterior para que apunte a la nueva tarjeta como su sucesora
@@ -352,7 +397,8 @@ async function crearTarjeta(empleado, numeroTarjeta, tarjetaAnterior = null) {
             SET id_tarjeta_posterior = ${insertId}
             WHERE id_tarjeta_responsabilidad = ${tarjetaAnterior.id_tarjeta_responsabilidad};
         `;
-        await mysql_exec_query(query);
+        let outcome = await mysql_exec_query(query);
+        if (outcome.error) throw new Error('No se pudo actualizar la tarjeta anterior para que apunte a la nueva tarjeta como su sucesora.');
     }
 
     return tarjeta;
@@ -367,11 +413,12 @@ async function obtenerTarjeta(id_tarjeta, conRegistros = false) {
     const [tarjeta] = await mysql_exec_query(query);
     if (conRegistros) {
         let query = `
-            SELECT *
+            SELECT
+                ROW_NUMBER() OVER (ORDER BY fecha) AS no_registro,
+                registro.*
             FROM tarjeta_responsabilidad
             INNER JOIN registro USING(id_tarjeta_responsabilidad)
             WHERE id_tarjeta_responsabilidad = ${id_tarjeta}
-            ORDER BY registro.fecha;
         `
         let registros = await mysql_exec_query(query);
         tarjeta.registros = registros;
@@ -522,6 +569,29 @@ async function generarExcel(tarjeta) {
 }
 
 
+async function obtenerRegistro(id_registro) {
+    let query = `
+        SELECT
+        (
+            SELECT COUNT(*) + 1
+            FROM registro r2
+            WHERE (
+                r2.fecha < r.fecha AND
+                r2.id_tarjeta_responsabilidad = r.id_tarjeta_responsabilidad
+            )
+        ) AS no_registro,
+        r.*
+        FROM registro r
+        WHERE r.id_registro = ${id_registro}
+        LIMIT 1;
+    `;
+    const outcome = await mysql_exec_query(query);
+    if (outcome.error) throw new Error('Fallo al obtener registro.');
+    if (!outcome.length) throw new Error('Registro no encontrado.');
+    const [registro] = outcome;
+    return registro;
+}
+
 
 async function generarRegistrosDesvinculados(idsBienes, action) {
     // Obtener la información de los bienes de los cuales se crearan registros
@@ -543,14 +613,14 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
     for (const modelo in biensPorModelo) {
         const bienes = biensPorModelo[modelo];
         let descripcionRegistro = getDescripcionRegistro(bienes);
-        if (action.type === 'Traspaso') {            
+        if (action.type === accionesTarjeta.TRASPASO) {            
             let nota = '';
             const plantillaNumeroTarjeta = '╦'.repeat(8);
             const tarjetaEmisora = await obtenerTarjeta(action.payload.id_tarjeta_emisora);
             if (!action.payload.esRecepcion) {
-                nota = `Se descarga el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
+                nota = `Se descarga el contenido descrito en el presente registro, de la tarjeta No. ${tarjetaEmisora.numero} hacia la tarjeta No. ${plantillaNumeroTarjeta + 'R'}: `;
             } else {
-                nota = `Se recibe el contenido descrito en el presente registro de la tarjeta No. ${tarjetaEmisora.numero}: `;
+                nota = `Se recibe el contenido descrito en el presente registro, de la tarjeta No. ${tarjetaEmisora.numero}: `;
             }
             descripcionRegistro = nota + descripcionRegistro;
         }
@@ -576,22 +646,16 @@ async function generarRegistrosDesvinculados(idsBienes, action) {
 }
 
 
-const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, action) => {
+const ejecutarAccionTarjeta = async (id_autor, id_empleado, registros, numerosTarjetas, action) => {
     // Obtener el empleado al cual se le cargaran los registros
-    const [empleado] = await mysql_exec_query(`
-        SELECT
-            empleado.*,
-            unidad_servicio.nombre_nuclear AS unidad_servicio_nuclear
-        FROM empleado
-        INNER JOIN unidad_servicio ON empleado.id_unidad_servicio = unidad_servicio.id_unidad_servicio
-        WHERE id_empleado = ${id_empleado}
-        LIMIT 1;
-    `);
+    const empleado = await obtenerEmepleado(id_empleado);
+    if (!empleado) throw new Error('Empleado receptor no encontrado.');
 
     // Obtener la ultima tarjeta del empleado
     let ultimaTarjeta = await obtenerUltimaTarjeta(id_empleado);
     if (!ultimaTarjeta) {
         const numeroTarjeta = numerosTarjetas.shift();
+        if (!numeroTarjeta) throw new Error('Registro excede el espacio de las tarjetas.');
         ultimaTarjeta = await crearTarjeta(empleado, numeroTarjeta);
     }
 
@@ -615,21 +679,20 @@ const ejecutarAccionTarjeta = async (id_empleado, registros, numerosTarjetas, ac
         }
 
         // Una vez determina el destino del registro se coloca en la tarjeta correspondiente
-        registro = await colocarRegistro(ultimaTarjeta, registro, action);
+        registro = await colocarRegistro(id_autor, ultimaTarjeta, registro, action);
 
         if (tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad]) {
             tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad].registros.push(registro);
         } else {
             ultimaTarjeta.registros = [registro];
-            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = ultimaTarjeta;
+            tarjetasPorIdConNuevosRegistros[ultimaTarjeta.id_tarjeta_responsabilidad] = _.cloneDeep(ultimaTarjeta);
         }
-
-        return tarjetasPorIdConNuevosRegistros;
 	}
 
     // Se las tarjetas donde se insertaron registros y los registros insertados
-    return { tarjetas, registros };
+    return tarjetasPorIdConNuevosRegistros;
 }
+
 
 module.exports = {
     getNoLineas,

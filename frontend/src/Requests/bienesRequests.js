@@ -1,7 +1,7 @@
 import requestSettings from './requestSettings';
 
 
-const bienesURL = 'http://localhost:5000/bienes';
+const bienesURL = `${import.meta.env.VITE_BACKEND_URL}/bienes`;
 
 const bienesRequests = {
     validarDisponibilidadSicoin: async (sicoin) => {

@@ -1,7 +1,7 @@
 import requestSettings from './requestSettings';
 
 
-const empleadosURL = 'http://localhost:5000/empleados';
+const empleadosURL = `${import.meta.env.VITE_BACKEND_URL}/empleados`;
 
 const empleadoRequests = {
     getEmpleados: async () => {

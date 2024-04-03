@@ -1,6 +1,6 @@
 import requestSettings from './requestSettings';
 
-const authUrl = 'http://localhost:5000/auth';
+const authUrl = `${import.meta.env.VITE_BACKEND_URL}/auth`;
 
 const authRequests = {
     verificarDisponibilidadDpi: async (dpi, rol) => {

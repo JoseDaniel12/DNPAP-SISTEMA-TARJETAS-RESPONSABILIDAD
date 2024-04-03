@@ -37,7 +37,6 @@ function GestionProgramas() {
 
 
     const onCancelEdicion = () => {
-        setIdProgramaSeleccionado(null);
         setEnEdicion(false);
     }
 

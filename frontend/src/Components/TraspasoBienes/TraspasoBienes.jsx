@@ -2,56 +2,55 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
+import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 
 
 function TraspasoBienes() {
     const toast = useToast('bottom-right');
+    const { loginData: { usuario } } = useAuth();
+
     const params = useParams();
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
     const navigate = useNavigate();
 
-    // Filtros de la tabla de empleados
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [filters, setFilters] = useState(null);
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
     const [empleados, setEmpleados] = useState([]);
     const [empleadoReceptor, setEmpleadoReceptor] = useState(null);
+    const [errorEmpleadoReceptor, setErrorEmpleadoReceptor] = useState(true);
 
     const [bienes, setBienes] = useState([]);
     const [bienesPorTraspasar, setBienesPorTraspasar] = useState([]);
 
     const [cantTarjetasEmisor, setCantTarjetasEmisor] = useState(0);
     const [cantTarjetasReceptor, setCantTarjetasReceptor] = useState(0);
-    const cantTarjetasNesecarias = cantTarjetasEmisor + cantTarjetasReceptor;
     const [tarjetas, setTarjetas] = useState([]);
+    const cantTarjetasNesecarias = cantTarjetasEmisor + cantTarjetasReceptor;
 
-    const [numeroTarjetaEmisor, setNumeroTarjetEmisor] = useState('');
-    const [numerosTarjetasEmisor, setNumerosTarjetasEmisor] = useState([]);
-    
-    const [numeroTarjetaReceptor, setNumeroTarjetaReceptor] = useState([]);
-    const [numerosTarjetasReceptor, setNumerosTarjetasReceptor] = useState([]);
+    // ______________________________  Filtros ______________________________
+    const filtrosListaEmpleados = useTableFilters({
+        global: { value: '', matchMode: FilterMatchMode.CONTAINS }
 
-    const [errorEmpleadoReceptor, setErrorEmpleadoReceptor] = useState(true);
+    })
 
-
-    const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
+    const confFiltrosBienes = {
+        global: { value: '', matchMode: FilterMatchMode.CONTAINS }
     };
+
+    const filtrosBienesEmpleadoEmisor = useTableFilters(confFiltrosBienes);
+    const filtrosBienesPorTraspasar = useTableFilters(confFiltrosBienes);
+    // ______________________________________________________________________
+
 
     
     const handleSeleccionarEmpleado = (id_empleado) => {
@@ -76,6 +75,7 @@ function TraspasoBienes() {
         }
 
         const response = await empleadoRequests.trapasarBienes({
+            id_autor: usuario.id_empleado,
             idEmpleadoEmisor: id_empleado_emisor,
             idEmpleadoReceptor: empleadoReceptor.id_empleado,
             idsBienes: bienesPorTraspasar.map(bien => bien.id_bien),
@@ -124,6 +124,10 @@ function TraspasoBienes() {
         empleadoRequests.getBienes(id_empleado_emisor).then(response => {
             setBienes(response.data);
         });
+
+        filtrosListaEmpleados.initFilters();
+        filtrosBienesEmpleadoEmisor.initFilters();
+        filtrosBienesPorTraspasar.initFilters();
     }, []);
 
 
@@ -136,7 +140,7 @@ function TraspasoBienes() {
             <div className='col-12 mb-2'>
                 <DataTable
                     value={empleados}
-                    filters={filters}
+                    filters={filtrosListaEmpleados.filters}
                     paginator
                     paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                     currentPageReportTemplate="Empleado {first} a {last} de  {totalRecords}"
@@ -153,6 +157,8 @@ function TraspasoBienes() {
                                 <i className="pi pi-search" />
                                 <InputText  
                                     placeholder="Buscar por valor clave"
+                                    value={filtrosListaEmpleados.globalFilterValue}
+                                    onChange={filtrosListaEmpleados.onGlobalFilterChange}
                                 />
                             </span>
                         </div>
@@ -197,7 +203,7 @@ function TraspasoBienes() {
 
                 <DataTable
                     value={bienes}
-                    filters={filters}
+                    filters={filtrosBienesEmpleadoEmisor.filters}
                     paginator
                     paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                     currentPageReportTemplate="Empleado {first} a {last} de  {totalRecords}"
@@ -214,6 +220,8 @@ function TraspasoBienes() {
                                 <i className="pi pi-search" />
                                 <InputText  
                                     placeholder="Buscar por valor clave"
+                                    value={filtrosBienesEmpleadoEmisor.globalFilterValue}
+                                    onChange={filtrosBienesEmpleadoEmisor.onGlobalFilterChange}
                                 />
                             </span>
                         </div>
@@ -239,7 +247,7 @@ function TraspasoBienes() {
 
                 <DataTable
                     value={bienesPorTraspasar}
-                    filters={filters}
+                    filters={filtrosBienesPorTraspasar.filters}
                     paginator
                     paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
                     currentPageReportTemplate="Empleado {first} a {last} de  {totalRecords}"
@@ -256,6 +264,8 @@ function TraspasoBienes() {
                                 <i className="pi pi-search" />
                                 <InputText  
                                     placeholder="Buscar por valor clave"
+                                    value={filtrosBienesPorTraspasar.globalFilterValue}
+                                    onChange={filtrosBienesPorTraspasar.onGlobalFilterChange}
                                 />
                             </span>
                         </div>

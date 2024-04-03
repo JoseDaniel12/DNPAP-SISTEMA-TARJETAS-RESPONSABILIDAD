@@ -38,14 +38,12 @@ const adminOptions = [
         url: '',
         items: [
             {
-                label: 'Historial de Propiedad',
-                icon: 'pi pi-history',
-                url: '/historial-propiedad',
+                label: 'Resumen de Bienes Asignados',
+                url: '/bienes-asignados',
             },
             {
-                label: 'Historial Modificaciones',
-                icon: 'pi pi-history',
-                url: '/historial-modificaciones',
+                label: 'Bitacora de Actividades',
+                url: '/bitacora',
             }
         ]
     }

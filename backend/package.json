@@ -17,6 +17,7 @@
     "express-fileupload": "^1.4.2",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
     "lodash": "^4.17.21",
     "mysql2": "^3.6.5",
     "nodemailer": "^6.9.7",

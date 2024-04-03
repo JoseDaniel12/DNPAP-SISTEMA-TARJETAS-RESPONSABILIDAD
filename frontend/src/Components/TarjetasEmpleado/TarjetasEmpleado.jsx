@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
@@ -9,14 +9,19 @@ import { Tag } from 'primereact/tag';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
 import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
+import { set } from 'date-fns';
   
 
 function TarjetasEmpleado() {
+    const { loginData } = useAuth();
+    const usuario = loginData?.usuario;
+
     const toast = useToast('bottom-right');
     const navigate = useNavigate();
 
@@ -39,9 +44,10 @@ function TarjetasEmpleado() {
             if (res.error) {
                 return toast.current.show({severity:'error', summary: 'Cambio de No. de Tarjeta', detail: res.error, life: 2500});
             }
-            toast.current.show({severity:'success', summary: 'Cambio de Nol Tarjeta', detail: res.message, life: 2500});
             setTarjeta(prev => ({...prev, numero: nuevoNumeroTarjeta}));
+            setTarjetas(prev => prev.map(t => t.id_tarjeta_responsabilidad === tarjeta.id_tarjeta_responsabilidad ? {...t, numero: nuevoNumeroTarjeta} : t));
             setNuevoNumeroTarjeta('');
+            toast.current.show({severity:'success', summary: 'Cambio de Nol Tarjeta', detail: res.message, life: 2500});
         });
     }
 
@@ -80,11 +86,11 @@ function TarjetasEmpleado() {
     const hanldeComentarTarjeta = async (tarjetaConNuevoRegistro) => {
         if (tarjeta?.id_tarjeta_responsabilidad === tarjetaConNuevoRegistro.id_tarjeta_responsabilidad) {
             setRegistros(prev => [...prev, tarjetaConNuevoRegistro.registros[0]]);
-        } else {
+        } else if (!tarjetas.find(t => t.id_tarjeta_responsabilidad === tarjetaConNuevoRegistro.id_tarjeta_responsabilidad)) {
             delete tarjetaConNuevoRegistro.registros;
             setTarjetas(prev => [tarjetaConNuevoRegistro , ...prev]);
-            setTarjeta(tarjetaConNuevoRegistro);
         }
+        setTarjeta(tarjetaConNuevoRegistro);
     };
     
     const precioTemplate = (precio, row) => {
@@ -155,51 +161,56 @@ function TarjetasEmpleado() {
                     />
                 </div>
 
-                <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Comentar en Tarjetas'
-                            severity='help'
-                            icon='pi pi-file-edit'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => setVisbilidadDialogComentario(true)}
-                        />
-                        <ComentacionTarjeta
-                            visible={visbilidadDialogComentario}
-                            setVisible={setVisbilidadDialogComentario}
-                            onComentarTarjeta={hanldeComentarTarjeta}
-                            id_empleado={empleado?.id_empleado}
-                        />
+                {
+                    (usuario && empleado?.activo === 1) && (
+                    <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Comentar en Tarjetas'
+                                severity='help'
+                                icon='pi pi-file-edit'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => setVisbilidadDialogComentario(true)}
+                            />
+                            <ComentacionTarjeta
+                                visible={visbilidadDialogComentario}
+                                setVisible={setVisbilidadDialogComentario}
+                                onComentarTarjeta={hanldeComentarTarjeta}
+                                id_empleado={id_empleado}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Asignar Bienes'
+                                severity='success'
+                                icon='pi pi-plus'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button
+                                type='button'
+                                label='Traspasar Bienes'
+                                severity='warning'
+                                icon='pi pi-arrow-right-arrow-left'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
+                        <div className='col-12 md:max-w-max'>
+                            <Button 
+                                label='Desasignar Bienes'
+                                severity='danger'
+                                icon='pi pi-trash'
+                                className='p-button-rounded md:w-auto p-button-outlined'
+                                onClick={() => navigate(`/desasignar-bienes/${empleado.id_empleado}`)}
+                            />
+                        </div>
                     </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Asignar Bienes'
-                            severity='success'
-                            icon='pi pi-plus'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/asignar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button
-                            type='button'
-                            label='Traspasar Bienes'
-                            severity='warning'
-                            icon='pi pi-arrow-right-arrow-left'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/traspasar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                    <div className='col-12 md:max-w-max'>
-                        <Button 
-                            label='Desasignar Bienes'
-                            severity='danger'
-                            icon='pi pi-trash'
-                            className='p-button-rounded md:w-auto p-button-outlined'
-                            onClick={() => navigate(`/desasignar-bienes/${empleado.id_empleado}`)}
-                        />
-                    </div>
-                </div>
+                    )
+                }
+
             </div>
 
 
@@ -210,7 +221,7 @@ function TarjetasEmpleado() {
                     paginator
                     paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
-                    currentPageReportTemplate='Registro {first} a {last} de  {totalRecords}'
+                    currentPageReportTemplate='Registro {first} a {last} de {totalRecords}'
                     rows={20}
                     scrollable
                     scrollHeight='800px'
@@ -234,24 +245,30 @@ function TarjetasEmpleado() {
                                     </label>
                                 </div>
 
-                                <div className='field col max-w-max'>
-                                    <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
-                                    <div className='flex flex-wrap gap-1 p-0'>
-                                        <div className='col p-0'>
-                                            <InputText 
-                                                id='search' type='text' placeholder='Nuevo No. Tarjeta'
-                                                value={nuevoNumeroTarjeta}
-                                                onChange={e => setNuevoNumeroTarjeta(e.target.value)}
-                                            />
+                                {
+                                    (usuario && empleado?.activo === 1) && (
+                                        <div className='field col max-w-max'>
+                                            <label className='font-bold text-black-alpha-70 block'>Cambiar No. Tarjeta:</label>
+                                            <div className='flex flex-wrap gap-1 p-0'>
+                                                <div className='col p-0'>
+                                                    <InputText 
+                                                        id='search' type='text' placeholder='Nuevo No. Tarjeta'
+                                                        value={nuevoNumeroTarjeta}
+                                                        onChange={e => setNuevoNumeroTarjeta(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className='col-12 lg:max-w-max p-0'>
+                                                    <Button
+                                                        severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'
+                                                        onClick={handleCambiarNumeroTarjeta}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className='col-12 lg:max-w-max p-0'>
-                                            <Button
-                                                severity='danger' label='Cambiar' icon='pi pi-pencil' className='p-button-outlined'
-                                                onClick={handleCambiarNumeroTarjeta}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
+                                    )
+                                }
+
+
 
                                 <div className='field col max-w-max lg:align-self-end'>
                                     <Button 
@@ -295,6 +312,7 @@ function TarjetasEmpleado() {
                     dataKey='id_registro'
                     rowClassName={rowClass}
                 >
+                    <Column field='no_registro' header='No. Registro'/>
                     <Column field='fecha' header='Fecha' dataType='date' body={row => fechaTemplate(row.fecha)}/>
                     <Column field='cantidad' header='Cantidad'/>
                     <Column field='descripcion' header='Descripción' />

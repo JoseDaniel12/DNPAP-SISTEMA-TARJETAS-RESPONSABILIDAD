@@ -2,31 +2,39 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
-import { Chip } from 'primereact/chip';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
+import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjetas from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 
 
 function DesasignacionBienes() {
     const toast = useToast('bottom-right');
+    const { loginData } = useAuth();
+    const usuario = loginData?.usuario;
+
     const { id_empleado } = useParams();
     const navigate = useNavigate();
     const [bienesEmpleado, setBienesEmpleado] = useState([]);
     const [bienesPorDesasignar, setBienesPorDesasignar] = useState([]);
 
-    // Filtros de la tabla de empleados
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [filters, setFilters] = useState(null);
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
     const [cantTarjetasNesecarias, setCantTarjetasNecesarias] = useState(0);
-    const [numeroTarjeta, setNumeroTarjeta] = useState('');
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
+
+    // ______________________________  Filtros ______________________________
+    const confFiltrosBienes = {
+        global: { value: '', matchMode: FilterMatchMode.CONTAINS }
+    };
+
+    const filtrosBienesEmpleado = useTableFilters(confFiltrosBienes)
+    const filtrosBienesPorDesasignar = useTableFilters(confFiltrosBienes);
+    // ______________________________________________________________________
 
 
     const handleQuitarBien = (id_bien) => {
@@ -51,7 +59,7 @@ function DesasignacionBienes() {
         }
         
         const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
-        const response = await empleadoRequests.desasignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.desasignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {
@@ -61,14 +69,6 @@ function DesasignacionBienes() {
         }
     }
 
-
-    const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
 
 
     const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
@@ -97,6 +97,9 @@ function DesasignacionBienes() {
 
     useEffect(() => {
         empleadoRequests.getBienes(id_empleado).then(res => setBienesEmpleado(res.data));
+
+        filtrosBienesEmpleado.initFilters();
+        filtrosBienesPorDesasignar.initFilters();
     }, []);
 
 
@@ -109,6 +112,7 @@ function DesasignacionBienes() {
             <div className='col-12'>
                 <DataTable
                     value={bienesEmpleado}
+                    filters={filtrosBienesEmpleado.filters}
                     rows={10}
                     paginator
                     scrollable
@@ -126,8 +130,10 @@ function DesasignacionBienes() {
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
-                                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
+                                    <InputText
                                         placeholder='Buscar por valor clave'
+                                        value={filtrosBienesEmpleado.globalFilterValue}
+                                        onChange={filtrosBienesEmpleado.onGlobalFilterChange}
                                     />
                                 </span>
                             </div>
@@ -158,6 +164,7 @@ function DesasignacionBienes() {
 
                 <DataTable
                     value={bienesPorDesasignar}
+                    filters={filtrosBienesPorDesasignar.filters}
                     rows={10}
                     paginator
                     scrollable
@@ -174,8 +181,10 @@ function DesasignacionBienes() {
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
-                                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
+                                    <InputText
                                         placeholder='Buscar por valor clave'
+                                        value={filtrosBienesPorDesasignar.globalFilterValue}
+                                        onChange={filtrosBienesPorDesasignar.onGlobalFilterChange}
                                     />
                                 </span>
                             </div>
@@ -209,7 +218,7 @@ function DesasignacionBienes() {
                 <AgregacionNumerosTarjetas
                     cantTarjetas={cantTarjetasNesecarias}
                     numerosTarjetas={numerosTarjetas}
-                    setNumeroTarjeta={setNumeroTarjeta}
+                    setNumerosTarjetas={setNumerosTarjetas}
                 />
             </div>
 

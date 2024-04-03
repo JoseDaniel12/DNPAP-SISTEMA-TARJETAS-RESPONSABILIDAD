@@ -2,31 +2,48 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { useToast } from '../../hooks/useToast';
+import { useAuth } from '../../Auth/Auth';
+import useTableFilters from '../../hooks/useTableFilters';
 import  AgregacionNumerosTarjeta from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
 import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import bienesRequests from '../../Requests/bienesRequests';
-import tarjetasRequests from '../../Requests/tarjetasReuests';
+import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 
 
 function AgregarBienesTarjeta() {
     const toast = useToast('bottom-right');
+    const { loginData: { usuario } } = useAuth();
+
     const { id_empleado } = useParams();
     const navigate = useNavigate();
     const [bienesSinAsignar, setBienesSinAsignar] = useState([]);
     const [bienesPorAsignar, setBienesPorAsignar] = useState([]);
 
-    // Filtros de la tabla de empleados
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [filters, setFilters] = useState(null);
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
     const [cantTarjetasNesecarias, setCantTarjetasNecesarias] = useState(0);
     const [numerosTarjetas, setNumerosTarjetas] = useState([]);
+
+
+    // ______________________________  Filtros ______________________________
+    const confFiltrosBienes = {
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        sicoin: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_serie: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_inventario: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        descripcion: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        marca: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        codigo: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        precio: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    }
+
+    const filtrosBienesSinVincular = useTableFilters(confFiltrosBienes);
+    const filtrosBienesPorAgregar = useTableFilters(confFiltrosBienes);
+    // ______________________________________________________________________
 
 
     const handleAgregarBien = (id_bien) => {
@@ -51,7 +68,7 @@ function AgregarBienesTarjeta() {
         }
         
         const idsBienes = bienesPorAsignar.map(b => b.id_bien);
-        const response = await empleadoRequests.asignarBienes({id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.asignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {
@@ -60,15 +77,6 @@ function AgregarBienesTarjeta() {
             navigate(-1);
         }
     }
-
-
-    const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
 
 
     useEffect(() => {
@@ -83,6 +91,8 @@ function AgregarBienesTarjeta() {
 
     useEffect(() => {
         bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data));
+        filtrosBienesSinVincular.initFilters();
+        filtrosBienesPorAgregar.initFilters();
     }, []);
 
 
@@ -94,7 +104,9 @@ function AgregarBienesTarjeta() {
             <div className='col-12  flex justify-content-end'>
                 <span className='p-input-icon-left flex align-items-center'>
                     <i className='pi pi-search' />
-                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
+                    <InputText
+                        value={filtrosBienesSinVincular.globalFilterValue}
+                        onChange={filtrosBienesSinVincular.onGlobalFilterChange} 
                         placeholder='Buscar por valor clave'
                     />
                 </span>
@@ -106,7 +118,6 @@ function AgregarBienesTarjeta() {
     return (
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
-                {/* <h1 className=' -mb-4 text-black-alpha-70'>Asignar Bienes</h1> */}
                 <h1 className='text-black-alpha-70 mb-1'>Asignar Bienes</h1>
             </div>
 
@@ -114,6 +125,7 @@ function AgregarBienesTarjeta() {
                 <DataTable
                     value={bienesSinAsignar}
                     rows={10}
+                    filters={filtrosBienesSinVincular.filters}
                     paginator
                     scrollable
                     scrollHeight='280px'
@@ -149,6 +161,7 @@ function AgregarBienesTarjeta() {
 
                 <DataTable
                     value={bienesPorAsignar}
+                    filters={filtrosBienesPorAgregar.filters}
                     rows={10}
                     paginator
                     scrollable
@@ -165,8 +178,10 @@ function AgregarBienesTarjeta() {
                             <div className='col-12  flex justify-content-end'>
                                 <span className='p-input-icon-left flex align-items-center'>
                                     <i className='pi pi-search' />
-                                    <InputText value={globalFilterValue} onChange={onGlobalFilterChange} 
+                                    <InputText
                                         placeholder='Buscar por valor clave'
+                                        value={filtrosBienesPorAgregar.globalFilterValue}
+                                        onChange={filtrosBienesPorAgregar.onGlobalFilterChange} 
                                     />
                                 </span>
                             </div>

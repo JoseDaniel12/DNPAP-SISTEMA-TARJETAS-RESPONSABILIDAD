@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { Button } from 'primereact/button';
 import { InputText } from 'primereact/inputtext';
@@ -11,13 +11,23 @@ import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { quetzalesTemplate } from '../../TableColumnTemplates';
 import { useToast } from '../../../hooks/useToast';
+import { useAuth } from '../../../Auth/Auth';
 
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
 function GestionEmpleados() {
+    const { loginData } = useAuth();
+    const usuario = loginData?.usuario;
+
     const toast = useToast('bottom-right');
     const navigate = useNavigate();
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    let mostrarEmpleadosActivos = true;
+    if (searchParams.get('mostrarEmpleadosActivos') === 'false') {
+        mostrarEmpleadosActivos = false;
+    }
 
     const tiposEmpleados = [
         {  value: 'Activos' },
@@ -25,7 +35,6 @@ function GestionEmpleados() {
     ];
 
     const [empleados, setEmpleados] = useState([]);
-    const [mostrarEmpleadosActivos, setMostrarEmpleadosActivos] = useState(true);
     const [filaSelccionada, setFilaSelccionada] = useState(null);
 
     // ______________________________  Filtros ______________________________
@@ -56,6 +65,16 @@ function GestionEmpleados() {
         setGlobalFilterValue(value);
     };
     // ______________________________________________________________________
+
+    
+    const handleCambioTipoEmpleados = (e) => {
+        const valor = e.value === 'Activos';
+        setSearchParams(prev => ({
+            ...prev,
+            mostrarEmpleadosActivos: valor
+        }));
+    };
+
 
 
     const handleGestionarBienesTarjetas = () => {
@@ -164,7 +183,7 @@ function GestionEmpleados() {
                 <SelectButton
                     options={tiposEmpleados} optionLabel='value'
                     value={mostrarEmpleadosActivos ? 'Activos' : 'De Baja'}
-                    onChange={e => setMostrarEmpleadosActivos(e.value === 'Activos')}
+                    onChange={handleCambioTipoEmpleados}
                 />
             </div>
         </div>
@@ -179,15 +198,20 @@ function GestionEmpleados() {
                 <h1 className='text-black-alpha-70 m-0 mb-2'>Gestionar Empleados</h1>
             </div>
 
-            <div className='col-12 md:max-w-max align-self-start'>
-                <Button 
-                    label='Registrar Empleado'
-                    severity='success'
-                    icon='pi pi-plus'
-                    className='md:w-auto p-button-outlined'
-                    onClick={() => navigate('/registrar-empleado')}
-                />
-            </div>
+            {
+                usuario  && (
+                    <div className='col-12 md:max-w-max align-self-start'>
+                        <Button 
+                            label='Registrar Empleado'
+                            severity='success'
+                            icon='pi pi-plus'
+                            className='md:w-auto p-button-outlined'
+                            onClick={() => navigate('/registrar-empleado')}
+                        />
+                    </div>
+                )
+            }
+
 
             <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
                 <div className='col-12 md:max-w-max'>
@@ -201,53 +225,58 @@ function GestionEmpleados() {
                 </div>
 
                 {
-                    mostrarEmpleadosActivos ? (
-                        <>
-                            <div className='col-12 md:max-w-max'>
-                                <Button
-                                    type='button'
-                                    label='Editar Empleado'
-                                    severity='warning'
-                                    icon='pi pi-pencil'
-                                    className='md:w-auto p-button-outlined'
-                                    onClick={handleEditarEmpleado}                    
-                                />
-                            </div>
-                            <div className='col-12 md:max-w-max'>
-                                <Button
-                                    type='button'
-                                    label='Baja a Empleado'
-                                    severity='danger'
-                                    icon='pi pi-trash'
-                                    className='md:w-auto p-button-outlined'
-                                    onClick={handleBajaEmpleado}                    
-                                />
-                            </div>
-                        </>
+                    !usuario ? (
+                        <></>
                     ) : (
-                        <>
-                            <div className='col-12 md:max-w-max'>
-                                <Button
-                                    type='button'
-                                    label='Activar Empleado'
-                                    severity='help'
-                                    icon='pi pi-check-circle'
-                                    className='md:w-auto p-button-outlined'
-                                    onClick={handleActivacionEmpleado}                    
-                                />
-                            </div>
-                            {/* <div className='col-12 md:max-w-max'>
-                                <Button
-                                    type='button'
-                                    label='Eliminar Empleado'
-                                    severity='danger'
-                                    icon='pi pi-times'
-                                    className='md:w-auto p-button-outlined'
-                                    onClick={handleEliminarEmpleado}
-                                />
-                            </div> */}
-                        </>
+                        mostrarEmpleadosActivos ? (
+                            <>
+                                <div className='col-12 md:max-w-max'>
+                                    <Button
+                                        type='button'
+                                        label='Editar Empleado'
+                                        severity='warning'
+                                        icon='pi pi-pencil'
+                                        className='md:w-auto p-button-outlined'
+                                        onClick={handleEditarEmpleado}                    
+                                    />
+                                </div>
+                                <div className='col-12 md:max-w-max'>
+                                    <Button
+                                        type='button'
+                                        label='Baja a Empleado'
+                                        severity='danger'
+                                        icon='pi pi-trash'
+                                        className='md:w-auto p-button-outlined'
+                                        onClick={handleBajaEmpleado}                    
+                                    />
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className='col-12 md:max-w-max'>
+                                    <Button
+                                        type='button'
+                                        label='Activar Empleado'
+                                        severity='help'
+                                        icon='pi pi-check-circle'
+                                        className='md:w-auto p-button-outlined'
+                                        onClick={handleActivacionEmpleado}                    
+                                    />
+                                </div>
+                                {/* <div className='col-12 md:max-w-max'>
+                                    <Button
+                                        type='button'
+                                        label='Eliminar Empleado'
+                                        severity='danger'
+                                        icon='pi pi-times'
+                                        className='md:w-auto p-button-outlined'
+                                        onClick={handleEliminarEmpleado}
+                                    />
+                                </div> */}
+                            </>
+                        )
                     )
+
                 }
             </div>
 

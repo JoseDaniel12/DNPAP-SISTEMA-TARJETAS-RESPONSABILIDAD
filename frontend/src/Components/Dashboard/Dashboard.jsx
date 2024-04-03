@@ -51,7 +51,6 @@ function Dashboard() {
     }, []);
 
     const userMenuOptions = [
-        { label: 'Editar Perfil', icon: 'pi pi-user-edit', url: '/perfil'},
         { 
             label: 'Salir', 
             icon: 'pi pi-sign-out',

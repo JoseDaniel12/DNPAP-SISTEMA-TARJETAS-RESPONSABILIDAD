@@ -71,7 +71,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
     const editarAuxiliar = async () => {
         empleadoRequests.editarAuxiliar(idAuxiliarSeleccionado, auxiliarForm.getValues()).then(response => {
             if (response.error) {
-                alert("error")
+                toast.current.show({ severity: 'error', summary: 'Error', detail: 'Error al editar el auxiliar.' });
             } else {
                 onAuxiliarEditado(response.data.auxiliar);
                 toast.current.show({ severity: 'success', summary: 'Exito', detail: 'Auxiliar editado correctamente.' });
@@ -187,7 +187,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
 
 
             {
-                usuario.rol === userRoles.COORDINADOR && (
+                (usuario.rol === userRoles.COORDINADOR || usuario.id_empleado === idAuxiliarSeleccionado) && (
                     <div className='col-12 field m-0 '>
                         <label className='font-bold text-black-alpha-70 block'> Actualizar Contraseña: </label>
                         <InputSwitch  checked={acutalizarContrasenia} onChange={e => auxiliarForm.setValue('acutalizarContrasenia', e.value)}/>

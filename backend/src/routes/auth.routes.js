@@ -30,7 +30,7 @@ router.post('/login', async (req, res) => {
     const { correo, contrasenia } = req.body;
 
     // Busqueda del usuario con las credenciales ingresadas
-    let [usuario] = await mysql_exec_query(`
+    let outcome = await mysql_exec_query(`
         SELECT
         empleado.*,
         rol.nombre as rol
@@ -39,6 +39,8 @@ router.post('/login', async (req, res) => {
         WHERE correo = '${correo}'
         LIMIT 1;
     `);
+    if (outcome.error) throw outcome.error;
+    let usuario = outcome[0];
 
     if (!usuario) {
         return res.status(400).json({ 

@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS tarjeta_responsabilidad (
 
 CREATE TABLE IF NOT EXISTS registro (
 	id_registro INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    fecha DATETIME(6) DEFAULT CURRENT_TIMESTAMP(6),
+    fecha DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3),
     cantidad INT UNSIGNED,
     descripcion LONGTEXT,
     precio DECIMAL(10, 2),
@@ -108,15 +108,21 @@ CREATE TABLE IF NOT EXISTS registro (
 );
 
 
-CREATE TABLE IF NOT EXISTS log (
-	id_log INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    descripcion VARCHAR(250),
-    fecha DATETIME,
+CREATE TABLE IF NOT EXISTS log_actividad (
+	id_log_actividad INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+    fecha DATETIME(3),
+    dpi VARCHAR(250),
+    nit VARCHAR(250),
+    nombres VARCHAR(250),
+    apellidos VARCHAR(250),
+    tipo_accion VARCHAR(250),
+    no_tarjeta VARCHAR(250),
+    no_registro INT,
 
     id_registro INT,
-    id_empleado INT,
-    FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE CASCADE,
-    FOREIGN KEY (id_empleado) REFERENCES empleado(id_empleado) ON DELETE CASCADE
+    id_autor INT,
+    FOREIGN KEY (id_registro) REFERENCES registro(id_registro) ON DELETE SET NULL,
+    FOREIGN KEY (id_autor) REFERENCES empleado(id_empleado) ON DELETE CASCADE
 );
 
 
@@ -168,17 +174,19 @@ CREATE TRIGGER update_saldos_tarjeta
 AFTER INSERT ON registro
 FOR EACH ROW
 BEGIN
-    -- Si el saldo va en el lado anverso se acutaliza el saldo anverso
-    IF NEW.anverso THEN
+    IF NOT NEW.es_nota THEN
+        -- Si el saldo va en el lado anverso se acutaliza el saldo anverso
+        IF NEW.anverso THEN
+            UPDATE tarjeta_responsabilidad
+            SET saldo_anverso = IF (NEW.ingreso = TRUE, saldo_anverso + NEW.precio, saldo_anverso - NEW.precio)
+            WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
+        END IF;
+
+        -- Se acutaliza el saldo general de la tarjeta (anverso/reverso)
         UPDATE tarjeta_responsabilidad
-        SET saldo_anverso = IF (NEW.ingreso = TRUE, saldo_anverso + NEW.precio, saldo_anverso - NEW.precio)
+        SET saldo = IF (NEW.ingreso = TRUE, saldo + NEW.precio, saldo - NEW.precio)
         WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
     END IF;
-
-    -- Se acutaliza el saldo general de la tarjeta (anverso/reverso)
-    UPDATE tarjeta_responsabilidad
-    SET saldo = IF (NEW.ingreso = TRUE, saldo + NEW.precio, saldo - NEW.precio)
-    WHERE tarjeta_responsabilidad.id_tarjeta_responsabilidad = NEW.id_tarjeta_responsabilidad;
 END;
 //
 DELIMITER ;
@@ -207,34 +215,13 @@ DELIMITER ;
 CREATE VIEW bien_activo AS
 # Bien con su dueño y tarjeta en la que lo posee (tarjeta en la que esta el bien como tal)
 SELECT
-    bien_activo_empleado.id_bien,
-    bien_activo_empleado.id_empleado,
+    empleado.id_empleado,
+    bien.id_bien,
     tarjeta_responsabilidad.id_tarjeta_responsabilidad
-FROM (
-    # Bienes activos de empleados
-    SELECT
-        empleado.id_empleado,
-        bien.id_bien
-    FROM empleado
-    INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-    INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-    INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-    INNER JOIN bien ON registro_bien.id_bien = bien.id_bien
-    GROUP BY empleado.id_empleado, bien.id_bien
-    HAVING (
-        SUM(CASE WHEN registro.ingreso = true THEN 1 ELSE 0 END) -
-        SUM(CASE WHEN registro.ingreso = false THEN 1 ELSE 0 END)
-    ) = true
-) AS bien_activo_empleado
-INNER JOIN tarjeta_responsabilidad ON bien_activo_empleado.id_empleado = tarjeta_responsabilidad.id_empleado
-INNER JOIN registro ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = registro.id_tarjeta_responsabilidad
-INNER JOIN registro_bien ON registro.id_registro = registro_bien.id_registro
-WHERE (
-    registro_bien.id_bien = bien_activo_empleado.id_bien AND
-    tarjeta_responsabilidad.id_empleado = bien_activo_empleado.id_empleado
-)
-GROUP BY bien_activo_empleado.id_empleado, bien_activo_empleado.id_bien, tarjeta_responsabilidad.id_tarjeta_responsabilidad
-HAVING MAX(tarjeta_responsabilidad.fecha);
+FROM bien
+INNER JOIN tarjeta_responsabilidad ON bien.id_tarjeta_responsabilidad = tarjeta_responsabilidad.id_tarjeta_responsabilidad
+INNER JOIN empleado ON tarjeta_responsabilidad.id_empleado = empleado.id_empleado;
+
 
 
 CREATE VIEW bien_inactivo AS
@@ -271,3 +258,30 @@ SELECT
     tipo_unidad_servicio.nombre AS tipo_unidad_servicio
 FROM unidad_jerarquizada uj
 INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio);
+
+
+CREATE VIEW reporte_bienes_activos AS
+SELECT
+    empleado.id_empleado,
+    MIN(unidad_jerarquizada.nombre_nuclear) AS unidad,
+    MIN(CONCAT(empleado.nombres, ' ', empleado.apellidos)) AS responsable,
+    MIN(tarjeta_responsabilidad.numero) AS no_tarjeta,
+    COUNT(*) AS cant_bien,
+    MIN(modelo.descripcion) AS descripcion,
+    MIN(modelo.marca) AS marca,
+    MIN(modelo.codigo) AS modelo,
+    GROUP_CONCAT(bien.no_serie SEPARATOR ', ') AS no_serie,
+    GROUP_CONCAT(DISTINCT bien.no_inventario SEPARATOR ', ') AS no_inventario,
+    GROUP_CONCAT(bien.sicoin SEPARATOR ', ') AS sicoin,
+    MIN(modelo.precio) AS precio_unitario,
+    (COUNT(*) * modelo.precio) AS monto,
+    tarjeta_responsabilidad.saldo AS saldo_tarjeta
+FROM unidad_jerarquizada
+INNER JOIN empleado ON unidad_jerarquizada.id_unidad_servicio = empleado.id_unidad_servicio
+INNER JOIN tarjeta_responsabilidad ON empleado.id_empleado = tarjeta_responsabilidad.id_empleado
+INNER JOIN bien_activo ON tarjeta_responsabilidad.id_tarjeta_responsabilidad = bien_activo.id_tarjeta_responsabilidad
+INNER JOIN bien ON bien_activo.id_bien = bien.id_bien
+INNER JOIN modelo ON bien.id_modelo = modelo.id_modelo
+WHERE bien_activo.id_tarjeta_responsabilidad = tarjeta_responsabilidad.id_tarjeta_responsabilidad
+GROUP BY empleado.id_empleado, tarjeta_responsabilidad.id_tarjeta_responsabilidad, modelo.id_modelo
+ORDER BY empleado.id_empleado;

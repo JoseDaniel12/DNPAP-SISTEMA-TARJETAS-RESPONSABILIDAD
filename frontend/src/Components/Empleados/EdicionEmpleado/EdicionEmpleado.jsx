@@ -41,7 +41,7 @@ function EdicionEmpleado() {
     const empleadoForm = useForm({
         defaultValues: {
             dpi: empleado.dpi,
-            nit: empleado.dpi,
+            nit: empleado.nit,
             nombres: empleado.nombres,
             apellidos: empleado.apellidos,
             cargo: empleado.cargo,

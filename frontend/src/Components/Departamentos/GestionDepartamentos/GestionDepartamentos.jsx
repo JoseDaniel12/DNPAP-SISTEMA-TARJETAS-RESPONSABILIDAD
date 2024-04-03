@@ -35,7 +35,6 @@ function GestionDepartamentos() {
 
 
     const onCancelEdicion = () => {
-        setIdDepartamentoSeleccionado(null);
         setEnEdicion(false);
     }
 
