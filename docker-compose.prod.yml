@@ -56,7 +56,7 @@ services:
       dockerfile: Dockerfile.prod
       args:
         # La ip debe ser la del servidor donde se encuentra el backend (no localhost)
-        - VITE_BACKEND_URL=http://127.0.0.1:5000
+        - VITE_BACKEND_URL=http://64.23.135.40:5000
     networks:
       - dnpap
     ports:
