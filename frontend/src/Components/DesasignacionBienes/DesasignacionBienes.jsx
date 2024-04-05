@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -9,6 +9,7 @@ import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../Auth/Auth';
 import useTableFilters from '../../hooks/useTableFilters';
 import AgregacionNumerosTarjetas from '../AgregacionNumerosTarjetas/AgregacionNumerosTarjetas';
+import { quetzalesTemplate } from '../TableColumnTemplates';
 
 import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
@@ -21,6 +22,7 @@ function DesasignacionBienes() {
 
     const { id_empleado } = useParams();
     const navigate = useNavigate();
+    const [empleadoEmisor, setEmpleadoEmisor] = useState({});
     const [bienesEmpleado, setBienesEmpleado] = useState([]);
     const [bienesPorDesasignar, setBienesPorDesasignar] = useState([]);
 
@@ -70,21 +72,6 @@ function DesasignacionBienes() {
     }
 
 
-
-    const formatoMonedaGTQ = new Intl.NumberFormat('es-GT', {
-        style: 'currency',
-        currency: 'GTQ',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    });
-
-    const preciosTemplate = (precio) => {
-        return (
-            <span>{formatoMonedaGTQ.format(precio)}</span>
-        );
-    };
-
-
     useEffect(() => {
         const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
         tarjetasRequests
@@ -96,6 +83,7 @@ function DesasignacionBienes() {
 
 
     useEffect(() => {
+        empleadoRequests.getEmpleado(id_empleado).then(res => setEmpleadoEmisor(res.data.empleado));
         empleadoRequests.getBienes(id_empleado).then(res => setBienesEmpleado(res.data));
 
         filtrosBienesEmpleado.initFilters();
@@ -107,6 +95,21 @@ function DesasignacionBienes() {
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
                 <h1 className='text-black-alpha-70 mb-1'>Desasignar Bienes</h1>
+            </div>
+
+            <div className='col-12'>
+                <DataTable
+                    value={[empleadoEmisor]}
+                    header= {
+                        <p>Empleado Emisor:</p>
+                    }
+                >
+                    <Column field='dpi' header='DPI'/>
+                    <Column field='nit' header='NIT'/>
+                    <Column field='nombres' header='Nombres'/>
+                    <Column field='apellidos' header='Apellidos'/>
+                    <Column field='cargo' header='Cargo'/>
+                </DataTable>
             </div>
 
             <div className='col-12'>
@@ -144,7 +147,7 @@ function DesasignacionBienes() {
                     <Column field='no_serie' header='No. Serie'/>
                     <Column field='no_inventario' header='Inventario'/>
                     <Column field='descripcion' header='Descripcion'/>
-                    <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column 
                         header='Quitar'
                         body = {
@@ -195,7 +198,7 @@ function DesasignacionBienes() {
                     <Column field='no_serie' header='No. Serie'/>
                     <Column field='no_inventario' header='Inventario'/>
                     <Column field='descripcion' header='Descripcion'/>
-                    <Column field='precio' header='Precio' body={bien => preciosTemplate(bien.precio)}/>
+                    <Column field='precio' header='Precio' body={bien => quetzalesTemplate(bien.precio)}/>
                     <Column 
                         header='Devolver'
                         body = {

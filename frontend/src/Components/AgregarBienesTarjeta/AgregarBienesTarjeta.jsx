@@ -22,6 +22,7 @@ function AgregarBienesTarjeta() {
 
     const { id_empleado } = useParams();
     const navigate = useNavigate();
+    const [empleadoReceptor, setEmpleadoReceptor] = useState(null);
     const [bienesSinAsignar, setBienesSinAsignar] = useState([]);
     const [bienesPorAsignar, setBienesPorAsignar] = useState([]);
 
@@ -90,6 +91,7 @@ function AgregarBienesTarjeta() {
 
 
     useEffect(() => {
+        empleadoRequests.getEmpleado(id_empleado).then(res => setEmpleadoReceptor(res.data.empleado));
         bienesRequests.getBienesSinAsignar().then(res => setBienesSinAsignar(res.data));
         filtrosBienesSinVincular.initFilters();
         filtrosBienesPorAgregar.initFilters();
@@ -119,6 +121,21 @@ function AgregarBienesTarjeta() {
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
                 <h1 className='text-black-alpha-70 mb-1'>Asignar Bienes</h1>
+            </div>
+
+            <div className='col-12'>
+                <DataTable
+                    value={[empleadoReceptor]}
+                    header= {
+                        <p>Empleado Receptor:</p>
+                    }
+                >
+                    <Column field='dpi' header='DPI'/>
+                    <Column field='nit' header='NIT'/>
+                    <Column field='nombres' header='Nombres'/>
+                    <Column field='apellidos' header='Apellidos'/>
+                    <Column field='cargo' header='Cargo'/>
+                </DataTable>
             </div>
 
             <div className='col-12'>
