@@ -1,9 +1,11 @@
-const conn = require('./mysql_conn');
+// const conn = require('./mysql_conn');
+const { getMysqlConnection } = require('../mysql/mysql_conn');
 
 
 const mysql_exec_query = async (query) => {
+    const conn = await getMysqlConnection();
     try {
-        const [result] = await conn.promise().execute(query);
+        const [result] = await conn.execute(query);
         return result;
     } catch (error) {
         console.log(error);
@@ -13,6 +15,7 @@ const mysql_exec_query = async (query) => {
   
   
 const mysql_exec_proc = async (name, params) => {
+    const conn = await getMysqlConnection();
     try {
         let proc;
         if (params.length > 0) {
@@ -21,7 +24,7 @@ const mysql_exec_proc = async (name, params) => {
         } else {
             proc = `CALL ${name}();`;
         }
-        const [result] = await conn.promise().execute(proc);
+        const [result] = await conn.execute(proc);
         return result[0];
     } catch (error) {
         console.log(error);

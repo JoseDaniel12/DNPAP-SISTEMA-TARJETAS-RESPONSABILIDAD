@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql_conn = require('../database/mysql/mysql_conn');
+const { getMysqlConnection } = require('../database/mysql/mysql_conn');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const _ = require('lodash');
 const { encriptar } = require('../helpers/encryption');
@@ -449,6 +449,7 @@ router.get('/obtener-tarjetas/:id_empleado', async (req, res) => {
 
 router.post('/asignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    const mysql_conn = await getMysqlConnection();
     mysql_conn.beginTransaction();
     try {
         const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
@@ -469,6 +470,7 @@ router.post('/asignar-bienes', async (req, res) => {
 
 router.post('/traspasar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    const mysql_conn = await getMysqlConnection();
     mysql_conn.beginTransaction();
     try {
         const {
@@ -539,6 +541,7 @@ router.post('/traspasar-bienes', async (req, res) => {
 
 router.post('/desasignar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    const mysql_conn = await getMysqlConnection();
     mysql_conn.beginTransaction();
     try {
         const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;

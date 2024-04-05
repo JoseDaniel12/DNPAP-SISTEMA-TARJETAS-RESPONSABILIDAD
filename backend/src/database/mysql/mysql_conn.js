@@ -1,30 +1,43 @@
 // require('dotenv').config();
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 
-const conn = mysql.createConnection({
-  host: process.env.MYSQL_HOST,
-  port: process.env.MYSQL_PORT,
-  database: process.env.MYSQL_DATABASE,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  decimalNumbers: true,
-  multipleStatements: true,
-  enableKeepAlive: true,
-});
+const createNewMysqlConnection = async () => {
+  const connSettings = {
+    host: process.env.MYSQL_HOST,
+    port: process.env.MYSQL_PORT,
+    database: process.env.MYSQL_DATABASE,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    decimalNumbers: true,
+    multipleStatements: true,
+    enableKeepAlive: true
+  };
 
-
-conn.connect(err => {
-  if (err) {
+  try {
+    const connection = await mysql.createConnection(connSettings);
+    return connection;
+  } catch (error) {
     console.log(`ERROR: MySql not connected: \n${err.stack}`);
-    console.log(`Host: ${process.env.MYSQL_HOST}`);
-    console.log(`Port: ${process.env.MYSQL_PORT}`);
-    console.log(`Database: ${process.env.MYSQL_DATABASE}`);
-    console.log(`User: ${process.env.MYSQL_USER}`);
-    console.log(`Password: ${process.env.MYSQL_PASSWORD}`);
-    return;
+    console.log(`Host: ${connSettings.host}`);
+    console.log(`Port: ${connSettings.port}`);
+    console.log(`Database: ${connSettings.database}`);
+    console.log(`User: ${connSettings.user}`);
+    console.log(`Password: ${connSettings.password}`);
+    return null;
   }
-  console.log('> Success, MySql connected.');
-});
+};
 
 
-module.exports = conn;
+let mysqlConnection = null;
+const getMysqlConnection = async () => {
+  // Check to see if connection exists and is not in the "closing" state
+  if (!mysqlConnection || mysqlConnection?.connection?._closing) {
+    mysqlConnection = await createNewMysqlConnection();
+  }
+  return mysqlConnection;
+};
+
+
+module.exports = {
+  getMysqlConnection
+};

@@ -1,6 +1,6 @@
 const express = require('express');
-const HTTPResponseBody  = require('./HTTPResponseBody'); 
-const conn = require('../database/mysql/mysql_conn');
+const HTTPResponseBody  = require('./HTTPResponseBody');
+const { getMysqlConnection } = require('../database/mysql/mysql_conn');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const { format } = require('date-fns');
 const { crearModelo, encontrarModelo } = require('../utilities/bienes');
@@ -52,6 +52,7 @@ router.post('/verificar-disponibilidad-noSerie', async (req, res) => {
 
 router.post('/registro-bienes-comunes', async (req, res) => {
     const respBody = new HTTPResponseBody();
+    const conn = await getMysqlConnection();
     conn.beginTransaction();
     try {
         let {
