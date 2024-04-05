@@ -36,7 +36,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
       args:
-        - VITE_BACKEND_URL=https://back.mspasdnpap.com
+        - VITE_BACKEND_URL=https://backend.mspasdnpap.com
     networks:
       - dnpap
     ports:

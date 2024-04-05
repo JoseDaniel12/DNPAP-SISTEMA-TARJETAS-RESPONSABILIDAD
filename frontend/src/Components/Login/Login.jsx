@@ -8,6 +8,8 @@ import { Button } from 'primereact/button';
 import { Message } from 'primereact/message';
 import { useAuth } from '../../Auth/Auth';
 
+import authRequests from '../../Requests/authRequests';
+
 const validationSchema = yup.object({
     correo: yup.string().required('El correo es requerido.').email('El correo no es valido.'),
     contrasenia: yup.string().required('La contraseña es requerida')
@@ -21,21 +23,13 @@ function Login() {
     const [credencialesIncorrectas, setCredencialesIncorrectas] = useState(false);
 
     const handleLoginSubmit = async (values, actions) => {
-        const response = await fetch('http://localhost:5000/auth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(values)
-        });
-
-        const data = await response.json();
-        if (response.status !== 200) {
+        const response = await authRequests.login(values);
+        if (response.error) {
             setCredencialesIncorrectas(true);
             return;
         }
     
-        setLoginData(data);
+        setLoginData(response);
         navigate('/');
 
         actions.resetForm();

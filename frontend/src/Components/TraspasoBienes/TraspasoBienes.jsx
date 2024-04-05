@@ -15,6 +15,7 @@ import { quetzalesTemplate } from '../TableColumnTemplates';
 import { accionesTarjeta } from '../../types/accionesTarjeta';
 import empleadoRequests from '../../Requests/empleadoRequests';
 import tarjetasRequests from '../../Requests/tarjetasRequests';
+import { set } from 'date-fns';
 
 
 function TraspasoBienes() {
@@ -25,6 +26,7 @@ function TraspasoBienes() {
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
     const navigate = useNavigate();
 
+    const [empleadoEmisor, setEmpleadoEmisor] = useState(null);
     const [empleados, setEmpleados] = useState([]);
     const [empleadoReceptor, setEmpleadoReceptor] = useState(null);
     const [errorEmpleadoReceptor, setErrorEmpleadoReceptor] = useState(true);
@@ -116,6 +118,8 @@ function TraspasoBienes() {
 
     
     useEffect(() => {
+        empleadoRequests.getEmpleado(id_empleado_emisor).then(response => setEmpleadoEmisor(response.data.empleado));
+
         empleadoRequests.getEmpleados().then(response => {
             const empleados = response.data.empleados.filter(empleado => empleado.id_empleado !== id_empleado_emisor);
             setEmpleados(empleados);
@@ -135,6 +139,21 @@ function TraspasoBienes() {
         <div className='grid col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 text-center'>
                 <h1 className='mb-1 text-black-alpha-70'>Traspaso de Bienes a Otro Empleado</h1>
+            </div>
+
+            <div className='col-12'>
+                <DataTable
+                    value={[empleadoEmisor]}
+                    header= {
+                        <p>Empleado Emisor:</p>
+                    }
+                >
+                    <Column field='dpi' header='DPI'/>
+                    <Column field='nit' header='NIT'/>
+                    <Column field='nombres' header='Nombres'/>
+                    <Column field='apellidos' header='Apellidos'/>
+                    <Column field='cargo' header='Cargo'/>
+                </DataTable>
             </div>
 
             <div className='col-12 mb-2'>
