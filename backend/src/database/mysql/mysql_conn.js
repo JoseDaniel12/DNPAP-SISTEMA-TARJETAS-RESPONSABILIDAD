@@ -17,7 +17,7 @@ const createNewMysqlConnection = async () => {
     const connection = await mysql.createConnection(connSettings);
     return connection;
   } catch (error) {
-    console.log(`ERROR: MySql not connected: \n${err.stack}`);
+    console.log(`ERROR: MySql not connected: \n${error.stack}`);
     console.log(`Host: ${connSettings.host}`);
     console.log(`Port: ${connSettings.port}`);
     console.log(`Database: ${connSettings.database}`);
