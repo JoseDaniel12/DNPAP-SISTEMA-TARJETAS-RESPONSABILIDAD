@@ -18,7 +18,6 @@ function Bitacora() {
         global: { value: null, matchMode: FilterMatchMode.CONTAINS },
         fecha: { operator: FilterOperator.AND, constraints: [{ value: null, matchMode: FilterMatchMode.DATE_IS }] },
         dpi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        nit: { value: null, matchMode: FilterMatchMode.CONTAINS },
         nombres: { value: null, matchMode: FilterMatchMode.CONTAINS },
         apellidos: { value: null, matchMode: FilterMatchMode.CONTAINS },
         tipo_accion: { value: null, matchMode: FilterMatchMode.CONTAINS },
@@ -97,7 +96,6 @@ function Bitacora() {
                         body={row => fechaTemplate(row.fecha)}
                     />
                     <Column field='dpi' header='DPI' filter filterPlaceholder='Buscar por dpi'/>
-                    <Column field='nit' header='NIT' filter filterPlaceholder='Buscar por nit'/>
                     <Column field='nombres' header='Nombres' filter filterPlaceholder='Buscar por nombres'/>
                     <Column field='apellidos' header='Apellidos' filter filterPlaceholder='Buscar por apellidos'/>
                     <Column field='tipo_accion' header='Tipo de Actividad' filter filterPlaceholder='Buscar por actividad'/>

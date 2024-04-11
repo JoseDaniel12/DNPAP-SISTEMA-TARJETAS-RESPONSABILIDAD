@@ -57,7 +57,7 @@ const empleadoRequests = {
         const url = `${empleadosURL}/registar-auxiliar`;
         return await fetch(url, {
             ...requestSettings,
-            method: 'PUT',
+            method: 'POST',
             body: JSON.stringify(body),
         }).then(response => response.json());
     },
@@ -71,11 +71,19 @@ const empleadoRequests = {
         }).then(response => response.json());
     },
 
+    eliminarAuxiliar: async (idAuxiliar) => {
+        const url = `${empleadosURL}/eliminar-auxiliar/${idAuxiliar}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'DELETE',
+        }).then(response => response.json());
+    },
+
     registrarEmpleado: async (body) => {
         const url = `${empleadosURL}/registar-empleado`;
         return await fetch(url, {
             ...requestSettings,
-            method: 'PUT',
+            method: 'POST',
             body: JSON.stringify(body),
         }).then(response => response.json());
     },
