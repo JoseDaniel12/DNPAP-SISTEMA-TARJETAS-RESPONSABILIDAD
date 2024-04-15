@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -19,6 +19,7 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 function AgregarBienesTarjeta() {
     const toast = useToast('bottom-right');
     const { loginData: { usuario } } = useAuth();
+    const controllerRef = useRef();
 
     const { id_empleado } = useParams();
     const navigate = useNavigate();
@@ -68,8 +69,12 @@ function AgregarBienesTarjeta() {
             return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
         }
         
+        if (controllerRef.current) controllerRef.current.abort();
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
+
         const idsBienes = bienesPorAsignar.map(b => b.id_bien);
-        const response = await empleadoRequests.asignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.asignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas}, signal);
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {

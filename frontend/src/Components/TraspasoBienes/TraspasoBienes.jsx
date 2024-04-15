@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -21,6 +21,7 @@ import { set } from 'date-fns';
 function TraspasoBienes() {
     const toast = useToast('bottom-right');
     const { loginData: { usuario } } = useAuth();
+    const controllerRef = useRef();
 
     const params = useParams();
     const id_empleado_emisor = parseInt(params.id_empleado_emisor);
@@ -76,6 +77,10 @@ function TraspasoBienes() {
             return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
         }
 
+        if (controllerRef.current) controllerRef.current.abort();
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
+
         const response = await empleadoRequests.trapasarBienes({
             id_autor: usuario.id_empleado,
             idEmpleadoEmisor: id_empleado_emisor,
@@ -83,7 +88,7 @@ function TraspasoBienes() {
             idsBienes: bienesPorTraspasar.map(bien => bien.id_bien),
             numerosTarjetaEmisor: tarjetas.slice(0, cantTarjetasEmisor),
             numerosTarjetaReceptor: tarjetas.slice(cantTarjetasEmisor, cantTarjetasNesecarias)
-        });
+        }, signal);
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {

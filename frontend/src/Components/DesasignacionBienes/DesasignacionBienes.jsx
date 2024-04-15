@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
@@ -19,6 +19,7 @@ function DesasignacionBienes() {
     const toast = useToast('bottom-right');
     const { loginData } = useAuth();
     const usuario = loginData?.usuario;
+    const controllerRef = useRef();
 
     const { id_empleado } = useParams();
     const navigate = useNavigate();
@@ -59,9 +60,13 @@ function DesasignacionBienes() {
             const error = 'Debes ingresar la cantidad de tarjetas indicada.'
             return toast.current.show({severity:'error', summary: 'Error', detail: error, life: 2500, position: 'top-center'});
         }
+
+        if (controllerRef.current) controllerRef.current.abort();
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
         
         const idsBienes = bienesPorDesasignar.map(b => b.id_bien);
-        const response = await empleadoRequests.desasignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas});
+        const response = await empleadoRequests.desasignarBienes({id_autor: usuario.id_empleado, id_empleado, idsBienes, numerosTarjetas}, signal);
         if (response.error) {
             toast.current.show({severity:'error', summary: 'Error', detail: response.error, life: 3000});
         } else  {

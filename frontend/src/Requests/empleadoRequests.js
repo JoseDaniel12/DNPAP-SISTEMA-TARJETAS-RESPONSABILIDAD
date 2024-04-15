@@ -129,39 +129,43 @@ const empleadoRequests = {
         }).then(response => response.json());
     },
 
-    asignarBienes: async (body) => {
+    asignarBienes: async (body, signal = null) => {
         const url = `${empleadosURL}/asignar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal
         }).then(response => response.json());
     },
 
-    trapasarBienes: async (body) => {
+    trapasarBienes: async (body, signal = null) => {
         const url = `${empleadosURL}/traspasar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal
         }).then(response => response.json());
     },
 
-    desasignarBienes: async (body) => {
+    desasignarBienes: async (body, signal = null) => {
         const url = `${empleadosURL}/desasignar-bienes`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal
         }).then(response => response.json());
     },
 
-    comentarTarjetas: async (id_empleado, body) => {
+    comentarTarjetas: async (id_empleado, body, signal = null) => {
         const url = `${empleadosURL}/comentar-tarjeta/${id_empleado}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'POST',
-            body: JSON.stringify(body)
+            body: JSON.stringify(body),
+            signal
         }).then(response => response.json());
     },
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog } from 'primereact/dialog';
 import { Button } from 'primereact/button';
 import { Steps } from 'primereact/steps';
@@ -14,6 +14,7 @@ import empleadoRequests from '../../Requests/empleadoRequests';
 function ComentacionTarjeta({visible, setVisible, id_empleado, onComentarTarjeta}) {
     const toast = useToast('bottom-right');
     const { loginData: { usuario } } = useAuth();
+    const controllerRef = useRef();
 
     const initialData = {
         id_autor: usuario.id_empleado,
@@ -61,13 +62,16 @@ function ComentacionTarjeta({visible, setVisible, id_empleado, onComentarTarjeta
             return onHide();
         };
 
-        const res = await empleadoRequests.comentarTarjetas(id_empleado, data);
+        if (controllerRef.current) controllerRef.current.abort();
+        controllerRef.current = new AbortController();
+        const signal = controllerRef.current.signal;
+
+        const res = await empleadoRequests.comentarTarjetas(id_empleado, data, signal);
         if (!res.error) {
             const tarjetaConNuevoRegistro = res.data;
             onComentarTarjeta(tarjetaConNuevoRegistro);
             toast.current.show({ severity: 'success', summary: 'Exito', detail: res.message });
             onHide();
-         
         } else {
             toast.current.show({ severity: 'error', summary: 'Error', detail: res.error, sticky: true});
         }

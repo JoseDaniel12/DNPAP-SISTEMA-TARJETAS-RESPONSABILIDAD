@@ -47,11 +47,11 @@ INSERT INTO tipo_unidad_servicio (nombre) VALUES ('Programa');
 INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_tipo_unidad_servicio, id_municipio)
 VALUES ('Direccion de Normatividad de Programas de Atención a las Personas', 'DNPAP', 1, 1);
 # Departamentos:
-INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
-VALUES ('Departamento de Inmunizaciones', 'DI', 1, 2);
+#INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
+#VALUES ('Departamento de Inmunizaciones', 'DI', 1, 2);
 # Programas:
-INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
-VALUES ('Programa de Salud Buco Dental', 'PSBD', 2, 3);
+#INSERT INTO unidad_servicio (nombre_nuclear, siglas, id_unidad_superior,  id_tipo_unidad_servicio)
+#VALUES ('Programa de Salud Buco Dental', 'PSBD', 2, 3);
 
 
 # _______________________ Roles _______________________
@@ -64,11 +64,11 @@ INSERT INTO rol (nombre) VALUES ('Ordinario');
 # _______________________ Empleados _______________________
 INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
 VALUES ('admin@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'José Miguel', 'Alvarado Aguilar', '3645832900101', '3645832900', 'Admin1', 1, 1);
-INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('admin2@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Paco Sebastian', 'Batres Feuntes', '89530993422102', '78345678', 'Admin2', 1, 1);
-INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('auxiliar@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Daniel  Armando', 'Fajardo Figueroa', '7356343899272', '3645832900', 'Auxiliar1', 2, 2);
-INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('Mario Ernesto', 'Montes Recions', '756342567723', '5645832900', 'Empleado1', 3, 3);
-INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
-VALUES ('Pedro Paco', 'Gutierrez Lopez', '89356743455152', '893567434', 'Empleado2', 3, 3);
+#INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+#VALUES ('admin2@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Paco Sebastian', 'Batres Feuntes', '89530993422102', '78345678', 'Admin2', 1, 1);
+#INSERT INTO empleado (correo, contrasenia, nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+#VALUES ('auxiliar@gmail.com', '$2a$10$7NSD5Ga8QsMnabFWp0txL.7l9Lyf2MaUGdj2AfYQUbGt0/zRh2Aka', 'Daniel  Armando', 'Fajardo Figueroa', '7356343899272', '3645832900', 'Auxiliar1', 2, 2);
+#INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+#VALUES ('Mario Ernesto', 'Montes Recions', '756342567723', '5645832900', 'Empleado1', 3, 3);
+#INSERT INTO empleado (nombres, apellidos, dpi, nit, cargo, id_unidad_servicio, id_rol)
+#VALUES ('Pedro Paco', 'Gutierrez Lopez', '89356743455152', '893567434', 'Empleado2', 3, 3);
