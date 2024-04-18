@@ -125,7 +125,8 @@ function RegistroPrograma({ onProgramaRegistrado }) {
                     name='idDepartamento'
                     control={programaForm.control}
                     render={({ field }) => (
-                        <Dropdown 
+                        <Dropdown
+                            filter
                             {...field}
                             options={departamentos}
                             placeholder='Seleccione un Departamento'

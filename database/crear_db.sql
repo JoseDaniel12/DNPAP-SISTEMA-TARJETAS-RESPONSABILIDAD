@@ -135,13 +135,6 @@ CREATE TABLE IF NOT EXISTS modelo (
 );
 
 
-CREATE TABLE IF NOT EXISTS kit (
-	id_kit INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
-    descripcion LONGTEXT,
-    precio DECIMAL(10, 2)
-);
-
-
 CREATE TABLE IF NOT EXISTS bien (
 	id_bien INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
 	sicoin VARCHAR(250),
@@ -151,10 +144,8 @@ CREATE TABLE IF NOT EXISTS bien (
     es_raiz_kit TINYINT(1) DEFAULT 0,
 
     id_modelo INT,
-    id_kit INT,
     id_tarjeta_responsabilidad INT,
     FOREIGN KEY (id_modelo) REFERENCES modelo(id_modelo) ON DELETE CASCADE,
-    FOREIGN KEY (id_kit) REFERENCES kit(id_kit) ON DELETE SET NULL,
     FOREIGN KEY (id_tarjeta_responsabilidad) REFERENCES tarjeta_responsabilidad(id_tarjeta_responsabilidad) ON DELETE SET NULL
 );
 

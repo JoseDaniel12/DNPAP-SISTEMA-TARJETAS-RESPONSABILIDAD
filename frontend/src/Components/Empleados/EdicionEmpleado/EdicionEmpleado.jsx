@@ -220,7 +220,8 @@ function EdicionEmpleado() {
                         <label htmlFor='programa' className='ml-1'>{tiposUnidadesServicio.PROGRAMA}</label>
                     </div>
                 </div>
-                <Dropdown 
+                <Dropdown
+                    filter
                     options={unidadesServicio.filter(u => u.tipo_unidad_servicio === tipoUnidadServicio)}
                     value={unidadServicioSeleccionada}
                     optionLabel='siglas_jerarquicas'

@@ -195,7 +195,8 @@ function RegistroEmpleado() {
                         <label htmlFor='programa' className='ml-1'>{tiposUnidadesServicio.PROGRAMA}</label>
                     </div>
                 </div>
-                <Dropdown 
+                <Dropdown
+                    filter
                     options={unidadesServicio}
                     value={unidadServicioSeleccionada}
                     optionLabel='siglas_jerarquicas'
