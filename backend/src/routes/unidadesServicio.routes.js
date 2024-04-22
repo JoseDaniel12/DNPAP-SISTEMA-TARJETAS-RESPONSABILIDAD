@@ -6,47 +6,6 @@ const tiposUnidadesServicio = require('../types/unidadesServicio');
 const router = express.Router();
 
 
-router.get('/:tipoUnidades', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const { tipoUnidades } = req.params;
-        let query = `
-            SELECT 
-                unidad_jerarquizada.*,
-                tipo_unidad_servicio.nombre AS tipo_unidad_servicio
-            FROM unidad_jerarquizada
-            INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio)
-            WHERE tipo_unidad_servicio.nombre = '${tipoUnidades}'
-        `;
-        const unidadesServicio = await mysql_exec_query(query);
-        respBody.setData({unidadesServicio});
-        res.send(respBody.getLiteralObject());
-    } catch(error) {
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    }
-});
-
-
-router.get('/unidad-serivicio/:id_unidad_servicio', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const { id_unidad_servicio } = req.params;
-        let query = `
-            SELECT unidad_jerarquizada.*
-            FROM unidad_jerarquizada
-            WHERE id_unidad_servicio = ${id_unidad_servicio}
-        `;
-        const [unidadServicio] = await mysql_exec_query(query);
-        respBody.setData({unidadServicio});
-        res.send(respBody.getLiteralObject());
-    } catch(error) {
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    }
-});
-
-
 router.get('/disponibilidad-nombre/:nombre', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -87,6 +46,47 @@ router.get('/disponibilidad-siglas/:siglas', async (req, res) => {
         } else {
             respBody.setData({disponibilidad: true});
         }
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.get('/:tipoUnidades', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { tipoUnidades } = req.params;
+        let query = `
+            SELECT 
+                unidad_jerarquizada.*,
+                tipo_unidad_servicio.nombre AS tipo_unidad_servicio
+            FROM unidad_jerarquizada
+            INNER JOIN tipo_unidad_servicio USING (id_tipo_unidad_servicio)
+            WHERE tipo_unidad_servicio.nombre = '${tipoUnidades}'
+        `;
+        const unidadesServicio = await mysql_exec_query(query);
+        respBody.setData({unidadesServicio});
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
+router.get('/unidad-serivicio/:id_unidad_servicio', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { id_unidad_servicio } = req.params;
+        let query = `
+            SELECT unidad_jerarquizada.*
+            FROM unidad_jerarquizada
+            WHERE id_unidad_servicio = ${id_unidad_servicio}
+        `;
+        const [unidadServicio] = await mysql_exec_query(query);
+        respBody.setData({unidadServicio});
         res.send(respBody.getLiteralObject());
     } catch(error) {
         respBody.setError(error.toString());

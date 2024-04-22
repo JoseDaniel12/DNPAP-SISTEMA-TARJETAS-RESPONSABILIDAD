@@ -1,12 +1,11 @@
+require('jspdf-autotable');
 const express = require('express');
 const { mysql_exec_query } = require('../database/mysql/mysql_exec');
 const XlsxPopulate = require('xlsx-populate');
 const { jsPDF } = require('jspdf');
-require('jspdf-autotable');
 
 const router = express.Router();
 const HTTPResponseBody  = require('./HTTPResponseBody');
-const { fill } = require('lodash');
 
 
 router.get('/resumen-bienes-asignados', async (req, res) => {
@@ -120,7 +119,6 @@ router.post('/excel-resumen-bienes-asignados', async (req, res) => {
 });
 
 
-
 router.get('/pdf-resumen-tarjetas', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -166,7 +164,6 @@ router.get('/pdf-resumen-tarjetas', async (req, res) => {
 });
 
 
-
 router.get('/logs-bitacora-actividades', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -184,7 +181,6 @@ router.get('/logs-bitacora-actividades', async (req, res) => {
     }
     
 });
-
 
 
 module.exports = router;

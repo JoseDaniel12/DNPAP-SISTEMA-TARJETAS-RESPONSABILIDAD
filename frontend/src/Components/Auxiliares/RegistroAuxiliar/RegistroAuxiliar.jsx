@@ -7,7 +7,6 @@ import { Message } from 'primereact/message';
 
 import { useAuth } from '../../../Auth/Auth';
 import { userRoles } from '../../../types/userRoles';
-import authRequests from '../../../Requests/authRequests';
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
@@ -48,7 +47,7 @@ function RegistroAuxiliar({ onAuxiliarRegistrado }) {
 
 
     const validateDisponibilidadDPI = async (dpi) => {
-        const response = await authRequests.verificarDisponibilidadDpi(dpi, userRoles.AUXILIAR);
+        const response = await empleadoRequests.verificarDisponibilidadDpi(dpi, userRoles.AUXILIAR);
         return response.data?.disponibilidad || false;
     }
 

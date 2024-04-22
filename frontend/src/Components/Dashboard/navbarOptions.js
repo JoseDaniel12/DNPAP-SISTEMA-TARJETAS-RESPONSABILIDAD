@@ -1,4 +1,4 @@
-const adminOptions = [
+const navbarOptions = [
     {
         label: 'Bienes',
         icon: 'pi pi-box',
@@ -49,4 +49,4 @@ const adminOptions = [
     }
 ];
 
-export default adminOptions;
+export default navbarOptions;

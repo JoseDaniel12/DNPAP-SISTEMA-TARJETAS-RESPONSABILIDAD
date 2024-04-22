@@ -22,7 +22,7 @@ import NotFound from '../Components/NotFound/NotFound';
 import { userRoles } from '../types/userRoles';
 
 function Rutas() {
-    const {loginData, setLoginData} = useAuth();
+    const { loginData } = useAuth();
     const usuario = loginData?.usuario;
 
     const rutasCoordinador = (
@@ -52,6 +52,7 @@ function Rutas() {
 
     return (
         <Routes>
+          <Route path="/login" element={<Login/>} />
           {
             !usuario? (
               <>
@@ -71,7 +72,6 @@ function Rutas() {
               </>
             )
           }
-          <Route path="/login" element={<Login/>} />
         </Routes>
     );
 }

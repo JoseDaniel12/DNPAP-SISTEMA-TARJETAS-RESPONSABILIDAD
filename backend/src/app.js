@@ -28,10 +28,10 @@ app.get('/', async (_, res) => {
 });
 
 app.use('/auth', require('./routes/auth.routes.js'));
-app.use('/unidadesServicio', require('./routes/unidadesServicio.routes.js'));
-app.use('/empleados', require('./routes/empleados.routes.js'));
 app.use('/bienes', require('./routes/bienes.routes.js'));
+app.use('/empleados', require('./routes/empleados.routes.js'));
 app.use('/tarjetas', require('./routes/tarjetas.routes.js'));
+app.use('/unidadesServicio', require('./routes/unidadesServicio.routes.js'));
 app.use('/reportes', require('./routes/reportes.routes.js'));
 
 module.exports = app;

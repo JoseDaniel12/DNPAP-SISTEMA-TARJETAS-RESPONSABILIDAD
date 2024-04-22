@@ -78,6 +78,6 @@ const unidadesServicioRequests = {
             method: 'DELETE',
         }).then(response => response.json());
     },
-}
+};
 
 export default unidadesServicioRequests;

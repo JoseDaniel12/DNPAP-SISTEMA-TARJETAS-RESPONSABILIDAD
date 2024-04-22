@@ -11,7 +11,6 @@ import { confirmDialog } from 'primereact/confirmdialog';
 import { useAuth } from '../../../Auth/Auth';
 import { useToast } from '../../../hooks/useToast';
 import { userRoles } from '../../../types/userRoles';
-import authRequests from '../../../Requests/authRequests';
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
 
@@ -57,7 +56,7 @@ function EdicionAuxiliar({ idAuxiliarSeleccionado, onCancelEdicion, onAuxiliarEd
 
 
     const validateDisponibilidadDPI = async (dpi) => {
-        const response = await authRequests.verificarDisponibilidadDpi(dpi, userRoles.AUXILIAR);
+        const response = await empleadoRequests.verificarDisponibilidadDpi(dpi, userRoles.AUXILIAR);
         return response.data?.disponibilidad || false;
     }
 

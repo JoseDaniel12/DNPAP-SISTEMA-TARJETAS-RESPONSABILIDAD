@@ -1,31 +1,26 @@
-import React, { useEffect, useState, useRef  } from 'react'
+import React, { useState, useRef, useEffect  } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom';
-import { Image } from 'primereact/image';
 import { Menubar } from 'primereact/menubar';
-import adminOptions from './navbarOptions/adminOptions';
-import auxiliarOptions from './navbarOptions/auxiliarOptions';
-import { useAuth } from '../../Auth/Auth';
-import dnpapLogo from '../../assets/imgs/logo_dnpap.png';
-import { Button } from 'primereact/button';
 import { Menu } from 'primereact/menu';
-        
+import { Button } from 'primereact/button';
+import { Image } from 'primereact/image';
 
-const userOptions = {
-    'Ordinario': adminOptions,
-    'Auxiliar': adminOptions
-}
+import { useAuth } from '../../Auth/Auth';
+import navbarOptions from './navbarOptions';
+import dnpapLogo from '../../assets/imgs/logo_dnpap.png';
 
-function Dashboard() {  
-    const { loginData, setLoginData } = useAuth();
+
+function Dashboard() {
     const navigate = useNavigate();
+    const { loginData, setLoginData } = useAuth();
 
     if (!loginData) {
-        return <div>F</div>
+        return <div>Inicio de Sesion Requerido.</div>
     }
-    const [usuario, setUsuario] = useState(loginData.usuario);
 
-    const [selectedItem, setSelectedItem] = useState(null);
-    const getMenuObject = (userOptions) => {
+    const usuario = loginData.usuario;
+
+    const getMenubarItems = (userOptions) => {
         let options = userOptions.map(userOp => {
             let option = {};
             if (userOp.label) option.label = userOp.label;
@@ -38,53 +33,54 @@ function Dashboard() {
                 navigate(userOp.url);
             };
             if (userOp.separator) option.separator = userOp.separator;
-            if (userOp.items) option.items = getMenuObject(userOp.items);  
+            if (userOp.items) option.items = getMenubarItems(userOp.items);  
             return option;
         });
         return options;
-    }
+    };
 
-    const [menubarOptions, setMenubarOptions] = useState([]);
+    const [menubarItems, setMenubarItems] = useState([]);
     useEffect(() => {
-        // setMenubarOptions(getMenuObject(userOptions[usuario.rol]));
-        setMenubarOptions(getMenuObject(adminOptions));
+        setMenubarItems(getMenubarItems(navbarOptions));
     }, []);
 
+    const userMenuRef = useRef(null);
     const userMenuOptions = [
         { 
             label: 'Salir', 
             icon: 'pi pi-sign-out',
             command: () => {
                 setLoginData(null);
+                window.localStorage.removeItem('loginData');
                 navigate('/');
             }
         },
     ];
-    const userMenuButton = useRef(null);
+    
+    const dnpapImage = <Image src={dnpapLogo} width='50' className='hidden sm:block mx-2'/>;
+
     const userMenu = (
         <>
             <Button
                 className='text-color-secondary'
                 style={{backgroundColor: 'transparent', border: 'none', padding: '0.55rem'}}
-                onClick={(e) => userMenuButton.current.toggle(e)}
+                onClick={e => userMenuRef.current.toggle(e)}
             >
                 <div className='flex align-items-center'>
                     <i className='pi pi-fw pi-user mr-2'></i>
-                    <span className='p-menuitem-text mr-2'>{usuario.alias}</span>
+                    <span className='p-menuitem-text mr-2'>{usuario.nombres}</span>
                     <i className='pi pi-angle-down text-xl'></i>
                 </div>
             </Button>
-            <Menu model={userMenuOptions} ref={userMenuButton} popup popupAlignment='right'/>
+            <Menu ref={userMenuRef} model={userMenuOptions} popup popupAlignment='right'/>
         </>
     );
-
-    const dnpapImage = <Image src={dnpapLogo} width='50' className='hidden sm:block mx-2'/>;
 
     return (
         <div className='card'>
             <Menubar 
                 className='bg-orange mb-4' 
-                model={menubarOptions} 
+                model={menubarItems} 
                 start={dnpapImage} 
                 end={userMenu}
                 style={{'position': 'sticky', 'top': '0', 'zIndex': '1000'}}

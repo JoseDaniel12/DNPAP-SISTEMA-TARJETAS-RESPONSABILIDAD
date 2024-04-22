@@ -77,29 +77,4 @@ router.post('/login', async (req, res) => {
     return res.status(200).json({usuario, access_token, refresh_token});
 });
 
-
-router.get('/verificar-disponibilidad-dpi/:dpi/:rol', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const { dpi, rol } = req.params;
-        let query = `
-            SELECT empleado.*
-            FROM empleado
-            INNER JOIN rol USING (id_rol)
-            WHERE dpi = '${dpi}' AND rol.nombre = '${rol}';
-        `;
-        const outcome = await mysql_exec_query(query);
-        if (outcome.length > 0) {
-            respBody.setData({disponibilidad: false});
-        } else {
-            respBody.setData({disponibilidad: true});
-        }
-        res.status(200).send(respBody.getLiteralObject());
-    } catch(error) {
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    }
-});
-
-
 module.exports = router;

@@ -1,6 +1,5 @@
 import requestSettings from './requestSettings';
 
-
 const reportesURL = `${import.meta.env.VITE_BACKEND_URL}/reportes`;
 
 const reportesRequests = {
@@ -28,6 +27,6 @@ const reportesRequests = {
             method: 'GET'
         }).then(response => response.json());
     },
-}
+};
 
 export default reportesRequests;

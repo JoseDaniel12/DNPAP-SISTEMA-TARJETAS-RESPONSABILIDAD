@@ -12,7 +12,6 @@ import { Message } from 'primereact/message';
 import { useToast } from '../../../hooks/useToast';
 import { tiposUnidadesServicio } from '../../../types/unidadesServicio';
 import { userRoles } from '../../../types/userRoles';
-import authRequests from '../../../Requests/authRequests';
 import unidadesServicioRequests from '../../../Requests/unidadesServicioRequests';
 import empleadoRequests from '../../../Requests/empleadoRequests';
 
@@ -70,7 +69,7 @@ function RegistroEmpleado() {
 
 
     const validateDisponibilidadDPI = async (dpi) => {
-        const response = await authRequests.verificarDisponibilidadDpi(dpi, userRoles.ORDINARIO);
+        const response = await empleadoRequests.verificarDisponibilidadDpi(dpi, userRoles.ORDINARIO);
         return response.data?.disponibilidad || false;
     };
 

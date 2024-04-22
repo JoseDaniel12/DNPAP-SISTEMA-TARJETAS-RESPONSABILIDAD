@@ -38,6 +38,30 @@ router.get('/verificar-disponibilidad-correo/:correo', async (req, res) => {
 });
 
 
+router.get('/verificar-disponibilidad-dpi/:dpi/:rol', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { dpi, rol } = req.params;
+        let query = `
+            SELECT empleado.*
+            FROM empleado
+            INNER JOIN rol USING (id_rol)
+            WHERE dpi = '${dpi}' AND rol.nombre = '${rol}';
+        `;
+        const outcome = await mysql_exec_query(query);
+        if (outcome.length > 0) {
+            respBody.setData({disponibilidad: false});
+        } else {
+            respBody.setData({disponibilidad: true});
+        }
+        res.status(200).send(respBody.getLiteralObject());
+    } catch(error) {
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
 router.post('/registar-auxiliar', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -148,6 +172,7 @@ router.put('/editar-auxiliar/:idAuxiliar', async (req, res) => {
         return res.status(500).json({error: error.toString()});
     }
 });
+
 
 router.delete('/eliminar-auxiliar/:idAuxiliar', async (req, res) => {
     const respBody = new HTTPResponseBody();
@@ -413,6 +438,26 @@ router.post('/asignar-bienes', async (req, res) => {
 });
 
 
+router.post('/desasignar-bienes', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    const mysql_conn = await getMysqlConnection();
+    mysql_conn.beginTransaction();
+    try {
+        const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
+        const action = { type: accionesTarjeta.DESASIGNACION }
+        const registros = await generarRegistrosDesvinculados(idsBienes, action);
+        await ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
+        mysql_conn.commit();
+        respBody.setMessage('Bienes desasignados correctamente');
+        res.send(respBody.getLiteralObject());
+    } catch(error) {
+        mysql_conn.rollback();
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
 router.post('/traspasar-bienes', async (req, res) => {
     const respBody = new HTTPResponseBody();
     const mysql_conn = await getMysqlConnection();
@@ -477,26 +522,6 @@ router.post('/traspasar-bienes', async (req, res) => {
         res.status(200).send(respBody.getLiteralObject());
     } catch(error) {
         console.log(error)
-        mysql_conn.rollback();
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    }
-});
-
-
-router.post('/desasignar-bienes', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    const mysql_conn = await getMysqlConnection();
-    mysql_conn.beginTransaction();
-    try {
-        const { id_autor, id_empleado, idsBienes, numerosTarjetas } = req.body;
-        const action = { type: accionesTarjeta.DESASIGNACION }
-        const registros = await generarRegistrosDesvinculados(idsBienes, action);
-        await ejecutarAccionTarjeta(id_autor, id_empleado, registros, numerosTarjetas, action);
-        mysql_conn.commit();
-        respBody.setMessage('Bienes desasignados correctamente');
-        res.send(respBody.getLiteralObject());
-    } catch(error) {
         mysql_conn.rollback();
         respBody.setError(error.toString());
         res.status(500).send(respBody.getLiteralObject());

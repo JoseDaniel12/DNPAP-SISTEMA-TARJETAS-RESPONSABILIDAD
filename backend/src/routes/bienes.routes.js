@@ -7,7 +7,6 @@ const { crearModelo, encontrarModelo } = require('../utilities/bienes');
 const router = express.Router();
 
 
-
 router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -149,6 +148,22 @@ router.get('/bien/:id_bien', async (req, res) => {
 });
 
 
+router.delete('/eliminar-bien/:id_bien', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const id_bien = parseInt(req.params.id_bien);
+        let query = `DELETE FROM bien WHERE id_bien = ${id_bien}`;
+        await mysql_exec_query(query);
+        respBody.setMessage('Bien Eliminado correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
 router.put('/editar-bien/:id_bien', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -212,23 +227,6 @@ router.put('/editar-bien/:id_bien', async (req, res) => {
 });
 
 
-router.delete('/eliminar-bien/:id_bien', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const id_bien = parseInt(req.params.id_bien);
-        let query = `DELETE FROM bien WHERE id_bien = ${id_bien}`;
-        await mysql_exec_query(query);
-        respBody.setMessage('Bien Eliminado correctamente.');
-        res.status(200).send(respBody.getLiteralObject());
-    } catch (error) {
-        console.log(error)
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    }
-});
-
-
-
 router.get('/bienes-sin-asignar', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
@@ -260,80 +258,6 @@ router.get('/bienes-asignados', async (req, res) => {
         `;
         const bienes = await mysql_exec_query(query);
         respBody.setData(bienes);
-        res.status(200).send(respBody.getLiteralObject());
-    } catch (error) {
-        console.log(error)
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    } 
-});
-
-
-router.post('/crear-kit', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const { precio, idsBienes, idBienRaiz } = req.body;
-        // Se crea el kit
-        let query = `
-            INSERT INTO kit (precio)
-            VALUES (${precio});
-        `;
-        const { insertId: id_kit } = await mysql_exec_query(query);
-
-        // se agregan los bienes al kit
-        query = `
-            UPDATE bien
-            SET id_kit = ${id_kit}
-            WHERE id_bien IN (${idsBienes.join(',')});
-        `;
-        await mysql_exec_query(query);
-
-        // Se configura el bien raiz (el que tentra el precio del kit)
-        query = `
-            UPDATE bien
-            SET es_raiz_kit = TRUE
-            WHERE id_bien = ${idBienRaiz};
-        `;
-        await mysql_exec_query(query);
-
-        respBody.setData('Bienes asignados correctamente.');
-        res.status(200).send(respBody.getLiteralObject());
-    } catch (error) {
-        console.log(error)
-        respBody.setError(error.toString());
-        res.status(500).send(respBody.getLiteralObject());
-    } 
-});
-
-
-router.put('/acutalizar-kit', async (req, res) => {
-    const respBody = new HTTPResponseBody();
-    try {
-        const { id_kit, idBiens, idBienRaiz } = req.body;
-        // Se desvinculan los bienes anteriores del kit
-        let query = `
-            UPDATE bien
-            SET id_kit = NULL, es_raiz_kit = FALSE
-            WHERE id_kit = ${id_kit};
-        `;
-
-        // se vinculan los nuevos bienes al kit
-        query = `
-            UPDATE bien
-            SET id_kit = ${id_kit}
-            WHERE id_bien IN (${idsBienes.join(',')});
-        `;
-        await mysql_exec_query(query);
-
-        // Se configura el bien raiz (el que tentra el precio del kit)
-        query = `
-            UPDATE bien
-            SET es_raiz_kit = TRUE
-            WHERE id_bien = ${idBienRaiz};
-        `;
-        await mysql_exec_query(query);
-
-        respBody.setData('Bienes asignados correctamente.');
         res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)
