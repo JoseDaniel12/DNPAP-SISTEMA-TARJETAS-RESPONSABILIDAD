@@ -57,7 +57,6 @@ function formatearDescripcionBien(descripcion) {
 function getDescripcionRegistro(bienes) {
     if (!bienes.length) return '';
 
-
     let trozosDescripcionRegistro = [];
 
     const bienBase = bienes[0];
