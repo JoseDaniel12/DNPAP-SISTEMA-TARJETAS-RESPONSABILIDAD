@@ -142,11 +142,11 @@ function RegistroBien() {
         const { sicoin, noSerie, noInventario } = datosEspecificos;
         if ([sicoin, noSerie, noInventario].every(valor => valor === '')) return;
 
-        const sicoinDisponible = await validateDisponibilidadSicoin(sicoin);
-        if (!sicoinDisponible) setErrorDatosEspecificos('sicoin', {
-            type: 'manual',
-            message: 'SICOIN ya registrado.'
-        });
+        // const sicoinDisponible = await validateDisponibilidadSicoin(sicoin);
+        // if (!sicoinDisponible) setErrorDatosEspecificos('sicoin', {
+        //     type: 'manual',
+        //     message: 'SICOIN ya registrado.'
+        // });
 
         const noSerieDisponible = await validateDisponibilidadnoSerie(noSerie);
         if (!noSerieDisponible) setErrorDatosEspecificos('noSerie', {
