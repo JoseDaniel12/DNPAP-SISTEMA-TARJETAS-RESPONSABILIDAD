@@ -54,46 +54,9 @@ router.post('/registro-bienes-comunes', async (req, res) => {
     const conn = await getMysqlConnection();
     conn.beginTransaction();
     try {
-        let {
-            descripcion,
-            precio,
-            marca,
-            codigoModelo,
-            fecha_registro,
-            datos_espeficos_bienes,
-        } = req.body;
+        let { bienes } = req.body;
     
-        bienes = datos_espeficos_bienes.map(bien => ({
-            descripcion,
-            precio,
-            marca,
-            codigoModelo,
-            fecha_registro,
-            ...bien,
-        }));
-    
-        // Se verifica si el modelo ya existe o si se debe crear uno nuevo
-        let query = `
-            SELECT * from modelo
-            WHERE (
-                descripcion = '${descripcion}' AND
-                precio = '${precio}' AND
-                marca = '${marca}' AND
-                codigo = '${codigoModelo}'
-            )
-            LIMIT 1;
-        `;
-        let [modelo] = await mysql_exec_query(query);
-        let idModelo = modelo?.id_modelo;
-        if (!idModelo) {
-            let { insertId } = await mysql_exec_query(`
-                INSERT INTO modelo (descripcion, precio, marca, codigo)
-                VALUES ('${descripcion}', ${precio}, '${marca}', '${codigoModelo}');
-            `);
-            idModelo = insertId;
-        } 
-    
-        // Se registran los bienes en el modelo creado o enctrado
+        // Se registran los bienes en el modelo al que pertenecen
         for (const bien of bienes) {
             let result = await mysql_exec_query(`
                 INSERT INTO bien (
@@ -105,10 +68,10 @@ router.post('/registro-bienes-comunes', async (req, res) => {
                 )
                 VALUES (
                     '${bien.sicoin}',
-                    '${bien.noSerie}', 
-                    '${bien.noInventario}',
-                    '${format(bien.fecha_registro, 'yyyy-MM-dd')}',
-                    '${idModelo}'
+                    '${bien.no_serie}', 
+                    '${bien.no_inventario}',
+                    '${format(new Date(), 'yyyy-MM-dd')}',
+                    '${bien.id_modelo}'
                 );
             `);
             if (result.error) throw new Error(result.error.message);
@@ -164,60 +127,53 @@ router.delete('/eliminar-bien/:id_bien', async (req, res) => {
 });
 
 
+router.delete('/eliminar-bienes', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        const { idsBienes } = req.body;
+        console.log(idsBienes)
+        let query = `
+            DELETE FROM bien 
+            WHERE id_bien IN (${idsBienes.join(',')});
+        `;
+        await mysql_exec_query(query);
+        respBody.setMessage('Bienes Eliminados correctamente.');
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
 router.put('/editar-bien/:id_bien', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {
         const id_bien = parseInt(req.params.id_bien);
-        const { 
-            descripcion, precio, marca, codigoModelo, sicoin, noSerie, noInventario,
-            id_modelo
-        } = req.body;
+        const { sicoin, no_serie, no_inventario } = req.body;
 
         // Se actualizan los datos especificos del bien
         let query = `
             UPDATE bien
             SET sicoin = '${sicoin}',
-                no_serie = '${noSerie}',
-                no_inventario = '${noInventario}'
+                no_serie = '${no_serie}',
+                no_inventario = '${no_inventario}'
             WHERE id_bien = ${id_bien};
         `;
         await mysql_exec_query(query);
-        
-        // Se ve si ya existe un modelo con las nuevas caracteristicas ingresadas
-        const modeloExistente = await encontrarModelo(descripcion, precio, marca, codigoModelo);
-        if (modeloExistente) {
-            // Si ya existia, se cambia el bien en edición al modelo existente
-            let query = `
-                UPDATE bien
-                SET id_modelo = ${modeloExistente.id_modelo}
-                WHERE id_bien = ${id_bien};
-            `;
-            await mysql_exec_query(query);
-        } else {
-            // Si no exsite un modelo con las nuevas caracteristicas ingresadas se crea uno nuevo
-            const nuevoModelo = await crearModelo(descripcion, precio, marca, codigoModelo);
-            // Se cambia el bien al nuevo modelo creado
-            query = `
-                UPDATE bien
-                SET id_modelo = ${nuevoModelo.id_modelo}
-                WHERE id_bien = ${id_bien};
-            `;
-            await mysql_exec_query(query);
-        }
 
-        // Si el modelo que tenia el bien en edición ya no tiene bienes asociados, se elimina
+        // Se obtiene el bien actualizado
         query = `
-            SELECT * FROM bien WHERE id_modelo = ${id_modelo};
+            SELECT *
+            FROM bien
+            INNER JOIN modelo USING (id_modelo)
+            WHERE id_bien = ${id_bien};
         `;
-        const bienesModelo = await mysql_exec_query(query);
-        if (!bienesModelo.length) {
-            query = `
-                DELETE FROM modelo WHERE id_modelo = ${id_modelo};
-            `;
-            await mysql_exec_query(query);
-        }
-
-        respBody.setData('Bien actualizado correctamente.');
+        const [bien] = await mysql_exec_query(query);
+        
+        respBody.setMessage('Bien Editado correctamente.');
+        respBody.setData(bien);
         res.status(200).send(respBody.getLiteralObject());
     } catch (error) {
         console.log(error)

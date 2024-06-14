@@ -3,6 +3,12 @@ import { useAuth } from '../Auth/Auth';
 import Login from '../Components/Login/Login';
 import Dashboard from "../Components/Dashboard/Dashboard";
 import UnsignedUserLayout from '../Components/UnsignedUserLayout/UnsignedUserLayout';
+import GestionModelos from '../Components/Bienes/Modelos/GestionModelos/GestionModelos';
+import RegistroModelo from '../Components/Bienes/Modelos/RegistroModelo/RegistroModelo';
+import EdicionModelo from '../Components/Bienes/Modelos/EdicionModelo/EdicionModelo';
+import GestionBienes2 from '../Components/Bienes/GestionBienes/GestionBienes2';
+import CargaBienesModelo from '../Components/Bienes/CargaBienesModelo/CargaBienesModelo';
+
 import GestionBienes from '../Components/Bienes/GestionBienes/GestionBienes';
 import RegistroBien from '../Components/Bienes/RegistroBien/RegistroBien';
 import EdicionBien from '../Components/Bienes/EdicionBien/EdicionBien';
@@ -27,6 +33,13 @@ function Rutas() {
     const rutas = (
         <>
           <Route index element={<GestionEmpleados />} />
+          <Route path="modelos" element={<GestionModelos/>} />
+          <Route path="registrar-modelo" element={<RegistroModelo/>} />
+          <Route path="editar-modelo/:id_modelo" element={<EdicionModelo/>} />
+          <Route path="gestionar-bienes2/:id_modelo" element={<GestionBienes2 />} />
+
+          <Route path="cargar-bienes-modelo/:id_modelo" element={<CargaBienesModelo />} />
+          
           <Route path="gestionar-bienes" element={<GestionBienes />} />
           <Route path="registar-bienes" element={<RegistroBien />} />
           <Route path="editar-bien/:id_bien" element={<EdicionBien />} />

@@ -46,6 +46,15 @@ const bienesRequests = {
         }).then(response => response.json());
     },
 
+    eliminarBienes: async (requestBody) => {
+        const url = `${bienesURL}/eliminar-bienes`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'DELETE',
+            body: JSON.stringify(requestBody)
+        }).then(response => response.json());
+    },
+
     editarBien: async (id_bien, requestBody) => {
         const url = `${bienesURL}/editar-bien/${id_bien}`;
         return await fetch(url, {

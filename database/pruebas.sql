@@ -14,3 +14,5 @@ select * from kit;
 select * from registro_bien;
 select * from tipo_unidad_servicio;
 
+SELECT GROUP_CONCAT(no_serie SEPARATOR ';') AS bienes
+FROM bien;
