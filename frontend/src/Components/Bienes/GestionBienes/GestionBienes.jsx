@@ -9,19 +9,13 @@ import { Column } from 'primereact/column';
 import { FilterMatchMode, FilterOperator } from 'primereact/api';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
-import { useToast } from '../../../hooks/useToast';
+
+import useTableFilters from '../../../hooks/useTableFilters';
 import { quetzalesTemplate } from '../../TableColumnTemplates';
 import bienesRequests from '../../../Requests/bienesRequests';
 
 function GestionBienes() {
-    const toast = useToast('bottom-right');
     const navigate = useNavigate();
-
-    const [searchParams, setSearchParams] = useSearchParams();
-    let asignados = true;
-    if (searchParams.get('asignados') === 'false') {
-        asignados = false;
-    }
 
     const tiposBienes = [
         {  value: 'Asignados' },
@@ -32,95 +26,46 @@ function GestionBienes() {
 
 
     // ______________________________  Filtros ______________________________
-    const [globalFilterValue, setGlobalFilterValue] = useState('');
-    const [filters, setFilters] = useState(null);
-    const [filtrosAplicados, setFiltrosAplicados] = useState(false);
-
-
-    const initFilters = () => {
-        setFilters({
-            global: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            dpi: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            nit: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            nombres: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            apellidos: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            cargo: { value: null, matchMode: FilterMatchMode.CONTAINS },
-            saldo: { value: null, matchMode: FilterMatchMode.CONTAINS },
-        });
-        setGlobalFilterValue('');
-    };  
-
-
-    const onGlobalFilterChange = (e) => {
-        const value = e.target.value;
-        let _filters = { ...filters };
-        _filters['global'].value = value;
-        setFilters(_filters);
-        setGlobalFilterValue(value);
-    };
+    const filtrosBienes = useTableFilters({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        sicoin: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_serie: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_inventario: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        codigo: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        marca: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        precio: { value: null, matchMode: FilterMatchMode.EQUALS },
+        descripcion: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    });
     // ______________________________________________________________________
-
-
-    const handleCambioTipoBienes = (e) => {
-        const valor = e.value === 'Asignados';
-        setSearchParams(prev => ({
-            ...prev,
-           asignados: valor
-        }));
-    };
-
-
-    const eliminarBien = (id_bien) => {
-        bienesRequests.eliminarBien(id_bien).then(response => {
-            if (!response.error) {
-                setBienes(prev => prev.filter(b => b.id_bien !== id_bien));
-                toast.current.show({ severity: 'success', summary: 'Eliminación de Bien', detail: response.message });
-            } else {
-                toast.current.show({ severity: 'error', summary: 'Eliminación de Bien', detail: response.message });
-            }
-        });
-    };
-
-
-    const handleEliminarBien = (id_bien) => {
-        confirmDialog({
-            header: 'Eliminación de Bien',
-            message: '¿Estas seguro de eliminar el Bien?',
-            icon: 'pi pi-info-circle',
-            acceptClassName: 'p-button-danger',
-            accept: () => eliminarBien(id_bien)
-        });
-    };
 
     
     useEffect(() => {
-        initFilters();
+        filtrosBienes.initFilters();
+        bienesRequests.getBienes().then(response => {
+            setBienes(response.data);
+        })
     }, []);
-
-    useEffect(() => {
-        if (asignados) {
-            bienesRequests.getBienesAsignados().then(response => {
-                setBienes(response.data);
-            });
-        } else {
-            bienesRequests.getBienesSinAsignar().then(response => {
-                setBienes(response.data);
-            });
-        }
-    }, [asignados]);
-
+    
 
     const encabezadoTablaBienesTemplate = () => (
-        <div className='col-12  flex justify-content-end'>
-            <span className='p-input-icon-left flex align-items-center'>
-                <i className='pi pi-search' />
+        <div className='flex gap-1'>
+            <div className='p-input-icon-left flex align-items-center'>
+                <i className='pi pi-search'/>
                 <InputText
-                    id='busquedaBien'
-                    value={globalFilterValue}
+                    id='busquedaEmpleado'
+                    value={filtrosBienes.globalFilterValue}
                     placeholder='Buscar por valor clave'
-                    onChange={onGlobalFilterChange} 
+                    onChange={filtrosBienes.onGlobalFilterChange} 
                 />
-            </span>
+            </div>
+            <Button
+                tooltip='Limpiar Filtros'
+                tooltipOptions={{ position: 'bottom' }}
+                icon='pi pi-filter-slash'
+                severity='help'
+                className='w-max-auto p-button-outlined'
+                onClick={filtrosBienes.initFilters}
+            />
         </div>
     );
 
@@ -129,9 +74,18 @@ function GestionBienes() {
         const bien = bienes.find(b => b.id_bien === row.id_bien);
 
         return (
-            <div className='flex justify-content-center gap-2'>
+            <div className='flex justify-content-start gap-2'>
+                <Button
+                    tooltip='Ir a Modelo del Bien'
+                    tooltipOptions={{ position: 'bottom' }}
+                    icon='pi pi-folder'
+                    severity='warning'
+                    className='p-button-rounded p-button-outlined'
+                    onClick={() => navigate(`/gestionar-bienes2/${bien.id_modelo}`)}
+                />
+
                 {
-                    asignados  && (
+                    row.id_tarjeta_responsabilidad && (
                         <Button
                             tooltip='Ir a tarjeta'
                             tooltipOptions={{ position: 'bottom' }}
@@ -140,30 +94,6 @@ function GestionBienes() {
                             className='p-button-rounded p-button-outlined'
                             onClick={() => navigate(`/tarjetas-empleado/${bien.id_empleado}?id_tarjeta_responsabilidad=${bien.id_tarjeta_responsabilidad}`) }
                         />
-                    )
-                }
-
-                {
-                    !asignados  && (
-                        <>
-                            <Button
-                                tooltip='Editar'
-                                tooltipOptions={{ position: 'bottom' }}
-                                icon='pi pi-pencil'
-                                severity='warning'
-                                className='p-button-rounded p-button-outlined'
-                                onClick={() => navigate(`/editar-bien/${bien.id_bien}`)}
-                            />
-
-                            <Button
-                                tooltip='Eliminar'
-                                tooltipOptions={{ position: 'bottom' }}
-                                icon='pi pi-times'
-                                severity='danger'
-                                className='p-button-rounded p-button-outlined'
-                                onClick={() => handleEliminarBien(bien.id_bien)}
-                            />
-                        </>
                     )
                 }
             </div>
@@ -176,33 +106,13 @@ function GestionBienes() {
             <ConfirmDialog dismissableMask={true} />
 
             <div className='col-12 text-center'>
-                <h1 className='text-black-alpha-70 m-0 mb-2'>Gestion de Bienes</h1>
-            </div>
-
-            <div className='col-12 grid'>
-                <div className='col-12 md:col-8'>
-                    <SelectButton  
-                        options={tiposBienes} optionLabel='value'
-                        value={asignados ? 'Asignados' : 'Desasignados'}
-                        onChange={handleCambioTipoBienes}
-                    />
-                </div>
-
-                <div className='col-12 md:col-4'>
-                    <Button
-                        label='Registrar Bienes'
-                        icon='pi pi-plus'
-                        severity='success'
-                        className='p-button-outlined p-button-rounded'
-                        onClick={() => navigate('/registar-bienes')}
-                    />
-                </div>
+                <h1 className='text-black-alpha-70 m-0 mb-2'>Buscar Bienes Registrados</h1>
             </div>
 
             <div className='col-12'>
                 <DataTable 
                     value={bienes}
-                    filters={filters}
+                    filters={filtrosBienes.filters}
                     paginator
                     paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
@@ -214,13 +124,13 @@ function GestionBienes() {
                     stripedRows 
                     header={encabezadoTablaBienesTemplate}
                 >
-                    <Column field='sicoin' header='Sicoin' />
-                    <Column field='no_serie' header='No. Serie' />
-                    <Column field='no_inventario' header='No. Inventario' />
-                    <Column field='codigo' header='Codigo Modelo' />
-                    <Column field='marca' header='Marca' />
-                    <Column field='precio' header='Precio' body={row => quetzalesTemplate(row.precio)} />
-                    <Column field='descripcion' header='Descripción' />
+                    <Column field='sicoin' header='Sicoin' filter filterPlaceholder='Buscar por sicoin'/>
+                    <Column field='no_serie' header='No. Serie' filter filterPlaceholder='Buscar por No. serie'/>
+                    <Column field='no_inventario' header='No. Inventario' filter filterPlaceholder='Buscar por No. inventario'/>
+                    <Column field='codigo' header='Codigo Modelo' filter filterPlaceholder='Buscar por codigo de modelo'/>
+                    <Column field='marca' header='Marca' filter filterPlaceholder='Buscar por marca'/>
+                    <Column field='precio' header='Precio' body={row => quetzalesTemplate(row.precio)} dataType='numeric' filter filterPlaceholder='Buscar por precio'/>
+                    <Column field='descripcion' header='Descripción' filter filterPlaceholder='Buscar por descripcion'/>
                     <Column header='Acciones' body={accionesTemplate}/>
                 </DataTable>
             </div>

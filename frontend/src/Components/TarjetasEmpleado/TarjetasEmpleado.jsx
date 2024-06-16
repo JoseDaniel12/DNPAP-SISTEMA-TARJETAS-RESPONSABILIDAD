@@ -4,8 +4,10 @@ import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
+import { FilterMatchMode } from 'primereact/api';
 import { Dropdown } from 'primereact/dropdown';
 import { Tag } from 'primereact/tag';
+import { Calendar } from 'primereact/calendar';
 import { ConfirmDialog } from 'primereact/confirmdialog';
 import { confirmDialog } from 'primereact/confirmdialog';
 import { useToast } from '../../hooks/useToast';
@@ -13,6 +15,7 @@ import { useAuth } from '../../Auth/Auth';
 import ComentacionTarjeta from '../ComentacionTarjeta/ComentacionTarjeta';
 import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 
+import useTableFilters from '../../hooks/useTableFilters';
 import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
 import { set } from 'date-fns';
@@ -37,6 +40,19 @@ function TarjetasEmpleado() {
     const [visbilidadDialogComentario, setVisbilidadDialogComentario] = useState(false);
 
     const [nuevoNumeroTarjeta, setNuevoNumeroTarjeta] = useState('');
+
+    // ______________________________  Filtros ______________________________
+    const filtrosRegistros = useTableFilters({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_registro: { value: null, matchMode: FilterMatchMode.EQUALS },
+        fecha: { value: null, matchMode: FilterMatchMode.DATE_IS },
+        cantidad: { value: null, matchMode: FilterMatchMode.EQUALS },
+        descripcion: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        debe: { value: null, matchMode: FilterMatchMode.EQUALS },
+        haber: { value: null, matchMode: FilterMatchMode.EQUALS },
+        saldo: { value: null, matchMode: FilterMatchMode.EQUALS },
+    });
+    // ______________________________________________________________________
 
 
     const cambiarNumeroTarjeta = async () => {
@@ -137,10 +153,24 @@ function TarjetasEmpleado() {
     useEffect(() => {
         if (!tarjeta) return;
         tarjetasRequests.getRegistrosTarjeta(tarjeta.id_tarjeta_responsabilidad).then((response) => {
-            const registros = response.data;
+            let registros = response.data;
+            registros = registros.map(r => {
+                return {...r, fecha: new Date(r.fecha)};
+            });
             setRegistros(registros);
         });
     }, [tarjeta]);
+
+
+    const dateFilterTemplate = (options) => {
+        return <Calendar 
+            value={options.value}
+            onChange={e => options.filterCallback(e.value, options.index)} 
+            dateFormat='dd/mm/yy'
+            placeholder='dd/mm/yyyy'
+            mask='99/99/9999'
+        />;
+    };
 
 
     return (
@@ -218,6 +248,7 @@ function TarjetasEmpleado() {
                 <DataTable
                     className='mb-6'
                     value={registros}
+                    filters={filtrosRegistros.filters}
                     paginator
                     paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
@@ -269,7 +300,6 @@ function TarjetasEmpleado() {
                                 }
 
 
-
                                 <div className='field col max-w-max lg:align-self-end'>
                                     <Button 
                                         label='Generar EXCEL de Tarjeta'
@@ -297,14 +327,24 @@ function TarjetasEmpleado() {
                                 </div>
                             </div>
 
-                            <div className='col-12  flex justify-content-end'>
-                                <span className='p-input-icon-left flex align-items-center'>
-                                    <i className='pi pi-search' />
+                            <div className='col-12 flex gap-1 justify-content-end'>
+                                <div className='p-input-icon-left flex align-items-center'>
+                                    <i className='pi pi-search'/>
                                     <InputText
                                         id='busquedaEmpleado'
+                                        value={filtrosRegistros.globalFilterValue}
                                         placeholder='Buscar por valor clave'
+                                        onChange={filtrosRegistros.onGlobalFilterChange} 
                                     />
-                                </span>
+                                </div>
+                                <Button
+                                    tooltip='Limpiar Filtros'
+                                    tooltipOptions={{ position: 'bottom' }}
+                                    icon='pi pi-filter-slash'
+                                    severity='help'
+                                    className='w-max-auto p-button-outlined'
+                                    onClick={filtrosRegistros.initFilters}
+                                />
                             </div>
                         </div>
                     }
@@ -312,13 +352,13 @@ function TarjetasEmpleado() {
                     dataKey='id_registro'
                     rowClassName={rowClass}
                 >
-                    <Column field='no_registro' header='No. Registro'/>
-                    <Column field='fecha' header='Fecha' dataType='date' body={row => fechaTemplate(row.fecha)}/>
-                    <Column field='cantidad' header='Cantidad'/>
-                    <Column field='descripcion' header='Descripción' />
-                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe, row)}/>
-                    <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)}/>
-                    <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)}/>
+                    <Column field='no_registro' header='No. Registro' dataType='numeric' filter filterPlaceholder='Buscar por No. registro'/>
+                    <Column field='fecha' header='Fecha' dataType='date' body={row => fechaTemplate(row.fecha)} filter filterField='fecha' filterElement={dateFilterTemplate}/>
+                    <Column field='cantidad' header='Cantidad' dataType='numeric' filter filterPlaceholder='Buscar por cantidad'/>
+                    <Column field='descripcion' header='Descripción' filter filterPlaceholder='Buscar por descripción'/>
+                    <Column field='debe' header='Debe'  body={row => precioTemplate(row.debe, row)} dataType='numeric' filter filterPlaceholder='Buscar por debe'/>
+                    <Column field='haber' header='Haber' body={row => precioTemplate(row.haber, row)} dataType='numeric' filter filterPlaceholder='Buscar por haber'/>
+                    <Column field='saldo' header='Saldo'  body={row => precioTemplate(row.saldo, row)} dataType='numeric' filter filterPlaceholder='Buscar por saldo'/>
                     <Column field='anverso' header='Lado'  body={sideTemplate}/>
                 </DataTable>
 

@@ -67,6 +67,15 @@ function CargaBienesModelo() {
     };
 
 
+    const bienesIncorrectosHeaderTemplate = () => {
+        return (
+            <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5">
+                Bienes Incorrectos
+            </span>
+        );
+    };
+
+
     return (
         <div className='grid col-11 md:col-11 mx-auto p-4 p-fluid bg-gray-50 border-round shadow-1 mb-4'>
             <div className='col-12 relative'>
@@ -127,7 +136,7 @@ function CargaBienesModelo() {
                     scrollHeight='400px'
                     showGridlines
                     stripedRows
-                    // header={tableHeaderTemplate}
+                    header={bienesIncorrectosHeaderTemplate}
                 >
                     <Column field='numeroFila' header='No. Fila'  filter filterPlaceholder='Buscar por No. fila'/>
                     <Column field='sicoin' header='Sicoin'  filter filterPlaceholder='Buscar por sicoin'/>

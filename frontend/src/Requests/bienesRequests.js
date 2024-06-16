@@ -38,6 +38,14 @@ const bienesRequests = {
         }).then(response => response.json());
     },
 
+    getBienes: async () => {
+        const url = `${bienesURL}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.json());
+    },
+
     eliminarBien: async (id_bien) => {
         const url = `${bienesURL}/eliminar-bien/${id_bien}`;
         return await fetch(url, {

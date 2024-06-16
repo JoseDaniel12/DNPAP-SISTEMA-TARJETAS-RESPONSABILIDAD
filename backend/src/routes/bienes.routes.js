@@ -7,6 +7,30 @@ const { crearModelo, encontrarModelo } = require('../utilities/bienes');
 const router = express.Router();
 
 
+router.get('/', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    try {
+        let query = `
+            SELECT 
+                bien.*,
+                modelo.*,
+                empleado.id_empleado
+            FROM bien
+            INNER JOIN modelo USING (id_modelo)
+            LEFT JOIN tarjeta_responsabilidad USING (id_tarjeta_responsabilidad)
+            LEFT JOIN empleado USING (id_empleado)
+        `;
+        const bienes = await mysql_exec_query(query);
+        respBody.setData(bienes);
+        res.status(200).send(respBody.getLiteralObject());
+    } catch (error) {
+        console.log(error)
+        respBody.setError(error.toString());
+        res.status(500).send(respBody.getLiteralObject());
+    }
+});
+
+
 router.post('/verificar-disponibilidad-sicoin', async (req, res) => {
     const respBody = new HTTPResponseBody();
     try {

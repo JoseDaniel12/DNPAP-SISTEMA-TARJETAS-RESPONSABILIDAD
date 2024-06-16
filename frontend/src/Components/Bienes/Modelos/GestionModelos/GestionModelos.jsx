@@ -154,7 +154,7 @@ function GestionModelos() {
                     stripedRows 
                     header={tableHeaderTemplate}
                 >
-                    <Column field='descripcion' header='Descripción'  filter filterPlaceholder='Buscar por descripción'/>
+                    <Column field='descripcion' header='Descripción' filter filterPlaceholder='Buscar por descripción'/>
                     <Column field='marca' header='Marca' filter filterPlaceholder='Buscar por marca' />
                     <Column field='codigo' header='Codigo'  filter filterPlaceholder='Buscar por codigo'/>
                     <Column field='precio' header='Precio' body={row => quetzalesTemplate(row.precio)} dataType='numeric' filter filterPlaceholder='Buscar por precio'/>
