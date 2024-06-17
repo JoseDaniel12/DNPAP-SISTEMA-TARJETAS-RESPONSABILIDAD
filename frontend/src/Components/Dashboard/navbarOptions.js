@@ -9,7 +9,7 @@ const navbarOptions = [
             },
             {
                 label: 'Buscar Bienes Registrados',
-                url: '/gestionar-bienes',
+                url: '/buscar-bienes-registrados',
             }
         ]
     },

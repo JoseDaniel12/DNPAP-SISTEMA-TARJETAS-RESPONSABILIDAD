@@ -107,7 +107,7 @@ function GestionModelos() {
                     icon='pi pi-box'
                     severity='info'
                     className='p-button-rounded p-button-outlined'
-                    onClick={() => navigate(`/gestionar-bienes2/${modelo.id_modelo}`) }
+                    onClick={() => navigate(`/gestionar-bienes-modelo/${modelo.id_modelo}`) }
                 />
                 <Button
                     tooltip='Editar'
