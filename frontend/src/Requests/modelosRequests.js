@@ -53,6 +53,14 @@ const modelosReuests = {
         }).then(response => response.json());
     },
 
+    getEjemploArchvioCargaBienes: async () => {
+        const url = `${modelosURL}/platilla-carga-bienes`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.blob());
+    },
+
     cargarBinesModeloMasivamente: async (id_modelo, formData) => {
         const url = `${modelosURL}/carga-masiva-bienes-modelo/${id_modelo}`;
         return await fetch(url, {

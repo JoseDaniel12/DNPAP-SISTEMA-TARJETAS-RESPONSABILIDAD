@@ -90,6 +90,20 @@ function GestionBienes() {
     };
 
 
+    const handleDescargarEjmploArchivoCarga = async () => {
+        const blob = await modelosRequests.getEjemploArchvioCargaBienes();
+        const url = window.URL.createObjectURL(blob);
+        // Creación de un enlace temporal y simulación de un clic en él para iniciar la descarga
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EjemploCargaMasivaDeBienes.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
+
     const validateDisponibilidadnoSerie = async (no_serie) => {
         if (no_serie === '') return true;
         for (const bien of bienes) {
@@ -211,34 +225,43 @@ function GestionBienes() {
             <div className='grid'>
                 <div className='col-12 -mb-1'>
                     <div className='grid'>
-                        <div className='col-12 md:max-w-max align-self-start'>
-                            <Button 
-                                label='Importar Excel'
-                                icon='pi pi-file-import'
-                                className='md:w-auto p-button-outlined'
-                                style={{color: '#217346'}}
-                                onClick={() => navigate(`/cargar-bienes-modelo/${id_modelo}`)}
-                            />
+                        <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-start m-0 p-0'>
+                            <div className='col md:max-w-max'>
+                                <Button 
+                                    label='Importar Excel'
+                                    icon='pi pi-file-import'
+                                    className='p-button-outlined'
+                                    style={{color: '#217346'}}
+                                    onClick={() => navigate(`/cargar-bienes-modelo/${id_modelo}`)}
+                                />
+                            </div>
+                            <div className='col max-w-max px-0'>
+                                <Button
+                                    tooltip='Descargar Ejemplo de Archivo de Carga'
+                                    tooltipOptions={{ position: 'bottom' }}
+                                    icon='pi pi-file-excel'
+                                    className='p-button-outlined'
+                                    style={{color: '#217346'}}
+                                    onClick={handleDescargarEjmploArchivoCarga}
+                                />
+                            </div>
                         </div>
 
                         {
                             bienesSeleccionados.length > 0 && (
-                                <div className='col-12 md:col grid flex flex-wrap justify-content-center md:justify-content-end m-0 p-0'>
-                                    <div className='col-12 md:max-w-max'>
+                                <div className='col-12 md:max-w-max justify-self-end'>
                                         <Button 
                                             label ='Eliminar Seleccionados'
                                             severity='danger'
                                             icon='pi pi-times'
-                                            className='md:w-auto p-button-outlined'
+                                            className='p-button-outlined'
                                             onClick={() => handleEliminarBienes(bienesSeleccionados)}
                                         />
-                                    </div>
                                 </div>
                             )
                         }
                     </div>
                 </div>
-
 
                 <div className='col-12 flex gap-1 -mb-3'>
                     <div className='p-input-icon-left flex align-items-center'>

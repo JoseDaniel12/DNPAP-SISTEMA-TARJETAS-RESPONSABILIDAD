@@ -18,7 +18,6 @@ import { quetzalesTemplate, fechaTemplate } from '../TableColumnTemplates';
 import useTableFilters from '../../hooks/useTableFilters';
 import tarjetasRequests from '../../Requests/tarjetasRequests';
 import empleadoRequests from '../../Requests/empleadoRequests';
-import { set } from 'date-fns';
   
 
 function TarjetasEmpleado() {

@@ -6,6 +6,7 @@ const modelosUtilities = require('../utilities/modelos');
 const multer  = require('multer');
 const XlsxPopulate = require('xlsx-populate');
 const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -298,5 +299,21 @@ router.post('/carga-masiva-bienes-modelo/:id_modelo', upload.single('bienes'), a
         res.status(500).send(respBody.getLiteralObject());
     }
 });
+
+
+router.get('/platilla-carga-bienes', async (req, res) => {
+    const respBody = new HTTPResponseBody();
+    const rutaEjemplo = path.join(__dirname, '../PlantillasExcel/EjemploCargaMasivaDeBienes.xlsx');
+    fs.readFile(rutaEjemplo, (err, data) => {
+        if (err) {
+            respBody.setError(err.toString());
+            return res.status(500).send(respBody.getLiteralObject());
+        }
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="EjemploCargaMasivaDeBienes.xlsx"');
+        res.send(data);
+    });
+});
+
 
 module.exports = router;
