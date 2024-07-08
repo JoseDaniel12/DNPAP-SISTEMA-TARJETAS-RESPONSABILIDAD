@@ -2,7 +2,16 @@ const navbarOptions = [
     {
         label: 'Bienes',
         icon: 'pi pi-box',
-        url: '/gestionar-bienes'
+        items: [
+            {
+                label: 'Gestionar Modelos y sus Bienes',
+                url: '/modelos',
+            },
+            {
+                label: 'Buscar Bienes Registrados',
+                url: '/buscar-bienes-registrados',
+            }
+        ]
     },
     {
         label: 'Personal',

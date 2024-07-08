@@ -205,7 +205,7 @@ function GestionEmpleados() {
                             label='Registrar Empleado'
                             severity='success'
                             icon='pi pi-plus'
-                            className='md:w-auto p-button-outlined'
+                            className='p-button-outlined'
                             onClick={() => navigate('/registrar-empleado')}
                         />
                     </div>

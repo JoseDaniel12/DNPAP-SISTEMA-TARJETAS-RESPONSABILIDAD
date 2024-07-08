@@ -3,22 +3,38 @@ import { useAuth } from '../Auth/Auth';
 import Login from '../Components/Login/Login';
 import Dashboard from "../Components/Dashboard/Dashboard";
 import UnsignedUserLayout from '../Components/UnsignedUserLayout/UnsignedUserLayout';
+import NotFound from '../Components/NotFound/NotFound';
+
+// Modelos de Bienes
+import GestionModelos from '../Components/Bienes/Modelos/GestionModelos/GestionModelos';
+import RegistroModelo from '../Components/Bienes/Modelos/RegistroModelo/RegistroModelo';
+import EdicionModelo from '../Components/Bienes/Modelos/EdicionModelo/EdicionModelo';
+
+// Bienes
 import GestionBienes from '../Components/Bienes/GestionBienes/GestionBienes';
-import RegistroBien from '../Components/Bienes/RegistroBien/RegistroBien';
-import EdicionBien from '../Components/Bienes/EdicionBien/EdicionBien';
-import GestionEmpleados from '../Components/Empleados/GestionEmpleados/GestionEmpleados';
+import CargaBienesModelo from '../Components/Bienes/CargaBienesModelo/CargaBienesModelo';
+import BusquedaBienesRegistrados from '../Components/Bienes/GestionBienes/BusquedaBienesRegistrados';
+
+// Personal
 import GestionAuxiliares from '../Components/Auxiliares/GestionAuxiliares/GestionAuxiliares';
-import AgregarBienesTarjeta from '../Components/AgregarBienesTarjeta/AgregarBienesTarjeta';
-import TraspasoBienes from '../Components/TraspasoBienes/TraspasoBienes';
-import DesasignacionBienes from '../Components/DesasignacionBienes/DesasignacionBienes';
-import TarjetasEmpleado from '../Components/TarjetasEmpleado/TarjetasEmpleado';
-import GestionDepartamentos from '../Components/Departamentos/GestionDepartamentos/GestionDepartamentos';
-import GestionProgramas from '../Components/Programas/GestionProgramas/GestionProgramas';
+import GestionEmpleados from '../Components/Empleados/GestionEmpleados/GestionEmpleados';
 import RegistroEmpleado from '../Components/Empleados/RegistroEmpleado/RegistroEmpleado';
 import EdicionEmpleado from '../Components/Empleados/EdicionEmpleado/EdicionEmpleado';
+
+// Unidades de Servicio
+import GestionDepartamentos from '../Components/Departamentos/GestionDepartamentos/GestionDepartamentos';
+import GestionProgramas from '../Components/Programas/GestionProgramas/GestionProgramas';
+
+ // Tarjetas y Transacciones de Bienes
+import AgregarBienesTarjeta from '../Components/AgregarBienesTarjeta/AgregarBienesTarjeta';
+import DesasignacionBienes from '../Components/DesasignacionBienes/DesasignacionBienes';
+import TraspasoBienes from '../Components/TraspasoBienes/TraspasoBienes';
+import TarjetasEmpleado from '../Components/TarjetasEmpleado/TarjetasEmpleado';
+
+// Reportes
 import BienesAsignados from '../Components/Reportes/BienesAsignados/BienesAsignados';
 import Bitacora from '../Components/Reportes/Bitacora/Bitacora';
-import NotFound from '../Components/NotFound/NotFound';
+
 
 function Rutas() {
     const { loginData } = useAuth();
@@ -27,26 +43,41 @@ function Rutas() {
     const rutas = (
         <>
           <Route index element={<GestionEmpleados />} />
-          <Route path="gestionar-bienes" element={<GestionBienes />} />
-          <Route path="registar-bienes" element={<RegistroBien />} />
-          <Route path="editar-bien/:id_bien" element={<EdicionBien />} />
+
+          // Modelos de Bienes
+          <Route path="modelos" element={<GestionModelos/>} />
+          <Route path="registrar-modelo" element={<RegistroModelo/>} />
+          <Route path="editar-modelo/:id_modelo" element={<EdicionModelo/>} />
+
+          // Bienes
+          <Route path="gestionar-bienes-modelo/:id_modelo" element={<GestionBienes />} />
+          <Route path="cargar-bienes-modelo/:id_modelo" element={<CargaBienesModelo />} />
+          <Route path="buscar-bienes-registrados" element={<BusquedaBienesRegistrados />} />
+
+          // Personal
           <Route path="gestionar-auxiliares" element={<GestionAuxiliares />} />
           <Route path="gestionar-empleados" element={<GestionEmpleados />} />
           <Route path="registrar-empleado" element={<RegistroEmpleado />} />
           <Route path="editar-empleado" element={<EdicionEmpleado />} />
+      
+          // Unidades de Servicio
           <Route path="gestionar-departamentos" element={<GestionDepartamentos />} />
           <Route path="gestionar-programas" element={<GestionProgramas />} />
+
+          // Tarjetas y Transacciones de Bienes
           <Route path="asignar-bienes/:id_empleado" element={<AgregarBienesTarjeta />} />
           <Route path="desasignar-bienes/:id_empleado" element={<DesasignacionBienes />} />
           <Route path="traspasar-bienes/:id_empleado_emisor" element={<TraspasoBienes />} />
           <Route path="tarjetas-empleado/:id_empleado" element={<TarjetasEmpleado />} />
+
+          // Reportes
           <Route path="bienes-asignados" element={<BienesAsignados />} />
           <Route path="bitacora" element={<Bitacora/>} />
         </>
     );
 
     return (
-        <Routes>
+      <Routes>
           <Route path="/login" element={<Login/>} />
           {
             !usuario? (
@@ -67,7 +98,7 @@ function Rutas() {
               </>
             )
           }
-        </Routes>
+      </Routes>
     );
 }
 

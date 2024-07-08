@@ -38,11 +38,28 @@ const bienesRequests = {
         }).then(response => response.json());
     },
 
+    getBienes: async () => {
+        const url = `${bienesURL}`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'GET'
+        }).then(response => response.json());
+    },
+
     eliminarBien: async (id_bien) => {
         const url = `${bienesURL}/eliminar-bien/${id_bien}`;
         return await fetch(url, {
             ...requestSettings,
             method: 'DELETE'
+        }).then(response => response.json());
+    },
+
+    eliminarBienes: async (requestBody) => {
+        const url = `${bienesURL}/eliminar-bienes`;
+        return await fetch(url, {
+            ...requestSettings,
+            method: 'DELETE',
+            body: JSON.stringify(requestBody)
         }).then(response => response.json());
     },
 
