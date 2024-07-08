@@ -4,8 +4,10 @@ import { FileUpload } from 'primereact/fileupload';
 import { Button } from 'primereact/button'
 import { DataTable } from "primereact/datatable";
 import { Column } from 'primereact/column';
+import { FilterMatchMode } from 'primereact/api';
 
 import { useToast } from '../../../hooks/useToast';
+import useTableFilters from '../../../hooks/useTableFilters';
 import { quetzalesTemplate } from '../../../Components/TableColumnTemplates';
 import bienesRequests from '../../../Requests/bienesRequests';
 import modelosRequests from '../../../Requests/modelosRequests';
@@ -20,6 +22,19 @@ function CargaBienesModelo() {
     const [modelo, setModelo] = useState({});
     const [bienesIncorrectos, setBienesIncorrectos] = useState([]);
 
+    // ______________________________  Filtros ______________________________
+    const filtrosBienes = useTableFilters({
+        global: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        numeroFila: { value: null, matchMode: FilterMatchMode.EQUALS },
+        sicoin: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_serie: { value: null, matchMode: FilterMatchMode.CONTAINS },
+        no_inventario: { value: null, matchMode: FilterMatchMode.CONTAINS },
+    });
+    // ______________________________________________________________________
+
+    const chooseOptions = { icon: 'pi pi-fw pi-file-excel', className: 'custom-choose-btn p-button-rounded p-button-outlined' };
+    const uploadOptions = { icon: 'pi pi-fw pi-cloud-upload', className: 'custom-upload-btn p-button-success p-button-rounded p-button-outlined' };
+    const cancelOptions = { icon: 'pi pi-fw pi-times', className: 'custom-cancel-btn p-button-danger p-button-rounded p-button-outlined' };
 
     const fileSelectHandler = () => {
         setBienesIncorrectos([]);
@@ -46,8 +61,22 @@ function CargaBienesModelo() {
         });
     };
 
+    const handleDescargarEjmploArchivoCarga = async () => {
+        const blob = await modelosRequests.getEjemploArchvioCargaBienes();
+        const url = window.URL.createObjectURL(blob);
+        // Creación de un enlace temporal y simulación de un clic en él para iniciar la descarga
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `EjemploCargaMasivaDeBienes.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+
 
     useEffect(() => {
+        filtrosBienes.initFilters();
         modelosRequests.getModelo(id_modelo).then(response => {
             const modelo = response.data;
             setModelo(modelo);
@@ -55,12 +84,33 @@ function CargaBienesModelo() {
     }, []);
 
 
+    const headerTemplate = (options) => {
+        const { className, chooseButton, uploadButton, cancelButton } = options;
+
+        return (
+            <div className={className} style={{ backgroundColor: 'transparent', display: 'flex', alignItems: 'center' }}>
+                <Button
+                    tooltip='Descargar Ejemplo de Archivo de Carga'
+                    tooltipOptions={{ position: 'right' }}
+                    icon='pi pi-file-excel'
+                    className='p-button-outlined p-button-rounded'
+                    style={{ width: '50px'}}
+                    onClick={handleDescargarEjmploArchivoCarga}
+                />
+                {chooseButton}
+                {uploadButton}
+                {cancelButton}
+            </div>
+        );
+    };
+
+
     const emptyTemplate = () => {
         return (
             <div className="flex align-items-center flex-column" >
                 <i className="pi pi-file mt-3 p-5" style={{ fontSize: '5em', borderRadius: '50%', backgroundColor: 'var(--surface-b)', color: 'var(--surface-d)' }}></i>
                 <span style={{ fontSize: '1.2em', color: 'var(--text-color-secondary)' }} className="my-5">
-                    Arrastre o Seleccione un archiov .xls
+                    Arrastre o Seleccione un Archivo .xls
                 </span>
             </div>
         );
@@ -109,7 +159,7 @@ function CargaBienesModelo() {
             </div>
 
 
-            <div className='col-12 md:col-5'>
+            <div className='col-12 md:col-6'>
                 <FileUpload
                     ref={fileUploadRef}
                     accept='.xls,.xlsx'
@@ -120,13 +170,17 @@ function CargaBienesModelo() {
                     uploadHandler={UploadHandler}
                     maxFileSize={1000000}
                     emptyTemplate={emptyTemplate}
+                    headerTemplate={headerTemplate}
+                    chooseOptions={chooseOptions}
+                    uploadOptions={uploadOptions}
+                    cancelOptions={cancelOptions}
                 />
             </div>
 
-            <div className='col-12 md:col-7'>
+            <div className='col-12 md:col-6'>
                 <DataTable 
                     value={bienesIncorrectos}
-                    // filters={filtrosBienes.filters}
+                    filters={filtrosBienes.filters}
                     paginator
                     paginatorPosition='top'
                     paginatorTemplate='RowsPerPageDropdown FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink'
@@ -138,7 +192,7 @@ function CargaBienesModelo() {
                     stripedRows
                     header={bienesIncorrectosHeaderTemplate}
                 >
-                    <Column field='numeroFila' header='No. Fila'  filter filterPlaceholder='Buscar por No. fila'/>
+                    <Column field='numeroFila' header='No. Fila' dataType='numeric' filter filterPlaceholder='Buscar por No. fila'/>
                     <Column field='sicoin' header='Sicoin'  filter filterPlaceholder='Buscar por sicoin'/>
                     <Column field='no_serie' header='No. Serie' filter filterPlaceholder='Buscar por No. serie' />
                     <Column field='no_inventario' header='No. Inventario'  filter filterPlaceholder='Buscar por No. inventario'/>
@@ -148,4 +202,4 @@ function CargaBienesModelo() {
     );
 }
 
-export default CargaBienesModelo
+export default CargaBienesModelo;

@@ -235,16 +235,6 @@ function GestionBienes() {
                                     onClick={() => navigate(`/cargar-bienes-modelo/${id_modelo}`)}
                                 />
                             </div>
-                            <div className='col max-w-max px-0'>
-                                <Button
-                                    tooltip='Descargar Ejemplo de Archivo de Carga'
-                                    tooltipOptions={{ position: 'bottom' }}
-                                    icon='pi pi-file-excel'
-                                    className='p-button-outlined'
-                                    style={{color: '#217346'}}
-                                    onClick={handleDescargarEjmploArchivoCarga}
-                                />
-                            </div>
                         </div>
 
                         {
