@@ -1,0 +1,26 @@
+version: '3.3'
+services:
+  db:
+    image: mysql:latest
+    container_name: dnpap-mysql-db
+    hostname: mysql
+    restart: always
+    environment:
+      # Password for root access
+      MYSQL_DATABASE: 'dnpap'
+      MYSQL_ROOT_PASSWORD: '12345'
+      allowPublicKeyRetrieval: True
+      TZ: 'America/Guatemala'
+    ports:
+      # <Port exposed> : <MySQL Port running inside container>
+      - '3306:3306'
+    expose:
+      # Opens port 3306 on the container
+      - '3306'
+      # Where our data will be persisted
+    volumes:
+      - dnpap-mysql-db:/var/lib/mysql
+    command: ['mysqld', '--default-time-zone=America/Guatemala']
+# Names our volume
+volumes:
+  dnpap-mysql-db:

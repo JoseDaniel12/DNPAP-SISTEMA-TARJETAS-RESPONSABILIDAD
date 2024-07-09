@@ -48,12 +48,3 @@ services:
       - /app/node_modules
     depends_on:
       - backend
-    # deploy:
-    #   resources:
-    #     limits:
-    #       cpus: "0.15"
-    #       memory: 250M
-    #     # Recusos dedicados, mantiene los recursos disponibles del host para el contenedor
-    #     reservations:
-    #       cpus: "0.1"
-    #       memory: 128M
